@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>福莱特浮空飞行器 — FlyteOS 2.1 飞行仿真系统</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;700&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+:root {
+  --primary: #00d4ff;
+  --primary-dim: #0099cc;
+  --secondary: #ff6b35;
+  --success: #00ff88;
+  --warning: #ffd700;
+  --danger: #ff4757;
+  --bg-dark: rgba(5, 12, 28, 0.85);
+  --bg-panel: rgba(10, 20, 45, 0.9);
+  --border-glow: rgba(0, 212, 255, 0.3);
+  --text-primary: #e8f4f8;
+  --text-secondary: #7a9bb8;
+  --glass: rgba(15, 30, 60, 0.7);
+}
+
+body {
+  background: #020810;
+  color: var(--text-primary);
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Rajdhani', 'Segoe UI', sans-serif;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+  letter-spacing: 0.5px;
+}
+
+#main {position: relative; width: 100vw; height: 100vh}
+#c {position: absolute; top: 0; left: 0; width: 100%; height: 100%}
+
+.glass-panel {
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glow);
+  border-radius: 12px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5),
+              inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+#hud-title {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 32px;
+  font-family: 'Orbitron', monospace;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  color: var(--primary);
+  text-shadow: 0 0 20px var(--primary);
+  background: linear-gradient(135deg, rgba(0,212,255,0.1), rgba(0,100,150,0.2));
+  border: 1px solid var(--primary);
+  border-radius: 25px;
+  box-shadow: 0 0 30px rgba(0,212,255,0.3);
+}
+
+#panel-l {
+  position: absolute;
+  top: 70px;
+  left: 16px;
+  width: 220px;
+  padding: 16px;
+}
+
+.panel-header {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--primary);
+  text-transform: uppercase;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border-glow);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-header::before {
+  content: '';
+  width: 4px;
+  height: 12px;
+  background: var(--primary);
+  border-radius: 2px;
+  box-shadow: 0 0 10px var(--primary);
+}
+
+.data-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+}
+
+.data-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.data-value {
+  font-family: 'Orbitron', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.data-value.highlight {
+  color: var(--primary);
+  text-shadow: 0 0 10px var(--primary);
+}
+
+.data-value.warning {color: var(--warning)}
+.data-value.danger {color: var(--danger)}
+.data-value.success {color: var(--success)}
+
+#panel-r {
+  position: absolute;
+  top: 70px;
+  right: 16px;
+  width: 230px;
+  padding: 16px;
+}
+
+.bar-container {margin: 10px 0;}
+
+.bar-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.bar-name {
+  font-size: 11px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bar-icon {width: 14px; height: 14px; opacity: 0.9;}
+
+.bar-value {
+  font-family: 'Orbitron', monospace;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.bar-bg {
+  height: 8px;
+  background: rgba(0, 20, 40, 0.8);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 212, 255, 0.2);
+}
+
+.bar-f {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease, background 0.3s ease;
+  box-shadow: 0 0 10px currentColor;
+}
+
+#panel-b {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 28px;
+  display: flex;
+  gap: 32px;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.status-dot.online {background: var(--success); box-shadow: 0 0 10px var(--success)}
+.status-dot.active {background: var(--primary); box-shadow: 0 0 10px var(--primary)}
+.status-dot.warning {background: var(--warning); box-shadow: 0 0 10px var(--warning)}
+
+@keyframes pulse {
+  0%, 100% {opacity: 1; transform: scale(1)}
+  50% {opacity: 0.6; transform: scale(0.9)}
+}
+
+#btns {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn {
+  padding: 10px 18px;
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+  background: var(--glass);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(8px);
+}
+
+.btn:hover {
+  background: rgba(0, 212, 255, 0.15);
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+  transform: translateX(-2px);
+}
+
+.btn.active {
+  background: rgba(0, 212, 255, 0.2);
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+}
+
+#log {
+  position: absolute;
+  bottom: 70px;
+  left: 16px;
+  width: 280px;
+  padding: 12px 16px;
+  max-height: 180px;
+}
+
+#log h4 {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.log-entry {
+  font-size: 11px;
+  padding: 3px 0;
+  color: var(--text-secondary);
+  border-left: 2px solid transparent;
+  padding-left: 8px;
+  margin: 4px 0;
+  transition: all 0.3s ease;
+}
+
+.log-entry.new {color: var(--primary); border-color: var(--primary)}
+.log-entry.warning {color: var(--warning); border-color: var(--warning)}
+.log-entry.success {color: var(--success); border-color: var(--success)}
+.log-entry.danger {color: var(--danger); border-color: var(--danger)}
+
+#mm {
+  position: absolute;
+  bottom: 70px;
+  right: 16px;
+  width: 180px;
+  height: 180px;
+  padding: 0;
+  overflow: hidden;
+}
+
+#mmc {width: 180px; height: 180px}
+
+#pitch-indicator {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 20px;
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  color: var(--warning);
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #020810;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: opacity 0.5s ease;
+}
+
+.loader.hidden {opacity: 0; pointer-events: none}
+
+.loader-ring {
+  width: 60px;
+  height: 60px;
+  border: 3px solid var(--border-glow);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loader-text {
+  margin-top: 20px;
+  font-family: 'Orbitron', monospace;
+  font-size: 12px;
+  letter-spacing: 3px;
+  color: var(--primary);
+}
+
+@keyframes spin {to {transform: rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="loader" id="loader">
+  <div class="loader-ring"></div>
+  <div class="loader-text">系统初始化中</div>
+</div>
+
+<div id="main">
+  <canvas id="c"></canvas>
+  
+  <div id="hud-title">FlyteOS v2.1 — 福莱特浮空飞行器仿真系统</div>
+  
+  <div id="panel-l" class="glass-panel">
+    <div class="panel-header">飞行数据</div>
+    <div class="data-row">
+      <span class="data-label">状 态</span>
+      <span class="data-value success" id="pState">待 机</span>
+    </div>
+    <div class="data-row">
+      <span class="data-label">X 坐标</span>
+      <span class="data-value highlight" id="pX">0.0 m</span>
+    </div>
+    <div class="data-row">
+      <span class="data-label">Y 坐标</span>
+      <span class="data-value highlight" id="pY">0.0 m</span>
+    </div>
+    <div class="data-row">
+      <span class="data-label">飞行高度</span>
+      <span class="data-value highlight" id="pZ">0.0 m</span>
+    </div>
+    <div class="data-row">
+      <span class="data-label">飞行速度</span>
+      <span class="data-value" id="pSpd">0.0 m/s</span>
+    </div>
+    <div class="data-row">
+      <span class="data-label">飞行航向</span>
+      <span class="data-value warning" id="pYaw">000°</span>
+    </div>
+    <div class="data-row">
+      <span class="data-label">俯仰角度</span>
+      <span class="data-value" id="pPitch">0.0°</span>
+    </div>
+    <div class="data-row">
+      <span class="data-label">飞行时长</span>
+      <span class="data-value" id="pTime">00:00</span>
+    </div>
+    <div class="data-row">
+      <span class="data-label">航点进度</span>
+      <span class="data-value" id="pWP">0/5</span>
+    </div>
+  </div>
+  
+  <div id="panel-r" class="glass-panel">
+    <div class="panel-header">能源系统</div>
+    
+    <div class="bar-container">
+      <div class="bar-label">
+        <span class="bar-name">
+          <svg class="bar-icon" viewBox="0 0 24 24" fill="none" stroke="#00ff88" stroke-width="2">
+            <rect x="6" y="7" width="12" height="14" rx="2"/>
+            <path d="M10 7V4a1 1 0 011-1h2a1 1 0 011 1v3"/>
+            <path d="M9 12h6M9 15h4"/>
+          </svg>
+          电池
+        </span>
+        <span class="bar-value" id="vBat" style="color:#00ff88">100%</span>
+      </div>
+      <div class="bar-bg">
+        <div class="bar-f" id="bBat" style="width:100%;background:#00ff88"></div>
+      </div>
+    </div>
+    
+    <div class="bar-container">
+      <div class="bar-label">
+        <span class="bar-name">
+          <svg class="bar-icon" viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+          </svg>
+          太阳能
+        </span>
+        <span class="bar-value" id="vSol" style="color:#ffd700">0%</span>
+      </div>
+      <div class="bar-bg">
+        <div class="bar-f" id="bSol" style="width:0%;background:#ffd700"></div>
+      </div>
+    </div>
+    
+    <div class="bar-container">
+      <div class="bar-label">
+        <span class="bar-name">
+          <svg class="bar-icon" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2">
+            <path d="M12 2L4 8v12h16V8l-8-6z"/>
+            <path d="M9 22v-6h6v6"/>
+            <circle cx="12" cy="10" r="2"/>
+          </svg>
+          氦气
+        </span>
+        <span class="bar-value" id="vHel" style="color:#a78bfa">0%</span>
+      </div>
+      <div class="bar-bg">
+        <div class="bar-f" id="bHel" style="width:0%;background:#a78bfa"></div>
+      </div>
+    </div>
+    
+    <div class="bar-container">
+      <div class="bar-label">
+        <span class="bar-name">
+          <svg class="bar-icon" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2">
+            <circle cx="12" cy="12" r="8"/>
+            <path d="M12 8v4l3 3"/>
+            <path d="M8 2l1.5 1.5M16 2l-1.5 1.5"/>
+          </svg>
+          涡轮
+        </span>
+        <span class="bar-value" id="vTurb" style="color:#f97316">0%</span>
+      </div>
+      <div class="bar-bg">
+        <div class="bar-f" id="bTurb" style="width:0%;background:#f97316"></div>
+      </div>
+    </div>
+    
+    <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-glow)">
+      <div class="data-row">
+        <span class="data-label">温 度</span>
+        <span class="data-value" id="pTemp">32°C</span>
+      </div>
+      <div class="data-row">
+        <span class="data-label">风 速</span>
+        <span class="data-value" id="pWind">3.2 m/s</span>
+      </div>
+      <div class="data-row">
+        <span class="data-label">垂直速度</span>
+        <span class="data-value" id="pVS">0.0 m/s</span>
+      </div>
+    </div>
+  </div>
+  
+  <div id="pitch-indicator">俯仰: <span id="pitchVal">0.0°</span></div>
+  
+  <div id="panel-b" class="glass-panel">
+    <div class="status-item">
+      <div class="status-dot online"></div>
+      <span>飞控系统</span>
+    </div>
+    <div class="status-item">
+      <div class="status-dot online"></div>
+      <span>导航系统</span>
+    </div>
+    <div class="status-item">
+      <div class="status-dot active"></div>
+      <span>数据链路</span>
+    </div>
+    <div class="status-item">
+      <div class="status-dot online"></div>
+      <span>MPPT</span>
+    </div>
+    <div class="status-item">
+      <div class="status-dot warning"></div>
+      <span>氦气系统</span>
+    </div>
+  </div>
+  
+  <div id="btns">
+    <button class="btn active" id="bAuto" onclick="toggleAuto()">自动飞行</button>
+    <button class="btn" onclick="setView(0)">跟随视角</button>
+    <button class="btn" onclick="setView(1)">俯视视角</button>
+    <button class="btn" onclick="setView(2)">侧视视角</button>
+    <button class="btn" onclick="resetSim()">重置任务</button>
+  </div>
+  
+  <div id="log" class="glass-panel">
+    <h4>// 任务日志</h4>
+    <div id="logBody"></div>
+  </div>
+  
+  <div id="mm" class="glass-panel">
+    <canvas id="mmc" width="180" height="180"></canvas>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const mmc = document.getElementById('mmc');
+const mmx = mmc.getContext('2d');
+
+let W, H;
+function resize(){
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+setTimeout(() => {
+  document.getElementById('loader').classList.add('hidden');
+}, 1500);
+
+const S = {
+  x:0, y:0, z:0,
+  vx:0, vy:0, vz:0,
+  yaw:0, pitch:0, roll:0,
+  tyaw:0, tpitch:0, troll:0,
+  prevZ:0,
+  battery:100, solar:0.6, helium:0.7, turbine:0.3,
+  temp:32, wind:3.2, vs:0,
+  speed:0, time:0,
+  status:'STARTUP', wpIdx:0,
+  auto:true
+};
+
+const WPS = [
+  {x:0,   y:0,   z:50, n:'起点'},
+  {x:150, y:0,   z:50, n:'航点1'},
+  {x:150, y:120, z:60, n:'航点2'},
+  {x:0,   y:120, z:50, n:'航点3'},
+  {x:-100,y:60,  z:55, n:'航点4'},
+  {x:0,   y:0,   z:5,  n:'降落'},
+];
+
+let viewMode = 0;
+const cam = { x:0, y:-30, z:80, tx:0, ty:0, tz:50 };
+
+const trail = [];
+const MAX_TRAIL = 1000;
+
+const clouds = [];
+for(let i=0; i<15; i++){
+  clouds.push({
+    x: (Math.random() - 0.5) * 400,
+    y: (Math.random() - 0.5) * 400,
+    z: 80 + Math.random() * 60,
+    w: 30 + Math.random() * 50,
+    h: 15 + Math.random() * 20,
+    speed: 0.5 + Math.random() * 1.5
+  });
+}
+
+const logs = [];
+function log(msg, type='info'){
+  const t = Math.floor(S.time);
+  const mins = String(Math.floor(t/60)).padStart(2,'0');
+  const secs = String(t%60).padStart(2,'0');
+  logs.unshift({msg:'['+mins+':'+secs+'] '+msg, type});
+  if(logs.length > 8) logs.pop();
+  renderLog();
+}
+
+const typeClass = {info:'new', warning:'warning', success:'success', danger:'danger'};
+function renderLog(){
+  const html = logs.slice(0,6).map((l,i)=>
+    '<div class="log-entry '+(i===0?typeClass[l.type]||'new':'')+'">'+l.msg+'</div>'
+  ).join('');
+  document.getElementById('logBody').innerHTML = html;
+}
+
+function physics(dt){
+  if(!S.auto) return;
+  S.time += dt;
+  const wp = WPS[S.wpIdx];
+  const dx=wp.x-S.x, dy=wp.y-S.y, dz=wp.z-S.z;
+  const dist=Math.sqrt(dx*dx+dy*dy+dz*dz);
+
+  if(dist < 6 && S.wpIdx < WPS.length-1){
+    const old = WPS[S.wpIdx].n;
+    S.wpIdx++;
+    log('已到达 ' + old + ' → 前往 ' + WPS[S.wpIdx].n, 'success');
+    if(S.wpIdx === WPS.length-1){ S.status='RETURNING'; log('任务完成 - 返航中','warning'); }
+    else if(S.wpIdx === 1) S.status='CRUISING';
+    else if(S.wpIdx === 0) S.status='STARTUP';
+    else S.status='EN ROUTE';
+  }
+  
+  if(S.wpIdx === WPS.length-1 && S.z < 3 && dist < 5){ 
+    log('降落完成 - 任务结束', 'success');
+    setTimeout(()=>resetSim(), 2000); 
+    S.auto = false;
+    return; 
+  }
+
+  const spd = Math.min(12, dist * 0.35);
+  const f = dist > 0.1 ? spd/dist : 0;
+  S.vx += (dx*f - S.vx) * 2.2 * dt;
+  S.vy += (dy*f - S.vy) * 2.2 * dt;
+  S.vz += (dz*0.6 - S.vz) * 1.8 * dt;
+  const vl = Math.sqrt(S.vx**2 + S.vy**2 + S.vz**2);
+  if(vl > 14){ const r=14/vl; S.vx*=r; S.vy*=r; S.vz*=r; }
+  S.speed = vl;
+  
+  S.vs = (S.z - S.prevZ) / dt;
+  S.prevZ = S.z;
+  
+  S.x += S.vx * dt; 
+  S.y += S.vy * dt; 
+  S.z = Math.max(0, S.z + S.vz * dt);
+
+  if(S.wpIdx === WPS.length-1 && S.z > 3){
+    const tdx = wp.x - S.x, tdy = wp.y - S.y;
+    S.tyaw = Math.atan2(tdy, tdx);
+    S.tpitch = -0.25;
+    S.troll = 0;
+  } else if(vl > 0.5){
+    S.tyaw = Math.atan2(S.vy, S.vx);
+    S.tpitch = -Math.atan2(S.vz, Math.sqrt(S.vx**2 + S.vy**2)) * 0.5;
+    S.troll = (S.tyaw - S.yaw) * 0.3;
+    S.troll = Math.max(-0.4, Math.min(0.4, S.troll));
+  }
+  S.yaw   += (S.tyaw   - S.yaw)   * 2.5 * dt;
+  S.pitch += (S.tpitch - S.pitch) * 3.0 * dt;
+  S.roll  += (S.troll   - S.roll)  * 3.0 * dt;
+
+  S.solar   = 0.45 + 0.45 * Math.abs(Math.sin(S.time * 0.015 + 1));
+  S.helium  = 0.60 + 0.20 * Math.sin(S.time * 0.01);
+  S.turbine = 0.15 + 0.40 * (vl / 14);
+  S.battery = Math.max(10, S.battery - (S.turbine * 0.01 - S.solar * 0.008) * dt);
+  S.temp    = 28 + S.turbine * 12 + Math.sin(S.time * 0.08) * 2;
+  S.wind    = 2.0 + Math.sin(S.time * 0.2) * 2.5 + (S.z > 40 ? 1.5 : 0);
+
+  clouds.forEach(c => {
+    c.x += c.speed * dt;
+    if(c.x > S.x + 250) c.x = S.x - 250;
+  });
+
+  trail.push({x:S.x, y:S.y, z:S.z});
+  if(trail.length > MAX_TRAIL) trail.shift();
+}
+
+function updateCam(){
+  if(viewMode === 0){
+    const behind = 30, up = 15;
+    const cy = Math.cos(S.yaw), sy = Math.sin(S.yaw);
+    cam.x = S.x - cy * behind;
+    cam.y = S.y - sy * behind;
+    cam.z = S.z + up;
+    cam.tx = S.x; cam.ty = S.y; cam.tz = S.z;
+  } else if(viewMode === 1){
+    cam.x = S.x; cam.y = S.y; cam.z = S.z + 200;
+    cam.tx = S.x; cam.ty = S.y; cam.tz = S.z;
+  } else {
+    cam.x = S.x + 80; cam.y = S.y + 80; cam.z = S.z + 35;
+    cam.tx = S.x; cam.ty = S.y; cam.tz = S.z;
+  }
+}
+
+function project(wx, wy, wz){
+  const dx = wx - cam.x, dy = wy - cam.y, dz = wz - cam.z;
+  const fxr = cam.tx - cam.x, fyr = cam.ty - cam.y, fzr = cam.tz - cam.z;
+  const fl = Math.sqrt(fxr*fxr + fyr*fyr + fzr*fzr) || 1;
+  const fx = fxr/fl, fy = fyr/fl, fz = fzr/fl;
+  let rx = -fy, ry = fx, rz = 0;
+  const rl = Math.sqrt(rx*rx + ry*ry) || 1; rx/=rl; ry/=rl;
+  const ux = ry*fz - rz*fy, uy = rz*fx - rx*fz, uz = rx*fy - ry*fx;
+  const cx2 = dx*rx + dy*ry + dz*rz;
+  const cy2 = dx*ux + dy*uy + dz*uz;
+  const cz2 = dx*fx + dy*fy + dz*fz;
+  if(cz2 < 0.5) return null;
+  const fov = 650;
+  const sx = W/2 + cx2/cz2*fov;
+  const sy = H/2 - cy2/cz2*fov;
+  const scale = fov/cz2;
+  return {sx, sy, scale, cz:cz2};
+}
+
+function drawAirship(p, yaw, pitch, roll, scale){
+  if(!p) return;
+  const {sx, sy} = p;
+  const s = Math.max(0.5, Math.min(14, scale));
+  const sf = s * 24;
+
+  ctx.save();
+  ctx.translate(sx, sy);
+  
+  const viewRot = viewMode === 1 ? 0 : -yaw;
+  ctx.rotate(viewRot);
+  
+  ctx.rotate(pitch * 0.5);
+  ctx.rotate(roll * 0.3);
+
+  const glowGrd = ctx.createRadialGradient(0,0, sf*0.2, 0,0, sf*2);
+  glowGrd.addColorStop(0,'rgba(0,212,255,0.25)');
+  glowGrd.addColorStop(0.5,'rgba(0,150,220,0.1)');
+  glowGrd.addColorStop(1,'rgba(0,80,180,0)');
+  ctx.fillStyle = glowGrd;
+  ctx.beginPath(); ctx.ellipse(0,0, sf*2, sf*1, 0,0,Math.PI*2); ctx.fill();
+
+  const noseX = sf * 1.15;
+  ctx.fillStyle = '#ff8c42';
+  ctx.beginPath();
+  ctx.moveTo(noseX + sf*0.35, 0);
+  ctx.lineTo(noseX - sf*0.05, -sf*0.14);
+  ctx.lineTo(noseX - sf*0.05, sf*0.14);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#ff6600';
+  ctx.lineWidth = sf*0.05;
+  ctx.beginPath(); ctx.moveTo(sf*0.2, 0); ctx.lineTo(noseX-sf*0.1, 0); ctx.stroke();
+
+  const arrowBase = sf * 1.1, arrowTip = sf * 1.75;
+  ctx.fillStyle = '#ffdd44';
+  ctx.beginPath();
+  ctx.moveTo(arrowTip, 0);
+  ctx.lineTo(arrowBase - sf*0.2, -sf*0.15);
+  ctx.lineTo(arrowBase - sf*0.06, 0);
+  ctx.lineTo(arrowBase - sf*0.2, sf*0.15);
+  ctx.closePath(); ctx.fill();
+
+  const grd = ctx.createRadialGradient(-sf*0.25,-sf*0.2, sf*0.1, 0,0, sf*1.2);
+  grd.addColorStop(0,'#d8e8f8');
+  grd.addColorStop(0.35,'#7aa4c4');
+  grd.addColorStop(0.7,'#3a6080');
+  grd.addColorStop(1,'#1a3048');
+  ctx.fillStyle = grd;
+  ctx.strokeStyle = 'rgba(120,180,220,0.6)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, sf*1.05, sf*0.44, 0, 0, Math.PI*2);
+  ctx.fill(); ctx.stroke();
+
+  const hl = ctx.createLinearGradient(-sf*0.6,-sf*0.35, sf*0.4,sf*0.1);
+  hl.addColorStop(0,'rgba(255,255,255,0.4)');
+  hl.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle = hl;
+  ctx.beginPath();
+  ctx.ellipse(-sf*0.15,-sf*0.1, sf*0.65, sf*0.22, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.strokeStyle = 'rgba(100,160,210,0.25)';
+  ctx.lineWidth = 0.6;
+  for(let i=-3; i<=3; i++){
+    const px = i * sf * 0.3;
+    if(Math.abs(px) > sf * 0.95) continue;
+    const hw = Math.sqrt(Math.max(0, 1-(px/(sf*1.05))**2)) * sf*0.44;
+    ctx.beginPath(); ctx.moveTo(px,-hw); ctx.lineTo(px,hw); ctx.stroke();
+  }
+
+  ctx.fillStyle = '#1a3a6a';
+  ctx.strokeStyle = 'rgba(100,150,255,0.7)';
+  ctx.lineWidth = 0.7;
+  ctx.beginPath();
+  ctx.rect(-sf*0.8, -sf*0.5, sf*1.6, sf*0.14);
+  ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = 'rgba(80,120,200,0.5)';
+  ctx.lineWidth = 0.5;
+  for(let i=0; i<6; i++){
+    ctx.beginPath();
+    ctx.moveTo(-sf*0.8 + i*sf*0.27, -sf*0.5);
+    ctx.lineTo(-sf*0.8 + i*sf*0.27, -sf*0.36);
+    ctx.stroke();
+  }
+
+  const gg = ctx.createLinearGradient(0,-sf*0.1, 0,sf*0.25);
+  gg.addColorStop(0,'#1a3a6a'); gg.addColorStop(1,'#0a1f40');
+  ctx.fillStyle = gg;
+  ctx.strokeStyle = 'rgba(60,120,200,0.6)';
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.roundRect(-sf*0.4, sf*0.1, sf*0.8, sf*0.3, sf*0.05);
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle = 'rgba(0,200,255,0.35)';
+  for(let i=-1; i<=1; i++){
+    ctx.beginPath();
+    ctx.ellipse(i*sf*0.2, sf*0.2, sf*0.08, sf*0.07, 0, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = 'rgba(80,140,220,0.65)';
+  ctx.beginPath();
+  ctx.moveTo(sf*1.05, 0);
+  ctx.lineTo(sf*1.25, -sf*0.32);
+  ctx.lineTo(sf*1.15, sf*0.08);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(sf*1.05, 0);
+  ctx.lineTo(sf*1.25, sf*0.32);
+  ctx.lineTo(sf*1.15, -sf*0.08);
+  ctx.closePath(); ctx.fill();
+
+  const propT = Date.now() * 0.01 * (S.speed/6 + 0.5);
+  const propPos = [
+    [-sf*0.55, -sf*0.4],
+    [ sf*0.55, -sf*0.4],
+    [-sf*0.55,  sf*0.4],
+    [ sf*0.55,  sf*0.4],
+  ];
+  propPos.forEach(([px,py],i)=>{
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.rotate(propT + i * Math.PI/2);
+    ctx.strokeStyle = 'rgba(0,220,255,0.9)';
+    ctx.lineWidth = sf*0.05;
+    ctx.beginPath();
+    ctx.moveTo(-sf*0.25, 0); ctx.lineTo(sf*0.25, 0);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0,-sf*0.25); ctx.lineTo(0,sf*0.25);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(0,180,255,0.25)';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.arc(0,0,sf*0.25,0,Math.PI*2); ctx.stroke();
+    ctx.restore();
+  });
+
+  const blink = Math.sin(Date.now() * 0.005) > 0;
+  if(blink){
+    ctx.fillStyle = '#ff3030';
+    ctx.beginPath(); ctx.arc(-sf*0.95, 0, sf*0.055, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#30ff30';
+    ctx.beginPath(); ctx.arc(sf*0.95, 0, sf*0.055, 0, Math.PI*2); ctx.fill();
+  }
+
+  ctx.restore();
+
+  const groundP = project(S.x, S.y, 0);
+  if(groundP && groundP.cz < 250){
+    const gs = groundP.scale * 20;
+    const alpha = Math.max(0, 0.5 - S.z/150);
+    ctx.save();
+    ctx.translate(groundP.sx, groundP.sy);
+    ctx.fillStyle = 'rgba(0,80,160,'+alpha+')';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, gs*1.1, gs*0.28, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function drawGround(){
+  const GRID = 30, RANGE = 6;
+  const cx = Math.round(S.x/GRID)*GRID, cy = Math.round(S.y/GRID)*GRID;
+  
+  for(let i=-RANGE; i<=RANGE; i++){
+    for(let j=-RANGE; j<=RANGE; j++){
+      const gx = cx + i*GRID, gy = cy + j*GRID;
+      const corners = [
+        project(gx,gy,0), project(gx+GRID,gy,0),
+        project(gx+GRID,gy+GRID,0), project(gx,gy+GRID,0)
+      ];
+      if(corners.some(c=>!c||c.cz<0.5)) continue;
+      
+      const dist = Math.sqrt((gx-S.x)**2 + (gy-S.y)**2);
+      const fade = Math.max(0.2, 1 - dist/250);
+      const even = (i+j) % 2 === 0;
+      ctx.fillStyle = even ? 
+        'rgba(8,18,45,'+(fade * 0.7)+')' : 
+        'rgba(5,12,32,'+(fade * 0.7)+')';
+      ctx.strokeStyle = 'rgba(30,70,140,'+(fade * 0.3)+')';
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(corners[0].sx, corners[0].sy);
+      for(let k=1;k<4;k++) ctx.lineTo(corners[k].sx, corners[k].sy);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+    }
+  }
+}
+
+function drawClouds(){
+  clouds.forEach(c => {
+    const p = project(c.x, c.y, c.z);
+    if(!p || p.cz < 0.5) return;
+    const alpha = Math.max(0.1, 0.4 - p.cz/400);
+    ctx.fillStyle = 'rgba(180,200,220,'+alpha+')';
+    ctx.beginPath();
+    ctx.ellipse(p.sx, p.sy, p.scale * c.w, p.scale * c.h * 0.5, 0, 0, Math.PI*2);
+    ctx.fill();
+  });
+}
+
+function drawWaypoints(){
+  WPS.forEach((wp,i)=>{
+    const p = project(wp.x, wp.y, wp.z);
+    if(!p || p.cz < 0.5) return;
+    const r = Math.max(5, p.scale * 6);
+    
+    let color;
+    if(i < S.wpIdx) color = '#00ff88';
+    else if(i === S.wpIdx) color = '#ffd700';
+    else color = '#445566';
+    
+    if(i < S.wpIdx){
+      ctx.fillStyle = 'rgba(0,255,136,0.15)';
+      ctx.beginPath(); ctx.arc(p.sx, p.sy, r*1.5, 0, Math.PI*2); ctx.fill();
+    }
+    
+    if(i === S.wpIdx){
+      const pulse = Math.sin(Date.now() * 0.006) * 0.4 + 0.6;
+      ctx.strokeStyle = 'rgba(255,215,0,'+pulse+')';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); 
+      ctx.arc(p.sx, p.sy, r + 8 + Math.sin(Date.now() * 0.008) * 5, 0, Math.PI*2); 
+      ctx.stroke();
+    }
+    
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(p.sx, p.sy, r, 0, Math.PI*2); ctx.stroke();
+    
+    ctx.fillStyle = color;
+    ctx.font = 'bold 12px "Microsoft YaHei", "PingFang SC", Orbitron, sans-serif';
+    ctx.fillText(wp.n, p.sx + r + 6, p.sy + 4);
+    
+    const gp = project(wp.x, wp.y, 0);
+    if(gp && gp.cz > 0.5){
+      ctx.strokeStyle = 'rgba(50,100,180,0.2)';
+      ctx.lineWidth = 0.7;
+      ctx.setLineDash([4,5]);
+      ctx.beginPath();
+      ctx.moveTo(p.sx, p.sy);
+      ctx.lineTo(gp.sx, gp.sy);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  });
+  
+  ctx.strokeStyle = 'rgba(60,120,200,0.3)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([6,10]);
+  ctx.beginPath();
+  let first = true;
+  WPS.forEach(wp => {
+    const p = project(wp.x, wp.y, wp.z);
+    if(!p || p.cz < 0.5){ first = true; return; }
+    first ? ctx.moveTo(p.sx, p.sy) : ctx.lineTo(p.sx, p.sy);
+    first = false;
+  });
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawTrail(){
+  if(trail.length < 2) return;
+  for(let i=1; i<trail.length; i++){
+    const p0 = project(trail[i-1].x, trail[i-1].y, trail[i-1].z);
+    const p1 = project(trail[i].x, trail[i].y, trail[i].z);
+    if(!p0 || !p1 || p0.cz < 0.5 || p1.cz < 0.5) continue;
+    const alpha = Math.max(0.05, (i/trail.length) * 0.8);
+    ctx.strokeStyle = 'rgba(0,200,255,'+alpha+')';
+    ctx.lineWidth = Math.max(1, p1.scale * 0.5);
+    ctx.beginPath();
+    ctx.moveTo(p0.sx, p0.sy);
+    ctx.lineTo(p1.sx, p1.sy);
+    ctx.stroke();
+  }
+}
+
+function drawSky(){
+  const grd = ctx.createLinearGradient(0, 0, 0, H);
+  grd.addColorStop(0, '#020810');
+  grd.addColorStop(0.3, '#041020');
+  grd.addColorStop(0.6, '#061830');
+  grd.addColorStop(1, '#081f3a');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, W, H);
+  
+  ctx.fillStyle = 'rgba(200,220,255,0.6)';
+  for(let i=0; i<160; i++){
+    const sx = (Math.sin(i * 137.51) * 0.5 + 0.5) * W;
+    const sy = (Math.cos(i * 97.35) * 0.5 + 0.5) * H * 0.6;
+    const sr = 0.5 + Math.abs(Math.sin(i * 29.3)) * 1.5;
+    const twinkle = 0.7 + Math.sin(Date.now() * 0.001 + i) * 0.3;
+    ctx.globalAlpha = twinkle;
+    ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawMinimap(){
+  const size = 180;
+  mmx.fillStyle = '#030a18';
+  mmx.fillRect(0, 0, size, size);
+  
+  mmx.strokeStyle = 'rgba(20,50,100,0.8)';
+  mmx.lineWidth = 0.5;
+  for(let g=0; g<size; g+=20){
+    mmx.beginPath(); mmx.moveTo(g,0); mmx.lineTo(g,size); mmx.stroke();
+    mmx.beginPath(); mmx.moveTo(0,g); mmx.lineTo(size,g); mmx.stroke();
+  }
+  
+  const dirs = ['N','E','S','W'];
+  mmx.font = '9px Orbitron';
+  mmx.fillStyle = 'rgba(120,160,200,0.7)';
+  dirs.forEach((d,i) => {
+    const angle = (i - 1) * Math.PI/2;
+    const x = size/2 + Math.cos(angle) * (size/2 - 8);
+    const y = size/2 - Math.sin(angle) * (size/2 - 8);
+    mmx.fillText(d, x - 4, y + 3);
+  });
+  
+  const toM = (v) => (v/350) * (size * 0.7) + size/2;
+  const mx = (x) => toM(x);
+  const my = (y) => size/2 - toM(y - S.y) + size/2;
+  
+  if(trail.length > 2){
+    mmx.strokeStyle = 'rgba(0,180,255,0.5)';
+    mmx.lineWidth = 1.5;
+    mmx.beginPath();
+    trail.forEach((t,i) => {
+      const px = mx(t.x - S.x + size/2);
+      const py = my(t.y - S.y + size/2);
+      i === 0 ? mmx.moveTo(px, py) : mmx.lineTo(px, py);
+    });
+    mmx.stroke();
+  }
+  
+  WPS.forEach((wp,i) => {
+    let color;
+    if(i < S.wpIdx) color = '#00ff88';
+    else if(i === S.wpIdx) color = '#ffd700';
+    else color = '#334455';
+    const px = mx(wp.x - S.x + size/2);
+    const py = my(wp.y - S.y + size/2);
+    mmx.fillStyle = color;
+    mmx.beginPath(); mmx.arc(px, py, 3, 0, Math.PI*2); mmx.fill();
+  });
+  
+  const ax = size/2, ay = size/2;
+  mmx.save();
+  mmx.translate(ax, ay);
+  mmx.rotate(Math.PI/2 - S.yaw);
+  
+  mmx.fillStyle = '#00e5ff';
+  mmx.shadowColor = '#00e5ff';
+  mmx.shadowBlur = 8;
+  mmx.beginPath();
+  mmx.moveTo(0, -8);
+  mmx.lineTo(5, 5);
+  mmx.lineTo(-5, 5);
+  mmx.closePath();
+  mmx.fill();
+  mmx.shadowBlur = 0;
+  mmx.restore();
+  
+  mmx.font = '8px "Microsoft YaHei", "PingFang SC", sans-serif';
+  mmx.fillStyle = 'rgba(100,150,200,0.6)';
+  mmx.fillText('战术地图', 4, 12);
+}
+
+function updateHUD(){
+  const statusMap = {
+    'STARTUP': ['待 机', 'success'],
+    'CRUISING': ['巡 航', 'success'],
+    'EN ROUTE': ['飞行中', 'warning'],
+    'RETURNING': ['返 航', 'warning'],
+    'LANDING': ['降 落', 'warning'],
+    'PAUSED': ['暂 停', 'danger']
+  };
+  const [text, cls] = statusMap[S.status] || [S.status, ''];
+  document.getElementById('pState').textContent = text;
+  document.getElementById('pState').className = 'data-value ' + cls;
+  
+  document.getElementById('pX').textContent = S.x.toFixed(1) + ' m';
+  document.getElementById('pY').textContent = S.y.toFixed(1) + ' m';
+  document.getElementById('pZ').textContent = S.z.toFixed(1) + ' m';
+  document.getElementById('pSpd').textContent = S.speed.toFixed(1) + ' m/s';
+  
+  let heading = ((S.yaw * 180/Math.PI) % 360 + 360) % 360;
+  document.getElementById('pYaw').textContent = heading.toFixed(0).padStart(3,'0') + '\u00B0';
+  document.getElementById('pPitch').textContent = (S.pitch * 180/Math.PI).toFixed(1) + '\u00B0';
+  document.getElementById('pitchVal').textContent = (S.pitch * 180/Math.PI).toFixed(1) + '\u00B0';
+  
+  const mins = String(Math.floor(S.time/60)).padStart(2,'0');
+  const secs = String(Math.floor(S.time%60)).padStart(2,'0');
+  document.getElementById('pTime').textContent = mins+':'+secs;
+  document.getElementById('pWP').textContent = S.wpIdx + '/' + (WPS.length-1);
+  
+  document.getElementById('pTemp').textContent = S.temp.toFixed(1) + '\u00B0C';
+  document.getElementById('pWind').textContent = S.wind.toFixed(1) + ' m/s';
+  document.getElementById('pVS').textContent = (S.vs >= 0 ? '+' : '') + S.vs.toFixed(1) + ' m/s';
+  document.getElementById('pVS').className = 'data-value ' + (S.vs > 0 ? 'warning' : S.vs < 0 ? 'danger' : '');
+  
+  const bat = Math.max(0, Math.min(100, S.battery));
+  document.getElementById('bBat').style.width = bat + '%';
+  document.getElementById('vBat').textContent = bat.toFixed(0) + '%';
+  document.getElementById('bBat').style.background = bat > 30 ? '#00ff88' : '#ff4757';
+  document.getElementById('vBat').style.color = bat > 30 ? '#00ff88' : '#ff4757';
+  
+  const sol = Math.max(0, Math.min(100, S.solar * 100));
+  document.getElementById('bSol').style.width = sol + '%';
+  document.getElementById('vSol').textContent = sol.toFixed(0) + '%';
+  
+  const hel = Math.max(0, Math.min(100, S.helium * 100));
+  document.getElementById('bHel').style.width = hel + '%';
+  document.getElementById('vHel').textContent = hel.toFixed(0) + '%';
+  
+  const turb = Math.max(0, Math.min(100, S.turbine * 100));
+  document.getElementById('bTurb').style.width = turb + '%';
+  document.getElementById('vTurb').textContent = turb.toFixed(0) + '%';
+}
+
+let last = null, frame = 0;
+function loop(ts){
+  if(!last){ last = ts; log('FlyteOS v2.1 系统初始化', 'info'); log('所有系统运行正常', 'success'); }
+  const dt = Math.min((ts-last)/1000, 0.05);
+  last = ts; frame++;
+
+  physics(dt);
+  updateCam();
+
+  ctx.clearRect(0, 0, W, H);
+  drawSky();
+  drawClouds();
+  drawGround();
+  drawTrail();
+  drawWaypoints();
+  
+  const p = project(S.x, S.y, S.z);
+  drawAirship(p, S.yaw, S.pitch, S.roll, p ? p.scale : 1);
+
+  if(frame % 3 === 0){ updateHUD(); drawMinimap(); }
+  requestAnimationFrame(loop);
+}
+
+function toggleAuto(){
+  S.auto = !S.auto;
+  S.status = S.auto ? 'EN ROUTE' : 'PAUSED';
+  const b = document.getElementById('bAuto');
+  b.textContent = S.auto ? '自动飞行' : '已暂停';
+  b.className = S.auto ? 'btn active' : 'btn';
+  log(S.auto ? '自动飞行已启动' : '飞行已暂停', S.auto ? 'success' : 'warning');
+}
+
+function setView(v){ 
+  viewMode = v; 
+  const names = ['跟随视角已激活', '俯视视角已激活', '侧视视角已激活'];
+  log(names[v], 'info');
+}
+
+function resetSim(){
+  S.x = S.y = S.z = 0; 
+  S.vx = S.vy = S.vz = 0;
+  S.yaw = S.pitch = S.roll = 0;
+  S.battery = 100; 
+  S.time = 0;
+  S.prevZ = 0;
+  S.wpIdx = 0; 
+  S.status = 'STARTUP'; 
+  trail.length = 0;
+  logs.length = 0;
+  log('系统已重置 - 任务重新开始', 'success');
+  renderLog();
+}
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

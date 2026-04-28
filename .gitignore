@@ -1,0 +1,45 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+
+# Build outputs
+dist/
+build/
+*.exe
+*.dll
+*.so
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+tmp/
+
+# OS temporary
+~$*
+*.lnk
+
+# Specific to this project
+srv_ok.flag
+cn_out.txt
+cn_err.txt
