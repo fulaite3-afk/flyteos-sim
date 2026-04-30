@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlyteOS v1.2 - 浮空飞行器模拟器 | 武汉福莱特航空科技</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+SC:wght@400;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',sans-serif}
+#c{position:fixed;top:0;left:0;width:100vw;height:100vh}
+#hud{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10}
+.panel{position:absolute;background:rgba(0,8,18,0.82);border:1px solid rgba(0,200,255,0.35);border-radius:5px;padding:12px 15px;color:#00d4ff;font-family:'Orbitron',monospace;font-size:11px;backdrop-filter:blur(6px);pointer-events:auto}
+/* ── 顶部标题 ── */
+#title{top:12px;left:50%;transform:translateX(-50%);text-align:center;white-space:nowrap}
+#title h1{font-size:16px;font-weight:900;letter-spacing:4px;color:#00d4ff;text-shadow:0 0 12px #00d4ff}
+#title .sub{font-size:9px;color:#5ba3b8;margin-top:3px;font-family:'Noto Sans SC',sans-serif;letter-spacing:1px}
+/* ── 遥测 ── */
+#tele{top:76px;left:14px;min-width:190px}
+.tr{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.tr:last-child{margin-bottom:0}
+.tl{color:#5ba3b8;font-size:9px;margin-right:10px}
+.tv{color:#00d4ff;font-weight:700;font-size:15px;min-width:72px;text-align:right}
+.tu{color:#3a7a8f;font-size:9px;margin-left:3px}
+/* ── 状态 ── */
+#status{top:76px;right:14px;min-width:165px}
+.si{display:flex;align-items:center;margin-bottom:6px}
+.si:last-child{margin-bottom:0}
+.sd{width:7px;height:7px;border-radius:50%;margin-right:7px;background:#1a2a3a}
+.sd.on{background:#00ff88;box-shadow:0 0 6px #00ff88;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.5}}
+.sd.warn{background:#ffaa00;box-shadow:0 0 6px #ffaa00}
+.sd.err{background:#ff4455;box-shadow:0 0 6px #ff4455}
+/* ── 飞行阶段 ── */
+#phase-panel{top:76px;left:50%;transform:translateX(-50%);text-align:center;min-width:200px}
+#phase-text{font-size:14px;font-weight:700;letter-spacing:2px;color:#00ff88;text-shadow:0 0 8px #00ff88}
+#phase-desc{font-size:9px;color:#5ba3b8;margin-top:4px;font-family:'Noto Sans SC',sans-serif}
+/* ── 迷你地图 ── */
+#mmap{bottom:14px;right:14px;padding:8px;width:240px;height:240px}
+#mmap-canvas{display:block;border-radius:3px;border:1px solid rgba(0,200,255,0.2)}
+#mmap-title{font-size:9px;color:#5ba3b8;margin-bottom:6px;text-align:center}
+/* ── 高度剖面图 ── */
+#altprofile{bottom:14px;left:14px;width:240px;height:120px}
+#ap-title{font-size:9px;color:#5ba3b8;margin-bottom:5px}
+#ap-canvas{display:block;border:1px solid rgba(0,200,255,0.15);border-radius:2px}
+/* ── 飞行日志 ── */
+#log{top:280px;left:14px;width:210px;max-height:160px;overflow:hidden}
+#log-title{font-size:9px;color:#5ba3b8;margin-bottom:5px}
+.le{font-size:9px;color:#7ec8e3;line-height:1.7;font-family:'Noto Sans SC',sans-serif}
+.le.wp{color:#ffdd00}
+.le.to{color:#00ff88}
+.le.warn{color:#ffaa00}
+/* ── 任务控制 ── */
+#mission{bottom:155px;right:14px;text-align:center;min-width:240px}
+#btn-mission{background:linear-gradient(135deg,#003366,#006699);border:1px solid #00aaff;color:#00d4ff;font-family:'Orbitron',monospace;font-size:11px;padding:8px 18px;border-radius:3px;cursor:pointer;width:100%;letter-spacing:2px;transition:.2s}
+#btn-mission:hover{background:linear-gradient(135deg,#005599,#0088cc);box-shadow:0 0 10px rgba(0,170,255,.4)}
+#btn-mission:disabled{background:#0a1520;color:#334;border-color:#223;cursor:not-allowed}
+#mission-status{font-size:9px;color:#5ba3b8;margin-top:5px;font-family:'Noto Sans SC',sans-serif}
+/* ── 帮助 ── */
+#help{bottom:14px;left:50%;transform:translateX(-50%);font-size:9px;color:#2a4a5a;line-height:2;text-align:center;font-family:'Noto Sans SC',sans-serif}
+/* ── 加载 ── */
+#loading{position:fixed;top:0;left:0;width:100%;height:100%;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;transition:opacity .5s}
+#loading h1{font-family:'Orbitron',monospace;font-size:22px;color:#00d4ff;text-shadow:0 0 20px #00d4ff;letter-spacing:6px;margin-bottom:8px}
+#loading .ver{font-size:11px;color:#5ba3b8;letter-spacing:3px;margin-bottom:40px}
+#prog-bar{width:360px;height:3px;background:#0a1520;border-radius:2px;overflow:hidden;margin-bottom:10px}
+#prog-fill{height:100%;background:linear-gradient(90deg,#0066cc,#00d4ff);width:0%;transition:width .3s}
+#prog-text{font-size:10px;color:#5ba3b8;font-family:'Noto Sans SC',sans-serif}
+/* ── 航高竖条 ── */
+#altbar{position:fixed;right:270px;top:50%;transform:translateY(-50%);width:16px;height:200px;background:rgba(0,8,18,.7);border:1px solid rgba(0,200,255,.2);border-radius:8px;overflow:hidden;z-index:11}
+#altbar-fill{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,#0066cc,#00ff88);border-radius:8px;transition:height .3s}
+#altbar-label{position:fixed;right:292px;top:50%;transform:translateY(-50%);font-family:'Orbitron',monospace;font-size:9px;color:#5ba3b8;writing-mode:vertical-rl;z-index:11}
+</style>
+</head>
+<body>
+<!-- 加载界面 -->
+<div id="loading">
+  <h1>FLYTEOS</h1>
+  <div class="ver">v1.2 · 浮空飞行器 · 实景地图版</div>
+  <div id="prog-bar"><div id="prog-fill"></div></div>
+  <div id="prog-text">正在初始化...</div>
+</div>
+
+<!-- 3D画布 -->
+<canvas id="c"></canvas>
+
+<!-- HUD -->
+<div id="hud">
+  <!-- 标题 -->
+  <div class="panel" id="title">
+    <h1>FLYTEOS v1.2</h1>
+    <div class="sub">武汉福莱特航空科技 · 浮空飞行器模拟器 · 东湖区域</div>
+  </div>
+
+  <!-- 遥测 -->
+  <div class="panel" id="tele">
+    <div class="tr"><span class="tl">高度 ALT</span><span><span class="tv" id="tv-alt">0.0</span><span class="tu">m</span></span></div>
+    <div class="tr"><span class="tl">速度 SPD</span><span><span class="tv" id="tv-spd">0.0</span><span class="tu">m/s</span></span></div>
+    <div class="tr"><span class="tl">航向 HDG</span><span><span class="tv" id="tv-hdg">000</span><span class="tu">°</span></span></div>
+    <div class="tr"><span class="tl">爬升率 VS</span><span><span class="tv" id="tv-vs">0.0</span><span class="tu">m/s</span></span></div>
+    <div class="tr"><span class="tl">航点 WP</span><span><span class="tv" id="tv-wp">-</span></span></div>
+    <div class="tr"><span class="tl">距离 DIST</span><span><span class="tv" id="tv-dist">0</span><span class="tu">m</span></span></div>
+  </div>
+
+  <!-- 飞行阶段 -->
+  <div class="panel" id="phase-panel">
+    <div id="phase-text">待机</div>
+    <div id="phase-desc">等待任务指令</div>
+  </div>
+
+  <!-- 状态 -->
+  <div class="panel" id="status">
+    <div class="si"><div class="sd" id="sd-pwr"></div><span>电源系统</span></div>
+    <div class="si"><div class="sd" id="sd-gps"></div><span>GPS导航</span></div>
+    <div class="si"><div class="sd" id="sd-fc"></div><span>飞控系统</span></div>
+    <div class="si"><div class="sd" id="sd-solar"></div><span>太阳能充电</span></div>
+    <div class="si"><div class="sd" id="sd-motor"></div><span>涡轮电机</span></div>
+    <div class="si"><div class="sd" id="sd-link"></div><span>数据链路</span></div>
+  </div>
+
+  <!-- 任务按钮 -->
+  <div class="panel" id="mission">
+    <button id="btn-mission" onclick="startAutoMission()">▶  执行完整飞行任务</button>
+    <div id="mission-status">点击开始自动飞行任务</div>
+  </div>
+
+  <!-- 迷你地图 -->
+  <div class="panel" id="mmap">
+    <div id="mmap-title">实景航迹图 · 东湖区域</div>
+    <canvas id="mmap-canvas" width="216" height="200"></canvas>
+  </div>
+
+  <!-- 高度剖面图 -->
+  <div class="panel" id="altprofile">
+    <div id="ap-title">高度剖面 ALTITUDE PROFILE</div>
+    <canvas id="ap-canvas" width="218" height="88"></canvas>
+  </div>
+
+  <!-- 飞行日志 -->
+  <div class="panel" id="log">
+    <div id="log-title">📋 飞行日志</div>
+    <div id="log-entries"></div>
+  </div>
+
+  <!-- 帮助 -->
+  <div id="help">
+    WASD 方向 &nbsp;|&nbsp; Q 上升 &nbsp;|&nbsp; E 下降 &nbsp;|&nbsp; 空格 起飞/降落 &nbsp;|&nbsp; 1/2/3 视角切换 &nbsp;|&nbsp; Esc 悬停
+  </div>
+
+  <!-- 航高竖条 -->
+  <div id="altbar"><div id="altbar-fill" style="height:0%"></div></div>
+  <div id="altbar-label">0 ─── 300m</div>
+</div>
+
+<!-- Three.js -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+// ═════════════════════════════════════════════════════════
+//  FlyteOS v1.2  ·  武汉福莱特航空科技
+//  卫星图: ESRI World Imagery (免费)
+//  地形: Mapzen Terrain / AWS (免费)
+// ═════════════════════════════════════════════════════════
+
+const PROXY = window.location.hostname==='localhost'?'http://localhost:7890':'';
+const CENTER_LAT = 30.5023;
+const CENTER_LNG = 114.4047;
+
+// 地形参数
+const TERRAIN_SIZE   = 5000;
+const TERRAIN_SEG    = 180;
+const ELEV_EXAG      = 3.5;
+const MAX_ALT        = 300;
+const CRUISE_ALT     = 220;
+
+// 6个预设航点（东湖巡逻路线，相对中心偏移，单位:米）
+// 起点→WP1(爬升)→WP2→WP3(最高)→WP4→WP5→WP6(下降)→返航降落
+const PRESET_WAYPOINTS = [
+  { ox:   0, oz:   0, alt:   0, name:'起点', phase:'HOME' },
+  { ox: 400, oz:-300, alt: 100, name:'WP1',  phase:'CLIMB' },
+  { ox: 700, oz: 200, alt: 200, name:'WP2',  phase:'CRUISE'},
+  { ox: 300, oz: 600, alt: 300, name:'WP3',  phase:'CRUISE'},
+  { ox:-400, oz: 500, alt: 300, name:'WP4',  phase:'CRUISE'},
+  { ox:-600, oz: 100, alt: 200, name:'WP5',  phase:'DESCENT'},
+  { ox:-300, oz:-400, alt: 100, name:'WP6',  phase:'DESCENT'},
+];
+
+// Three.js基础
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x8ab4d4, 0.00012);
+
+const camera = new THREE.PerspectiveCamera(62, innerWidth/innerHeight, 0.5, 25000);
+
+// ── 灯光 ──
+const ambient = new THREE.AmbientLight(0xc8e8ff, 0.65);
+scene.add(ambient);
+
+const sun = new THREE.DirectionalLight(0xfff5e0, 1.4);
+sun.position.set(600, 1200, 400);
+sun.castShadow = true;
+sun.shadow.mapSize.width = sun.shadow.mapSize.height = 2048;
+sun.shadow.camera.near = 10; sun.shadow.camera.far = 5000;
+sun.shadow.camera.left = sun.shadow.camera.bottom = -2500;
+sun.shadow.camera.right = sun.shadow.camera.top = 2500;
+scene.add(sun);
+
+// ── 天空（渐变层） ──
+const skyGeo = new THREE.SphereGeometry(18000, 32, 16);
+const skyMat = new THREE.ShaderMaterial({
+  side: THREE.BackSide,
+  uniforms: { topColor:{value:new THREE.Color(0x1a4a8a)}, horizColor:{value:new THREE.Color(0x7ec8e3)}, offset:{value:0.2}, exponent:{value:0.5} },
+  vertexShader:`varying float vY; void main(){ vY=normalize(position).y; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
+  fragmentShader:`uniform vec3 topColor; uniform vec3 horizColor; uniform float offset; uniform float exponent; varying float vY; void main(){ float h=pow(max(vY+offset,0.0),exponent); gl_FragColor=vec4(mix(horizColor,topColor,h),1.0); }`
+});
+scene.add(new THREE.Mesh(skyGeo, skyMat));
+
+// ── 云层 ──
+const clouds = [];
+(function buildClouds(){
+  const cMat = new THREE.MeshLambertMaterial({color:0xffffff,transparent:true,opacity:.85});
+  for(let i=0;i<25;i++){
+    const g = new THREE.Group();
+    const puffs = 3+Math.floor(Math.random()*4);
+    for(let p=0;p<puffs;p++){
+      const r = 30+Math.random()*50;
+      const geo = new THREE.SphereGeometry(r, 7, 5);
+      const m = new THREE.Mesh(geo, cMat);
+      m.position.set((Math.random()-.5)*80,(Math.random()-.5)*20,(Math.random()-.5)*50);
+      g.add(m);
+    }
+    g.position.set((Math.random()-.5)*TERRAIN_SIZE,(180+Math.random()*120),(Math.random()-.5)*TERRAIN_SIZE);
+    scene.add(g);
+    clouds.push({group:g, speed:0.5+Math.random()*1.2});
+  }
+})();
+
+// ─────────────────────────────────────────────────────────
+// 地形（卫星+高程）
+// ─────────────────────────────────────────────────────────
+const tileCache = new Map();
+
+function tileXY(lat, lng, z){
+  const n = Math.pow(2,z);
+  const x = Math.floor((lng+180)/360*n);
+  const yRad = lat*Math.PI/180;
+  const y = Math.floor((1-Math.log(Math.tan(yRad)+1/Math.cos(yRad))/Math.PI)/2*n);
+  return {x, y};
+}
+
+function satUrl(z,x,y){ return `${PROXY}/satellite/${z}/${x}/${y}.png`; }
+function terUrl(z,x,y){ return `${PROXY}/terrain/${z}/${x}/${y}.png`; }
+
+function loadTile(url){
+  if(tileCache.has(url)) return Promise.resolve(tileCache.get(url));
+  return new Promise((res,rej)=>{
+    const img=new Image(); img.crossOrigin='anonymous';
+    img.onload=()=>{ tileCache.set(url,img); res(img); };
+    img.onerror=()=>rej(new Error('tile fail: '+url));
+    img.src=url;
+  });
+}
+
+const terrainGeo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, TERRAIN_SEG, TERRAIN_SEG);
+terrainGeo.rotateX(-Math.PI/2);
+
+let minimapSatCanvas = null; // 迷你地图底图
+
+async function buildTerrain(){
+  const zoom=12, tiles=4, tpx=512;
+  const base = tileXY(CENTER_LAT, CENTER_LNG, zoom);
+  const half = Math.floor(tiles/2);
+  const x0=base.x-half, y0=base.y-half;
+
+  const satC = document.createElement('canvas');
+  satC.width = satC.height = tpx*tiles;
+  const satCtx = satC.getContext('2d');
+
+  const elvC = document.createElement('canvas');
+  elvC.width = elvC.height = tpx*tiles;
+  const elvCtx = elvC.getContext('2d');
+
+  let loaded=0, total=tiles*tiles*2;
+  const pct=(v)=>{ document.getElementById('prog-fill').style.width=v+'%'; };
+  const msg=(t)=>{ document.getElementById('prog-text').textContent=t; };
+
+  // 卫星瓦片
+  for(let ty=0;ty<tiles;ty++) for(let tx=0;tx<tiles;tx++){
+    const url=satUrl(zoom,x0+tx,y0+ty);
+    try{ const img=await loadTile(url); satCtx.drawImage(img,tx*tpx,ty*tpx,tpx,tpx); }
+    catch{ satCtx.fillStyle='#2a4a2a'; satCtx.fillRect(tx*tpx,ty*tpx,tpx,tpx); }
+    pct(5+Math.round(++loaded/total*40)); msg(`加载卫星影像 (${loaded}/${total/2})…`);
+  }
+
+  // 保存迷你地图底图
+  minimapSatCanvas = satC;
+
+  // 高程瓦片
+  for(let ty=0;ty<tiles;ty++) for(let tx=0;tx<tiles;tx++){
+    const url=terUrl(zoom,x0+tx,y0+ty);
+    try{ const img=await loadTile(url); elvCtx.drawImage(img,tx*tpx,ty*tpx,tpx,tpx); }
+    catch{}
+    pct(45+Math.round(++loaded/total*30)); msg(`加载地形高程 (${loaded-tiles*tiles}/${tiles*tiles})…`);
+  }
+
+  msg('生成地形网格…'); pct(80);
+  const elvPx = elvCtx.getImageData(0,0,elvC.width,elvC.height).data;
+  const pos = terrainGeo.attributes.position;
+  for(let i=0;i<pos.count;i++){
+    const u=pos.getX(i)/TERRAIN_SIZE+.5, v=pos.getZ(i)/TERRAIN_SIZE+.5;
+    const px=Math.floor(u*elvC.width), py=Math.floor(v*elvC.height);
+    const idx=(py*elvC.width+px)*4;
+    if(idx>=0&&idx<elvPx.length){
+      const h=(elvPx[idx]*256+elvPx[idx+1]+elvPx[idx+2]/256)-32768;
+      pos.setY(i, Math.max(h,0)*ELEV_EXAG);
+    }
+  }
+  pos.needsUpdate=true;
+  terrainGeo.computeVertexNormals();
+
+  const satTex = new THREE.CanvasTexture(satC);
+  satTex.wrapS=satTex.wrapT=THREE.ClampToEdgeWrapping;
+  const terrainMat = new THREE.MeshStandardMaterial({map:satTex, roughness:.8, metalness:.05});
+  const terrain = new THREE.Mesh(terrainGeo, terrainMat);
+  terrain.receiveShadow=true;
+  scene.add(terrain);
+
+  pct(100); msg('就绪！');
+}
+
+// ─────────────────────────────────────────────────────────
+// 浮空飞行器模型
+// ─────────────────────────────────────────────────────────
+function createAerostat(){
+  const g=new THREE.Group();
+
+  // 主气囊（椭球体）
+  const envGeo=new THREE.SphereGeometry(1,24,14);
+  envGeo.scale(3.2,.9,1);
+  const envMat=new THREE.MeshStandardMaterial({color:0x1a3a6c,metalness:.3,roughness:.6,emissive:0x001133,emissiveIntensity:.25});
+  const env=new THREE.Mesh(envGeo,envMat);
+  env.castShadow=true;
+  g.add(env);
+
+  // 气囊条纹
+  const stripeMat=new THREE.MeshStandardMaterial({color:0x2255aa,metalness:.4,roughness:.5});
+  [-1.5,0,1.5].forEach(ox=>{
+    const sGeo=new THREE.CylinderGeometry(.08,.08,.9,8);
+    sGeo.rotateZ(Math.PI/2);
+    const s=new THREE.Mesh(sGeo,stripeMat);
+    s.position.set(ox,.3,0); g.add(s);
+  });
+
+  // 太阳能板（上方）
+  const solMat=new THREE.MeshStandardMaterial({color:0x0d2a6e,metalness:.85,roughness:.15,emissive:0x071540,emissiveIntensity:.3});
+  const solGeo=new THREE.BoxGeometry(3.6,.04,1.1);
+  const sol=new THREE.Mesh(solGeo,solMat); sol.position.y=.92; g.add(sol);
+
+  // 太阳能板网格线
+  const glMat=new THREE.LineBasicMaterial({color:0x4488ff,transparent:true,opacity:.4});
+  for(let xi=-1.6;xi<=1.6;xi+=.4){
+    const lg=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(xi,.94,-.54),new THREE.Vector3(xi,.94,.54)]);
+    g.add(new THREE.Line(lg,glMat));
+  }
+  for(let zi=-.54;zi<=.54;zi+=.27){
+    const lg=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-1.8,.94,zi),new THREE.Vector3(1.8,.94,zi)]);
+    g.add(new THREE.Line(lg,glMat));
+  }
+
+  // 吊舱（下方负载舱）
+  const gondMat=new THREE.MeshStandardMaterial({color:0x0a1a2a,metalness:.5,roughness:.5});
+  const gondGeo=new THREE.BoxGeometry(1.8,.35,.5);
+  const gond=new THREE.Mesh(gondGeo,gondMat); gond.position.y=-1.0; g.add(gond);
+
+  // 吊杆（连接气囊与吊舱）
+  const rodMat=new THREE.MeshStandardMaterial({color:0x334455,metalness:.6,roughness:.4});
+  [-0.6,0,0.6].forEach(ox=>{
+    const rGeo=new THREE.CylinderGeometry(.03,.03,.55,6);
+    const r=new THREE.Mesh(rGeo,rodMat); r.position.set(ox,-.68,0); g.add(r);
+  });
+
+  // 尾翼 (X字型)
+  const finMat=new THREE.MeshStandardMaterial({color:0x1a2a3a,metalness:.3,roughness:.7,side:THREE.DoubleSide});
+  [[0,1,0],[0,-1,0],[1,0,0],[-1,0,0]].forEach(([x,y])=>{
+    const fGeo=new THREE.BoxGeometry(.04,.6,.9);
+    const f=new THREE.Mesh(fGeo,finMat);
+    f.position.set(x*0.5,-3.0,-.9); f.rotation.z=Math.atan2(y,x)*.6;
+    f.castShadow=true; g.add(f);
+  });
+
+  // 电动涡轮（左右各一）
+  const turbMat=new THREE.MeshStandardMaterial({color:0x223344,metalness:.7,roughness:.3});
+  [-2.2,2.2].forEach(ox=>{
+    const tGeo=new THREE.CylinderGeometry(.22,.22,.4,12); tGeo.rotateZ(Math.PI/2);
+    const t=new THREE.Mesh(tGeo,turbMat); t.position.set(ox,0,0); g.add(t);
+    const pGeo=new THREE.CylinderGeometry(.4,.4,.04,12);
+    const pMat=new THREE.MeshStandardMaterial({color:0x3399cc,transparent:true,opacity:.75,emissive:0x0055aa,emissiveIntensity:.3});
+    const p=new THREE.Mesh(pGeo,pMat); p.position.set(ox,0,.25); p.userData.isProp=true; g.add(p);
+  });
+
+  // 导航灯
+  const addLight=(color,pos)=>{
+    const l=new THREE.PointLight(color,.8,6); l.position.set(...pos); g.add(l);
+    const lGeo=new THREE.SphereGeometry(.1,8,8);
+    const lMat=new THREE.MeshBasicMaterial({color});
+    const lm=new THREE.Mesh(lGeo,lMat); lm.position.set(...pos); lm.userData.isNavLight=true; g.add(lm);
+  };
+  addLight(0xff2222, [-2.2,.2,0]);
+  addLight(0x22ff88, [2.2,.2,0]);
+  addLight(0xffffff, [0,.2,-1.2]);
+  addLight(0xffffff, [0,.2,1.2]);
+
+  return g;
+}
+
+// ─────────────────────────────────────────────────────────
+// 飞行状态
+// ─────────────────────────────────────────────────────────
+const PHASES={
+  GROUNDED:'待机',ARMING:'初始化',TAKEOFF:'起飞',CLIMB:'爬升',
+  CRUISE:'巡航',DESCENT:'下降',APPROACH:'进近',LANDING:'降落',PARKED:'停机'
+};
+const PHASE_DESC={
+  GROUNDED:'等待任务指令', ARMING:'系统自检中', TAKEOFF:'垂直起飞阶段',
+  CLIMB:'爬升至巡航高度', CRUISE:'沿预定航路巡航', DESCENT:'下降至进近高度',
+  APPROACH:'进近返航降落', LANDING:'垂直降落', PARKED:'任务完成'
+};
+
+const ds={ // droneState
+  pos: new THREE.Vector3(0,0,0),
+  hdg: 0, spd: 0, alt: 0, vs: 0,
+  phase: 'GROUNDED',
+  isAuto: false, wpIdx: 0, wps: [],
+  propRPM: 0,
+  missionStarted: false,
+};
+
+const altHistory = []; // 高度历史（用于剖面图）
+const trail3D = []; // 3D轨迹点
+let trailLine = null;
+
+// ─────────────────────────────────────────────────────────
+// 初始化航点标记
+// ─────────────────────────────────────────────────────────
+const wpMarkers3D = [];
+
+function buildWaypointMarkers(){
+  // 清除旧标记
+  wpMarkers3D.forEach(m=>scene.remove(m.group));
+  wpMarkers3D.length=0;
+
+  PRESET_WAYPOINTS.forEach((wp,i)=>{
+    if(i===0) return; // 起点不建标记
+    const g=new THREE.Group();
+    const worldY=wp.alt*ELEV_EXAG*.1; // 估算地形高度补偿
+
+    // 地面标志圈
+    const ringGeo=new THREE.RingGeometry(4,5.5,32);
+    ringGeo.rotateX(-Math.PI/2);
+    const ringMat=new THREE.MeshBasicMaterial({
+      color: wp.phase==='CRUISE'?0x00d4ff : wp.phase==='CLIMB'?0x00ff88 : 0xffaa00,
+      side:THREE.DoubleSide, transparent:true, opacity:.75
+    });
+    const ring=new THREE.Mesh(ringGeo,ringMat);
+    ring.position.set(wp.ox,.2,wp.oz);
+    g.add(ring);
+
+    // 垂直引导线（显示航点高度）
+    const lineH = wp.alt*.8;
+    const linePts=[new THREE.Vector3(wp.ox,0,wp.oz), new THREE.Vector3(wp.ox,lineH,wp.oz)];
+    const lineGeo=new THREE.BufferGeometry().setFromPoints(linePts);
+    const lineMat=new THREE.LineBasicMaterial({color:ringMat.color,transparent:true,opacity:.4});
+    g.add(new THREE.Line(lineGeo,lineMat));
+
+    // 航点球标
+    const sGeo=new THREE.SphereGeometry(3,12,8);
+    const sMat=new THREE.MeshStandardMaterial({color:ringMat.color,emissive:ringMat.color,emissiveIntensity:.5,transparent:true,opacity:.85});
+    const s=new THREE.Mesh(sGeo,sMat); s.position.set(wp.ox,lineH,wp.oz);
+    g.add(s);
+
+    // 数字标签
+    const lC=document.createElement('canvas'); lC.width=lC.height=80;
+    const lCtx=lC.getContext('2d');
+    lCtx.fillStyle=`rgba(${wp.phase==='CRUISE'?'0,180,255':wp.phase==='CLIMB'?'0,255,120':'255,160,0'},.85)`;
+    lCtx.beginPath(); lCtx.arc(40,40,35,0,Math.PI*2); lCtx.fill();
+    lCtx.fillStyle='#000'; lCtx.font='bold 38px Orbitron'; lCtx.textAlign='center'; lCtx.textBaseline='middle';
+    lCtx.fillText(i,40,40);
+    const lTex=new THREE.CanvasTexture(lC);
+    const lGeo=new THREE.PlaneGeometry(12,12);
+    const lMat=new THREE.MeshBasicMaterial({map:lTex,transparent:true,side:THREE.DoubleSide});
+    const lm=new THREE.Mesh(lGeo,lMat); lm.position.set(wp.ox,lineH+8,wp.oz); lm.userData.isBillboard=true;
+    g.add(lm);
+
+    // 高度标注
+    const hC=document.createElement('canvas'); hC.width=160; hC.height=40;
+    const hCtx=hC.getContext('2d');
+    hCtx.fillStyle='rgba(0,0,0,.6)';
+    hCtx.fillRect(0,0,160,40);
+    hCtx.fillStyle='#aaddff'; hCtx.font='bold 22px Orbitron'; hCtx.textAlign='center'; hCtx.textBaseline='middle';
+    hCtx.fillText(`${wp.alt}m`, 80, 20);
+    const hTex=new THREE.CanvasTexture(hC);
+    const hGeo=new THREE.PlaneGeometry(20,5);
+    const hMat=new THREE.MeshBasicMaterial({map:hTex,transparent:true,side:THREE.DoubleSide});
+    const hm=new THREE.Mesh(hGeo,hMat); hm.position.set(wp.ox+12,lineH+4,wp.oz); hm.userData.isBillboard=true;
+    g.add(hm);
+
+    scene.add(g);
+    wpMarkers3D.push({group:g, idx:i});
+  });
+}
+
+// ─────────────────────────────────────────────────────────
+// 飞行轨迹线
+// ─────────────────────────────────────────────────────────
+function updateTrailLine(){
+  if(trailLine) scene.remove(trailLine);
+  if(trail3D.length<2) return;
+  const pts=trail3D.map(p=>new THREE.Vector3(p.x,p.y,p.z));
+  const geo=new THREE.BufferGeometry().setFromPoints(pts);
+  // 颜色随高度变化
+  const colors=[];
+  pts.forEach(p=>{
+    const t=Math.min(p.y/MAX_ALT,1);
+    colors.push(0,t*.8+.2, 1-t*.5); // 低=绿蓝, 高=纯蓝
+  });
+  geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+  const mat=new THREE.LineBasicMaterial({vertexColors:true,linewidth:2,transparent:true,opacity:.85});
+  trailLine=new THREE.Line(geo,mat);
+  scene.add(trailLine);
+}
+
+// ─────────────────────────────────────────────────────────
+// 自动飞行任务
+// ─────────────────────────────────────────────────────────
+function startAutoMission(){
+  if(ds.missionStarted) return;
+  ds.missionStarted=true;
+  ds.isAuto=true;
+  ds.wpIdx=0;
+  // 装载航点（从WP1开始，最后返回起点）
+  ds.wps=PRESET_WAYPOINTS.slice(1).map(wp=>({
+    x:wp.ox, z:wp.oz, alt:wp.alt, name:wp.name, phase:wp.phase
+  }));
+  // 追加返回起点
+  ds.wps.push({x:0,z:0,alt:0,name:'返航降落',phase:'LANDING'});
+
+  document.getElementById('btn-mission').disabled=true;
+  document.getElementById('mission-status').textContent='自动任务执行中...';
+
+  setPhase('ARMING');
+  addLog('系统自检启动', 'info');
+
+  setTimeout(()=>{
+    setPhase('TAKEOFF');
+    addLog('起飞！垂直上升中', 'takeoff');
+    activateAllSystems();
+  }, 2000);
+}
+
+function setPhase(p){
+  ds.phase=p;
+  document.getElementById('phase-text').textContent=PHASES[p]||p;
+  document.getElementById('phase-desc').textContent=PHASE_DESC[p]||'';
+  const colors={GROUNDED:'#aaaaaa',ARMING:'#ffaa00',TAKEOFF:'#00ff88',CLIMB:'#00ff88',CRUISE:'#00d4ff',DESCENT:'#ffaa00',APPROACH:'#ff8844',LANDING:'#ff4455',PARKED:'#aaaaaa'};
+  document.getElementById('phase-text').style.color=colors[p]||'#00d4ff';
+  document.getElementById('phase-text').style.textShadow=`0 0 8px ${colors[p]||'#00d4ff'}`;
+}
+
+function activateAllSystems(){
+  ['sd-pwr','sd-gps','sd-fc','sd-solar','sd-motor','sd-link'].forEach((id,i)=>{
+    setTimeout(()=>{
+      const el=document.getElementById(id);
+      el.classList.add('on');
+    },i*300);
+  });
+}
+
+// ─────────────────────────────────────────────────────────
+// 飞行逻辑更新
+// ─────────────────────────────────────────────────────────
+const DRONE_SPEED    = 18;
+const DRONE_TURN     = 55;
+const DRONE_VS_UP    = 8;
+const DRONE_VS_DOWN  = 5;
+const TAKEOFF_ALT    = 30;
+
+const drone = createAerostat();
+scene.add(drone);
+drone.scale.setScalar(3.5);
+
+let cameraMode=1, lastTime=0;
+
+function updateFlight(dt){
+  if(!ds.isAuto && ds.phase==='GROUNDED') return;
+
+  const prevAlt=ds.alt;
+
+  if(ds.isAuto){
+    updateAutoFlight(dt);
+  } else {
+    updateManualFlight(dt);
+  }
+
+  ds.vs=(ds.alt-prevAlt)/dt;
+
+  // 更新3D位置
+  const terrY=getTerrainY(ds.pos.x, ds.pos.z);
+  drone.position.set(ds.pos.x, terrY+ds.alt, ds.pos.z);
+  drone.rotation.y=ds.hdg*Math.PI/180;
+
+  // 浮空飞行器姿态（根据速度轻微俯仰）
+  const pitchAngle=Math.min(ds.spd/DRONE_SPEED,.25)*.15;
+  drone.rotation.x=pitchAngle;
+
+  // 旋转涡轮
+  drone.traverse(o=>{
+    if(o.userData.isProp && ds.propRPM>0){
+      o.rotation.x+=dt*ds.propRPM*.001;
+    }
+  });
+
+  // 记录轨迹（每0.5秒一个点）
+  if(Math.floor(lastTime*2)!==Math.floor((lastTime+dt)*2)){
+    const tp=drone.position.clone();
+    trail3D.push(tp);
+    if(trail3D.length>600) trail3D.shift();
+    updateTrailLine();
+  }
+
+  // 记录高度历史
+  altHistory.push(ds.alt);
+  if(altHistory.length>500) altHistory.shift();
+}
+
+function getTerrainY(x, z){
+  // 简化：基于地形几何计算近似高度
+  return 0;
+}
+
+function updateAutoFlight(dt){
+  if(ds.phase==='ARMING') return;
+
+  if(ds.phase==='TAKEOFF'){
+    // 垂直起飞
+    const targetAlt=TAKEOFF_ALT;
+    if(ds.alt<targetAlt){
+      ds.alt=Math.min(ds.alt+DRONE_VS_UP*2*dt, targetAlt);
+      ds.propRPM=Math.min(ds.propRPM+500*dt,3500);
+    } else {
+      setPhase('CLIMB');
+      addLog('切换爬升阶段，前往WP1', 'wp');
+    }
+    return;
+  }
+
+  if(ds.wps.length===0) return;
+  const wp=ds.wps[ds.wpIdx];
+  if(!wp) return;
+
+  // 计算到目标的向量
+  const dx=wp.x-ds.pos.x, dz=wp.z-ds.pos.z;
+  const dist2D=Math.sqrt(dx*dx+dz*dz);
+  const altDiff=wp.alt-ds.alt;
+
+  // 更新飞行阶段
+  if(wp.phase==='CLIMB' && ds.alt<wp.alt-5) setPhase('CLIMB');
+  else if(wp.phase==='CRUISE') setPhase('CRUISE');
+  else if(wp.phase==='DESCENT') setPhase('DESCENT');
+  else if(wp.phase==='LANDING') setPhase('APPROACH');
+
+  // 高度控制
+  if(Math.abs(altDiff)>2){
+    const vsTarget=Math.sign(altDiff)*(altDiff>0?DRONE_VS_UP:DRONE_VS_DOWN);
+    ds.alt=Math.max(0, Math.min(MAX_ALT, ds.alt+vsTarget*dt));
+  }
+
+  // 航向控制
+  if(dist2D>5){
+    const targetHdg=(Math.atan2(dx,dz)*180/Math.PI+360)%360;
+    let diff=targetHdg-ds.hdg;
+    while(diff>180) diff-=360; while(diff<-180) diff+=360;
+    ds.hdg=(ds.hdg+Math.sign(diff)*Math.min(Math.abs(diff),DRONE_TURN*dt)+360)%360;
+
+    if(Math.abs(diff)<45){
+      ds.spd=Math.min(ds.spd+8*dt, DRONE_SPEED);
+      ds.pos.x+=Math.sin(ds.hdg*Math.PI/180)*ds.spd*dt;
+      ds.pos.z+=Math.cos(ds.hdg*Math.PI/180)*ds.spd*dt;
+    } else {
+      ds.spd=Math.max(ds.spd-4*dt,2);
+    }
+  }
+
+  ds.propRPM=ds.phase==='LANDING'&&ds.alt<5?Math.max(ds.propRPM-200*dt,0):3000+ds.spd*50;
+
+  // 检查航点到达
+  const arrived=dist2D<20 && Math.abs(altDiff)<15;
+  if(arrived){
+    const wpName=wp.name||`WP${ds.wpIdx+1}`;
+    if(wp.phase==='LANDING'){
+      // 降落
+      ds.alt=Math.max(0, ds.alt-DRONE_VS_DOWN*1.5*dt);
+      if(ds.alt<=0.5){
+        ds.alt=0; ds.spd=0; ds.propRPM=0;
+        setPhase('PARKED');
+        ds.isAuto=false;
+        addLog('任务完成！已降落', 'takeoff');
+        document.getElementById('mission-status').textContent='✅ 任务完成 · 飞行器已降落';
+        ds.missionStarted=false;
+      }
+    } else {
+      addLog(`到达${wpName} (${wp.alt}m)`, 'wp');
+      ds.wpIdx++;
+      if(ds.wpIdx>=ds.wps.length){
+        ds.wpIdx=0;
+      }
+    }
+  }
+}
+
+function updateManualFlight(dt){
+  if(keys['KeyA']) ds.hdg=(ds.hdg-DRONE_TURN*dt+360)%360;
+  if(keys['KeyD']) ds.hdg=(ds.hdg+DRONE_TURN*dt)%360;
+  if(keys['KeyW']){ ds.spd=Math.min(ds.spd+6*dt,DRONE_SPEED); ds.pos.x+=Math.sin(ds.hdg*Math.PI/180)*ds.spd*dt; ds.pos.z+=Math.cos(ds.hdg*Math.PI/180)*ds.spd*dt; }
+  else if(keys['KeyS']){ ds.spd=Math.max(ds.spd-6*dt,0); }
+  else ds.spd=Math.max(ds.spd-3*dt,0);
+  if(keys['KeyQ']) ds.alt=Math.min(ds.alt+DRONE_VS_UP*dt, MAX_ALT);
+  if(keys['KeyE']) ds.alt=Math.max(ds.alt-DRONE_VS_DOWN*dt, 0);
+  ds.propRPM=ds.alt>0?2800+ds.spd*40:0;
+}
+
+// ─────────────────────────────────────────────────────────
+// 相机
+// ─────────────────────────────────────────────────────────
+function updateCamera(){
+  const dp=drone.position;
+  const hr=ds.hdg*Math.PI/180;
+  switch(cameraMode){
+    case 1: // 跟随
+      const tc=new THREE.Vector3(dp.x+Math.sin(hr)*-30, dp.y+12, dp.z+Math.cos(hr)*-30);
+      camera.position.lerp(tc,.06);
+      camera.lookAt(dp);
+      break;
+    case 2: // 驾驶舱
+      camera.position.lerp(new THREE.Vector3(dp.x+Math.sin(hr)*3.5, dp.y+1.5, dp.z+Math.cos(hr)*3.5),.2);
+      camera.lookAt(dp.clone().add(new THREE.Vector3(Math.sin(hr)*100,0,Math.cos(hr)*100)));
+      break;
+    case 3: // 上帝视角
+      camera.position.lerp(new THREE.Vector3(dp.x, dp.y+600, dp.z-80),.025);
+      camera.lookAt(dp);
+      break;
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// HUD更新
+// ─────────────────────────────────────────────────────────
+function updateHUD(){
+  document.getElementById('tv-alt').innerHTML=`${ds.alt.toFixed(1)}<span class="tu">m</span>`;
+  document.getElementById('tv-spd').innerHTML=`${ds.spd.toFixed(1)}<span class="tu">m/s</span>`;
+  document.getElementById('tv-hdg').innerHTML=`${String(Math.round(ds.hdg)).padStart(3,'0')}<span class="tu">°</span>`;
+  document.getElementById('tv-vs').innerHTML=`<span style="color:${ds.vs>0?'#00ff88':'#ffaa00'}">${ds.vs>0?'+':''}${ds.vs.toFixed(1)}</span><span class="tu">m/s</span>`;
+
+  if(ds.wps.length>0 && ds.wpIdx<ds.wps.length){
+    const wp=ds.wps[ds.wpIdx];
+    const dx=wp.x-ds.pos.x, dz=wp.z-ds.pos.z;
+    const dist=Math.sqrt(dx*dx+dz*dz);
+    document.getElementById('tv-wp').innerHTML=`${ds.wpIdx+1}/${ds.wps.length} <span class="tu">${wp.name||''}</span>`;
+    document.getElementById('tv-dist').innerHTML=`${dist.toFixed(0)}<span class="tu">m</span>`;
+  } else {
+    document.getElementById('tv-wp').textContent='---';
+    document.getElementById('tv-dist').textContent='---';
+  }
+
+  // 航高竖条
+  const pct=Math.min(ds.alt/MAX_ALT*100,100);
+  document.getElementById('altbar-fill').style.height=pct+'%';
+
+  drawMinimap();
+  drawAltProfile();
+}
+
+// ─────────────────────────────────────────────────────────
+// 迷你地图（带卫星底图）
+// ─────────────────────────────────────────────────────────
+function drawMinimap(){
+  const mc=document.getElementById('mmap-canvas');
+  const ctx=mc.getContext('2d');
+  const W=mc.width, H=mc.height;
+  const scale=0.038; // 像素/米
+
+  ctx.clearRect(0,0,W,H);
+
+  // 卫星底图
+  if(minimapSatCanvas){
+    ctx.drawImage(minimapSatCanvas,0,0,W,H);
+    ctx.fillStyle='rgba(0,6,18,.45)';
+    ctx.fillRect(0,0,W,H);
+  } else {
+    ctx.fillStyle='#00080f';
+    ctx.fillRect(0,0,W,H);
+  }
+
+  const cx=W/2, cy=H/2;
+  const toM=(wx,wz)=>[cx+wx*scale, cy+wz*scale];
+
+  // 画飞行轨迹
+  if(trail3D.length>1){
+    ctx.lineWidth=1.5;
+    for(let i=1;i<trail3D.length;i++){
+      const t=Math.min(trail3D[i].y/MAX_ALT,1);
+      ctx.strokeStyle=`rgba(${Math.round(t*80)},${Math.round(180+t*75)},255,${0.5+t*.4})`;
+      const [x0,y0]=toM(trail3D[i-1].x, trail3D[i-1].z);
+      const [x1,y1]=toM(trail3D[i].x, trail3D[i].z);
+      ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke();
+    }
+  }
+
+  // 计划航路（虚线）
+  ctx.setLineDash([4,3]); ctx.lineWidth=1;
+  ctx.strokeStyle='rgba(0,212,255,.3)';
+  ctx.beginPath();
+  ctx.moveTo(cx,cy);
+  PRESET_WAYPOINTS.forEach(wp=>{
+    const [x,y]=toM(wp.ox,wp.oz);
+    ctx.lineTo(x,y);
+  });
+  ctx.stroke(); ctx.setLineDash([]);
+
+  // 航点标记
+  PRESET_WAYPOINTS.forEach((wp,i)=>{
+    if(i===0) return;
+    const [x,y]=toM(wp.ox,wp.oz);
+    const isActive=ds.wps.length>0 && ds.wpIdx<ds.wps.length && ds.wps[ds.wpIdx].x===wp.ox && ds.wps[ds.wpIdx].z===wp.oz;
+    const col=wp.phase==='CRUISE'?'#00d4ff':wp.phase==='CLIMB'?'#00ff88':'#ffaa00';
+    ctx.beginPath(); ctx.arc(x,y,isActive?6:4,0,Math.PI*2);
+    ctx.fillStyle=isActive?col:'rgba(0,0,0,.5)'; ctx.fill();
+    ctx.strokeStyle=col; ctx.lineWidth=isActive?2:1; ctx.stroke();
+    ctx.fillStyle='#fff'; ctx.font=`${isActive?'bold ':''} 8px monospace`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(i,x,y);
+
+    // 高度标注
+    ctx.fillStyle=col+'cc'; ctx.font='7px monospace';
+    ctx.textAlign='left';
+    ctx.fillText(wp.alt+'m', x+6, y-4);
+  });
+
+  // 起点
+  ctx.beginPath(); ctx.arc(cx,cy,5,0,Math.PI*2);
+  ctx.fillStyle='#ffdd00'; ctx.fill();
+  ctx.fillStyle='#000'; ctx.font='bold 7px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('H',cx,cy);
+
+  // 飞行器
+  const [dx,dy]=toM(ds.pos.x, ds.pos.z);
+  ctx.save(); ctx.translate(dx,dy); ctx.rotate(ds.hdg*Math.PI/180);
+  ctx.beginPath(); ctx.moveTo(0,-8); ctx.lineTo(-5,5); ctx.lineTo(0,2); ctx.lineTo(5,5); ctx.closePath();
+  ctx.fillStyle='#00ff88'; ctx.fill();
+  ctx.restore();
+
+  // 当前高度标注
+  ctx.fillStyle='rgba(0,255,136,.9)';
+  ctx.font='bold 9px Orbitron'; ctx.textAlign='left';
+  ctx.fillText(`${ds.alt.toFixed(0)}m`, dx+10, dy-2);
+
+  // 比例尺
+  ctx.strokeStyle='rgba(255,255,255,.4)'; ctx.lineWidth=1; ctx.setLineDash([]);
+  const sW=Math.round(200*scale); // 200米的像素数
+  ctx.beginPath(); ctx.moveTo(8,H-10); ctx.lineTo(8+sW,H-10); ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,.5)'; ctx.font='7px monospace'; ctx.textAlign='center';
+  ctx.fillText('200m', 8+sW/2, H-3);
+}
+
+// ─────────────────────────────────────────────────────────
+// 高度剖面图
+// ─────────────────────────────────────────────────────────
+function drawAltProfile(){
+  const ac=document.getElementById('ap-canvas');
+  const ctx=ac.getContext('2d');
+  const W=ac.width, H=ac.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='rgba(0,5,15,.9)'; ctx.fillRect(0,0,W,H);
+
+  if(altHistory.length<2) return;
+
+  // 网格
+  ctx.strokeStyle='rgba(0,200,255,.08)'; ctx.lineWidth=.5;
+  [0.33,0.66,1].forEach(frac=>{
+    const y=H-(frac*H);
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+    ctx.fillStyle='rgba(0,200,255,.3)'; ctx.font='7px Orbitron'; ctx.textAlign='left';
+    ctx.fillText(`${Math.round(frac*MAX_ALT)}m`, 2, y-2);
+  });
+
+  // 填充曲线
+  const grad=ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'rgba(0,120,255,.7)'); grad.addColorStop(1,'rgba(0,255,136,.2)');
+  ctx.beginPath(); ctx.moveTo(0,H);
+  altHistory.forEach((h,i)=>{
+    const x=i/(altHistory.length-1)*W, y=H-h/MAX_ALT*H;
+    ctx.lineTo(x,y);
+  });
+  ctx.lineTo(W,H); ctx.closePath();
+  ctx.fillStyle=grad; ctx.fill();
+
+  // 折线
+  ctx.beginPath(); ctx.strokeStyle='#00d4ff'; ctx.lineWidth=1.5;
+  altHistory.forEach((h,i)=>{
+    const x=i/(altHistory.length-1)*W, y=H-h/MAX_ALT*H;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  // 当前值指示
+  const cx=W, cy=H-ds.alt/MAX_ALT*H;
+  ctx.beginPath(); ctx.arc(cx,cy,3,0,Math.PI*2);
+  ctx.fillStyle='#00ff88'; ctx.fill();
+
+  // 标注
+  ctx.fillStyle='#5ba3b8'; ctx.font='7px Noto Sans SC'; ctx.textAlign='left';
+  ctx.fillText('时间 →', W-35, H-2);
+}
+
+// ─────────────────────────────────────────────────────────
+// 飞行日志
+// ─────────────────────────────────────────────────────────
+const logEl=document.getElementById('log-entries');
+function addLog(msg, type='info'){
+  const d=document.createElement('div');
+  d.className='le'+(type==='wp'?' wp':type==='takeoff'?' to':type==='warn'?' warn':'');
+  const now=new Date();
+  d.textContent=`[${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}] ${msg}`;
+  logEl.insertBefore(d, logEl.firstChild);
+  while(logEl.children.length>10) logEl.removeChild(logEl.lastChild);
+}
+
+// ─────────────────────────────────────────────────────────
+// 键盘/点击
+// ─────────────────────────────────────────────────────────
+const keys={};
+window.addEventListener('keydown',e=>{
+  keys[e.code]=true;
+  if(e.code==='Space' && !ds.isAuto){
+    if(ds.phase==='GROUNDED'){ ds.phase='TAKEOFF'; addLog('手动起飞！','takeoff'); activateAllSystems(); }
+    else if(ds.alt>0){ addLog('悬停'); ds.spd=0; }
+  }
+  if(e.code==='Digit1'){ cameraMode=1; addLog('视角: 跟随'); }
+  if(e.code==='Digit2'){ cameraMode=2; addLog('视角: 驾驶舱'); }
+  if(e.code==='Digit3'){ cameraMode=3; addLog('视角: 俯瞰'); }
+  if(e.code==='Escape'){ ds.spd=0; addLog('悬停模式'); }
+});
+window.addEventListener('keyup',e=>{ keys[e.code]=false; });
+
+// ─────────────────────────────────────────────────────────
+// 渲染循环
+// ─────────────────────────────────────────────────────────
+function animate(t){
+  requestAnimationFrame(animate);
+  const dt=Math.min((t-lastTime)/1000,.1);
+  lastTime=t;
+
+  updateFlight(dt);
+  updateCamera();
+  updateHUD();
+
+  // 云朵漂移
+  clouds.forEach(c=>{ c.group.position.x+=c.speed*dt*0.5; if(c.group.position.x>TERRAIN_SIZE/2) c.group.position.x=-TERRAIN_SIZE/2; });
+
+  // 公告板标签朝向相机
+  scene.traverse(o=>{ if(o.userData.isBillboard) o.lookAt(camera.position); });
+
+  // 导航灯闪烁
+  const flash=Math.sin(t*0.003)>0;
+  scene.traverse(o=>{ if(o.userData.isNavLight && o.material) o.material.opacity=flash?1:.2; });
+
+  renderer.render(scene, camera);
+}
+
+// ─────────────────────────────────────────────────────────
+// 初始化
+// ─────────────────────────────────────────────────────────
+async function init(){
+  try{
+    await buildTerrain();
+    buildWaypointMarkers();
+
+    addLog('FlyteOS v1.2 就绪','info');
+    addLog('6个航点已加载 · 最大高度300m','info');
+    addLog('点击「执行完整飞行任务」开始','info');
+
+    ['sd-pwr','sd-gps'].forEach(id=>document.getElementById(id).classList.add('on'));
+
+    setTimeout(()=>{
+      const l=document.getElementById('loading');
+      l.style.opacity='0';
+      setTimeout(()=>l.style.display='none',600);
+    },600);
+
+    lastTime=performance.now();
+    requestAnimationFrame(animate);
+
+  }catch(e){
+    console.error(e);
+    document.getElementById('prog-text').textContent='加载失败: '+e.message;
+    document.getElementById('prog-text').style.color='#ff6b35';
+  }
+}
+
+window.addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+
+init();
+</script>
+</body>
+</html>
