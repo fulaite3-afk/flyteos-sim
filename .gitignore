@@ -39,6 +39,12 @@ tmp/
 ~$*
 *.lnk
 
+# Secrets - NEVER commit these
+.env
+.env.local
+.env.*.local
+GITHUB_TOKEN.txt
+
 # Specific to this project
 srv_ok.flag
 cn_out.txt
