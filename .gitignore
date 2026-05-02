@@ -49,3 +49,8 @@ GITHUB_TOKEN.txt
 srv_ok.flag
 cn_out.txt
 cn_err.txt
+
+# Temporary scripts (setup/debug tools)
+*.ps1
+simulator/cache/
+simulator/*_backup_*.html
