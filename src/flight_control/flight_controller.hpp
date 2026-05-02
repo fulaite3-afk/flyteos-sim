@@ -111,7 +111,7 @@ private:
 class FlightStateMachine {
 public:
     enum class Event : u8 {
-        ARM, DISARM, TAKEOFF, LAND, GO_HOME,
+        ARM, DISARM, TAKEOFF, AIRBORNE, LAND, GO_HOME,
         EMERGENCY, FAULT, FAULT_CLEAR, LAND_COMPLETE
     };
 
