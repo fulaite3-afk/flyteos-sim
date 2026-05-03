@@ -43,5 +43,15 @@ add_executable(flyteos_main
 )
 target_link_libraries(flyteos_main flyteos_core pthread)
 
+# ── 单元测试 ─────────────────────────────────────────────────────────
+add_executable(flyteos_test
+    tests/test_flight_control.cpp
+)
+target_link_libraries(flyteos_test flyteos_core pthread)
+
+# 启用测试
+enable_testing()
+add_test(NAME FlightControlTest COMMAND flyteos_test)
+
 message(STATUS "FlyteOS v${PROJECT_VERSION} - 武汉福莱特航空科技有限公司")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
