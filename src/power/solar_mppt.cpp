@@ -7,6 +7,8 @@
 
 namespace FlyteOS::Power {
 
+SolarMPPT::SolarMPPT(Config cfg) : cfg_(cfg) {}
+
 SolarMPPT::Output SolarMPPT::update(const Reading& now, const Reading& prev) {
     if (state_ == State::INIT) {
         best_v_ = now.voltage;

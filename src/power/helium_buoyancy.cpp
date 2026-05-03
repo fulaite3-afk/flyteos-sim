@@ -7,6 +7,8 @@
 
 namespace FlyteOS::Power {
 
+HeliumBuoyancy::HeliumBuoyancy(Config cfg) : cfg_(cfg) {}
+
 // 空气密度 kg/m³（理想气体近似）
 f32 HeliumBuoyancy::air_density(f32 temp_c, f32 pressure_hpa) {
     const f32 R_air = 287.05f;   // J/(kg·K)

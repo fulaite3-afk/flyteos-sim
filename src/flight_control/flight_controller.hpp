@@ -19,7 +19,8 @@ struct PIDConfig {
 
 class PID {
 public:
-    explicit PID(PIDConfig cfg = {}) : cfg_(cfg) {}
+    explicit PID(PIDConfig cfg);
+    PID() : PID(PIDConfig{}) {}
     f32 update(f32 error, f32 dt);
     void reset();
     void setConfig(const PIDConfig& c) { cfg_ = c; }
@@ -39,7 +40,8 @@ public:
         f32 max_vert_speed  = 2.0f;
     };
 
-    explicit PositionController(Config cfg = {});
+    explicit PositionController(Config cfg);
+    PositionController() : PositionController(Config{}) {}
     VelocityCmd update(const NEDPosition& target, const NEDPosition& current,
                        const NEDVelocity& vel, f32 dt);
     void reset();
@@ -58,7 +60,8 @@ public:
         PIDConfig vert  = {4.0f, 0.2f, 0.3f, 5.0f,  0.8f};
     };
 
-    explicit VelocityController(Config cfg = {});
+    explicit VelocityController(Config cfg);
+    VelocityController() : VelocityController(Config{}) {}
     AttitudeCmd update(const VelocityCmd& target, const NEDVelocity& current,
                        f32 yaw, f32 dt);
     void reset();
@@ -84,7 +87,8 @@ public:
         f32 max_yaw_rate_rads   = 1.5f;
     };
 
-    explicit AttitudeController(Config cfg = {});
+    explicit AttitudeController(Config cfg);
+    AttitudeController() : AttitudeController(Config{}) {}
 
     ActuatorOutput update(
         const AttitudeCmd& cmd,

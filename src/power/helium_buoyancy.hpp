@@ -52,7 +52,8 @@ public:
         Status status;
     };
 
-    explicit HeliumBuoyancy(Config cfg = {}) : cfg_(cfg) {}
+    explicit HeliumBuoyancy(Config cfg);
+    HeliumBuoyancy() : HeliumBuoyancy(Config{}) {}
 
     ValveCmd update(const Sensors& s);
     ValveCmd set_mode(Mode m);
