@@ -145,8 +145,7 @@ FlightStateMachine::Transition FlightStateMachine::handleEvent(Event ev) {
         break;
     case FlightState::TAKING_OFF:
         if (ev == Event::FAULT)   { to = FlightState::FAILSAFE;    allowed = true; reason = "Fault during takeoff"; }
-        // 外部判断离地后设为 IN_FLIGHT
-        { to = FlightState::IN_FLIGHT; allowed = true; reason = "Airborne"; }
+        if (ev == Event::AIRBORNE){ to = FlightState::IN_FLIGHT;   allowed = true; reason = "Airborne"; }
         break;
     case FlightState::IN_FLIGHT:
     case FlightState::HOVERING:
