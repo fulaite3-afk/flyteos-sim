@@ -150,8 +150,9 @@ http://localhost:8080/flight_sim_2.html
 
 **福莱特航空科技有限公司**
 - 成立于：2016年11月
+- 地址：中国·武汉
 - 官网：http://www.flyteaviation.com
-- 邮箱：325403386@qq.com
+- 邮箱：contact@flyteos-sim.org
 
 > 浮空节能环保型无人机，以"浮空飞行器"专利为依托，利用太阳能膜科技和电动涡轮作为动力来源，低碳节能、绿色环保。
 

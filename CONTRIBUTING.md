@@ -56,4 +56,4 @@ python -m http.server 8080
 
 ---
 
-有问题？发邮件至 325403386@qq.com 或创建 Issue。
+有问题？发邮件至 contact@flyteos-sim.org 或创建 Issue。

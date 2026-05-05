@@ -366,7 +366,7 @@
         <div class="loader">
             <div class="loader-bar" id="loader-bar"></div>
         </div>
-        <div class="loader-text" id="loader-text">正在加载武汉东湖地形数据...</div>
+        <div class="loader-text" id="loader-text">正在加载模拟地形数据...</div>
     </div>
     
     <!-- 3D Canvas -->
@@ -403,11 +403,11 @@
             </div>
             <div class="tele-row">
                 <span class="tele-label">经度</span>
-                <span class="tele-value" id="tele-lng" style="font-size:11px">114.40°</span>
+                <span class="tele-value" id="tele-lng" style="font-size:11px">112.00°</span>
             </div>
             <div class="tele-row">
                 <span class="tele-label">纬度</span>
-                <span class="tele-value" id="tele-lat" style="font-size:11px">30.50°</span>
+                <span class="tele-value" id="tele-lat" style="font-size:11px">28.00°</span>
             </div>
             <div class="tele-row">
                 <span class="tele-label">航点</span>
@@ -456,7 +456,7 @@
         
         <!-- Location -->
         <div class="hud-panel" id="location-bar">
-            📍 武汉东湖新技术开发区 · 光谷国际商会大厦
+            📍 模拟飞行区域
         </div>
         
         <!-- Flight Log -->
@@ -486,9 +486,9 @@
         ? 'http://localhost:7890' 
         : '';
     
-    // Location: Wuhan Donghu (东湖), our company area
-    const CENTER_LAT = 30.5023;
-    const CENTER_LNG = 114.4047;
+    // Location: Simulation area
+    const CENTER_LAT = 28.0000;
+    const CENTER_LNG = 112.0000;
     const HOME_POS = { lat: CENTER_LAT, lng: CENTER_LNG };
     
     // Terrain config

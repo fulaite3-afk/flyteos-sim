@@ -119,7 +119,7 @@ This project is licensed under the [MIT License](LICENSE).
 **Wuhan Fulaite Aviation Technology Co., Ltd.**
 - Founded: November 2016
 - Location: Wuhan Donghu New Technology Development Zone, China
-- Email: 325403386@qq.com
+- Email: contact@flyteos-sim.org
 
 Specializing in environmentally-friendly aerostat UAVs, leveraging solar membrane technology and electric turbochargers for low-carbon, green aviation.
 

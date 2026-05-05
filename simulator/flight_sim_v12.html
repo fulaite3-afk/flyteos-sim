@@ -88,7 +88,7 @@ body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',s
   <!-- 标题 -->
   <div class="panel" id="title">
     <h1>FLYTEOS v1.2</h1>
-    <div class="sub">武汉福莱特航空科技 · 浮空飞行器模拟器 · 东湖区域</div>
+    <div class="sub">武汉福莱特航空科技 · 浮空飞行器模拟器 · 模拟区域</div>
   </div>
 
   <!-- 遥测 -->
@@ -125,7 +125,7 @@ body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',s
 
   <!-- 迷你地图 -->
   <div class="panel" id="mmap">
-    <div id="mmap-title">实景航迹图 · 东湖区域</div>
+    <div id="mmap-title">实景航迹图 · 模拟区域</div>
     <canvas id="mmap-canvas" width="216" height="200"></canvas>
   </div>
 
@@ -161,8 +161,8 @@ body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',s
 // ═════════════════════════════════════════════════════════
 
 const PROXY = window.location.hostname==='localhost'?'http://localhost:7890':'';
-const CENTER_LAT = 30.5023;
-const CENTER_LNG = 114.4047;
+const CENTER_LAT = 28.0000;
+const CENTER_LNG = 112.0000;
 
 // 地形参数
 const TERRAIN_SIZE   = 5000;
@@ -171,7 +171,7 @@ const ELEV_EXAG      = 3.5;
 const MAX_ALT        = 300;
 const CRUISE_ALT     = 220;
 
-// 6个预设航点（东湖巡逻路线，相对中心偏移，单位:米）
+// 6个预设航点（预设巡航路线，相对中心偏移，单位:米）
 // 起点→WP1(爬升)→WP2→WP3(最高)→WP4→WP5→WP6(下降)→返航降落
 const PRESET_WAYPOINTS = [
   { ox:   0, oz:   0, alt:   0, name:'起点', phase:'HOME' },
