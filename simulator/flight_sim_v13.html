@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FlyteOS v1.3 - 浮空飞行器模拟器 | 武汉福莱特航空科技</title>
+<title>FlyteOS v1.4 - 浮空飞行器模拟器 | 武汉福莱特航空科技</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+SC:wght@400;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
@@ -75,6 +75,26 @@ body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',s
 #altbar-label{position:fixed;right:292px;top:50%;transform:translateY(-50%);font-family:'Orbitron',monospace;font-size:9px;color:#5ba3b8;writing-mode:vertical-rl;z-index:11}
 /* 穿云效果 */
 #through-cloud{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at center,rgba(220,235,255,0.35),rgba(180,210,255,0.1) 50%,transparent 75%);pointer-events:none;z-index:9;opacity:0;transition:opacity .6s}
+/* 系统面板 */
+#sys-panel{top:250px;right:14px;min-width:165px}
+.sys-title{font-size:9px;color:#5ba3b8;margin-bottom:6px;letter-spacing:1px}
+.sys-row{display:flex;align-items:center;margin-bottom:5px}
+.sys-row:last-child{margin-bottom:0}
+.sys-dot{width:6px;height:6px;border-radius:50%;margin-right:6px}
+.sys-dot.active{background:#00ff88;box-shadow:0 0 5px #00ff88;animation:blink 2s infinite}
+.sys-dot.standby{background:#ffaa00;box-shadow:0 0 5px #ffaa00}
+.sys-dot.warn{background:#ff4455;box-shadow:0 0 5px #ff4455}
+.sys-label{color:#5ba3b8;font-size:9px;min-width:48px}
+.sys-mod{color:#3a5a6a;font-size:8px;flex:1;margin-left:4px}
+.sys-state{font-size:8px;font-weight:700;min-width:52px;text-align:right}
+.sys-state.active{color:#00ff88}
+.sys-state.standby{color:#ffaa00}
+.sys-state.warn{color:#ff4455}
+/* 导航数据面板 */
+#navdata{top:440px;left:14px;width:210px}
+.nav-title{font-size:9px;color:#5ba3b8;margin-bottom:6px;letter-spacing:1px}
+/* 版本徽章 */
+.ver-badge{display:inline-block;font-size:8px;background:linear-gradient(135deg,#00cc66,#00aaff);color:#000;font-weight:700;padding:1px 6px;border-radius:8px;margin-left:6px;letter-spacing:1px;vertical-align:middle}
 /* 速度表 */
 #speedmeter{position:fixed;left:50%;bottom:46px;transform:translateX(-50%);width:90px;height:26px;background:rgba(0,8,18,.75);border:1px solid rgba(0,200,255,.2);border-radius:13px;display:flex;align-items:center;justify-content:center;z-index:11;gap:4px}
 #speedmeter .sm-val{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:#00d4ff}
@@ -85,7 +105,7 @@ body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',s
 <!-- 加载界面 -->
 <div id="loading">
   <h1>FLYTEOS</h1>
-  <div class="ver">v1.3 · 浮空飞行器 · 真实3D地形版</div>
+  <div class="ver">v1.4 · 浮空飞行器 · 飞控系统集成版</div>
   <div id="prog-bar"><div id="prog-fill"></div></div>
   <div id="prog-text">正在初始化...</div>
 </div>
@@ -100,8 +120,8 @@ body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',s
 <div id="hud">
   <!-- 标题 -->
   <div class="panel" id="title">
-    <h1>FLYTEOS v1.3</h1>
-    <div class="sub">武汉福莱特航空科技 · 浮空飞行器模拟器 · 模拟区域</div>
+    <h1>FLYTEOS v1.4</h1>
+    <div class="sub">武汉福莱特航空科技 · 浮空飞行器模拟器 · 模拟区域<span class="ver-badge">v1.4 UPDATE</span></div>
   </div>
 
   <!-- 遥测 -->
@@ -112,6 +132,8 @@ body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',s
     <div class="tr"><span class="tl">爬升率 VS</span><span><span class="tv" id="tv-vs">+0.0</span><span class="tu">m/s</span></span></div>
     <div class="tr"><span class="tl">航点 WP</span><span><span class="tv" id="tv-wp" style="font-size:11px">---</span></span></div>
     <div class="tr"><span class="tl">距离 DIST</span><span><span class="tv" id="tv-dist">---</span><span class="tu">m</span></span></div>
+    <div class="tr"><span class="tl">纬度 LAT</span><span><span class="tv" id="tv-lat" style="font-size:12px">28.00°</span><span class="tu">N</span></span></div>
+    <div class="tr"><span class="tl">经度 LNG</span><span><span class="tv" id="tv-lng" style="font-size:12px">112.00°</span><span class="tu">E</span></span></div>
   </div>
 
   <!-- 飞行阶段 -->
@@ -134,6 +156,17 @@ body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',s
     <div class="si"><div class="sd" id="sd-solar"></div><span>太阳能充电</span></div>
     <div class="si"><div class="sd" id="sd-motor"></div><span>涡轮电机</span></div>
     <div class="si"><div class="sd" id="sd-link"></div><span>数据链路</span></div>
+  </div>
+
+  <!-- 系统模块面板 -->
+  <div class="panel" id="sys-panel">
+    <div class="sys-title">SYSTEMS</div>
+    <div class="sys-row"><div class="sys-dot active" id="sys-core"></div><span class="sys-label">CORE</span><span class="sys-mod">SystemManager</span><span class="sys-state active" id="sys-core-st">ACTIVE</span></div>
+    <div class="sys-row"><div class="sys-dot active" id="sys-nav"></div><span class="sys-label">NAV</span><span class="sys-mod">WaypointNav</span><span class="sys-state active" id="sys-nav-st">ACTIVE</span></div>
+    <div class="sys-row"><div class="sys-dot active" id="sys-safety"></div><span class="sys-label">SAFETY</span><span class="sys-mod">SafetyMonitor</span><span class="sys-state active" id="sys-safety-st">ACTIVE</span></div>
+    <div class="sys-row"><div class="sys-dot standby" id="sys-dji"></div><span class="sys-label">DJI</span><span class="sys-mod">OSDK Bridge</span><span class="sys-state standby" id="sys-dji-st">STANDBY</span></div>
+    <div class="sys-row"><div class="sys-dot active" id="sys-mppt"></div><span class="sys-label">MPPT</span><span class="sys-mod">Solar</span><span class="sys-state active" id="sys-mppt-st">ACTIVE</span></div>
+    <div class="sys-row"><div class="sys-dot active" id="sys-buoy"></div><span class="sys-label">BUOY</span><span class="sys-mod">Helium</span><span class="sys-state active" id="sys-buoy-st">ACTIVE</span></div>
   </div>
 
   <!-- 任务按钮 -->
@@ -160,6 +193,15 @@ body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',s
     <div id="log-entries"></div>
   </div>
 
+  <!-- 导航数据面板 -->
+  <div class="panel" id="navdata">
+    <div class="nav-title">NAV DATA</div>
+    <div class="tr"><span class="tl">CUR WP</span><span><span class="tv" id="nv-curwp" style="font-size:12px">3/6</span></span></div>
+    <div class="tr"><span class="tl">DIST</span><span><span class="tv" id="nv-dist" style="font-size:12px">124.5</span><span class="tu">m</span></span></div>
+    <div class="tr"><span class="tl">BRG</span><span><span class="tv" id="nv-brg" style="font-size:12px">045</span><span class="tu">°</span></span></div>
+    <div class="tr"><span class="tl">NAV STATE</span><span><span class="tv" id="nv-state" style="font-size:11px;color:#00ff88">EN ROUTE</span></span></div>
+  </div>
+
   <!-- 帮助 -->
   <div id="help">
     WASD 方向控制 &nbsp;|&nbsp; Q 上升 &nbsp;|&nbsp; E 下降 &nbsp;|&nbsp; 空格 起飞/悬停 &nbsp;|&nbsp; 1/2/3 视角切换 &nbsp;|&nbsp; Esc 悬停
@@ -180,7 +222,7 @@ body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',s
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js" integrity="sha256-170c6789f43217c96b3170f4b42fafe135de7f7cd48497a4218f9757ee1d49fa" crossorigin="anonymous"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-//  FlyteOS v1.3  ·  武汉福莱特航空科技有限公司
+//  FlyteOS v1.4  ·  武汉福莱特航空科技有限公司
 //  核心特性: 程序化真实3D地形 + 低空云层系统 + 穿云效果
 // ═══════════════════════════════════════════════════════════════
 
@@ -1047,6 +1089,15 @@ function updateHUD() {
 
   drawMinimap();
   drawAltProfile();
+
+  // FLIGHT DATA: LAT/LNG based on aircraft position (generic reference 28.00N, 112.00E)
+  const latRef = 28.0, lngRef = 112.0;
+  const latOff = ds.pos.z / 111320; // ~111320m per degree latitude
+  const lngOff = ds.pos.x / (111320 * Math.cos(latRef * Math.PI / 180));
+  const curLat = latRef + latOff;
+  const curLng = lngRef + lngOff;
+  document.getElementById('tv-lat').textContent = curLat.toFixed(2) + '°';
+  document.getElementById('tv-lng').textContent = curLng.toFixed(2) + '°';
 }
 
 // ── 迷你地图 ──
@@ -1454,7 +1505,7 @@ async function init() {
     document.getElementById('sd-pwr').classList.add('on');
     document.getElementById('sd-gps').classList.add('on');
 
-    addLog('FlyteOS v1.3 就绪', 'info');
+    addLog('FlyteOS v1.4 就绪', 'info');
     addLog('🏔 程序化地形: 水体/草地/森林/山地/雪山', 'info');
     addLog('☁ 低空云层: 100-290m 高度带 (38朵)', 'info');
     addLog('点击「执行完整飞行任务」开始', 'info');
@@ -1476,6 +1527,44 @@ async function init() {
     progText.style.color = '#ff4444';
   }
 }
+
+// ── 新面板数据模拟 ──
+let simTick = 0;
+function updateSimPanels() {
+  simTick++;
+  const t = simTick * 0.5; // each tick = 500ms
+
+  // NAV DATA simulation
+  const curWp = ((simTick % 60) < 10) ? 3 : ((simTick % 60) < 30) ? 4 : 5;
+  const navDist = 80 + Math.sin(t * 0.3) * 40 + Math.sin(t * 0.7) * 15;
+  const navBrg = Math.round((45 + Math.sin(t * 0.2) * 30 + Math.sin(t * 0.5) * 15 + 360) % 360);
+  const navStates = ['EN ROUTE', 'EN ROUTE', 'TURNING', 'EN ROUTE', 'APPROACH'];
+  const navState = navStates[Math.floor(t * 0.15) % navStates.length];
+
+  document.getElementById('nv-curwp').textContent = curWp + '/6';
+  document.getElementById('nv-dist').textContent = navDist.toFixed(1);
+  document.getElementById('nv-brg').textContent = String(navBrg).padStart(3, '0');
+  const nvStateEl = document.getElementById('nv-state');
+  nvStateEl.textContent = navState;
+  nvStateEl.style.color = navState === 'APPROACH' ? '#ffaa00' : navState === 'TURNING' ? '#00d4ff' : '#00ff88';
+
+  // SYSTEMS panel - occasional state flicker
+  if (simTick % 20 === 0) {
+    // Rarely toggle DJI to active momentarily
+    const djiDot = document.getElementById('sys-dji');
+    const djiSt = document.getElementById('sys-dji-st');
+    if (Math.random() > 0.7) {
+      djiDot.className = 'sys-dot active';
+      djiSt.className = 'sys-state active';
+      djiSt.textContent = 'ACTIVE';
+    } else {
+      djiDot.className = 'sys-dot standby';
+      djiSt.className = 'sys-state standby';
+      djiSt.textContent = 'STANDBY';
+    }
+  }
+}
+setInterval(updateSimPanels, 500);
 
 window.addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight;
