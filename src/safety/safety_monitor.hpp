@@ -41,8 +41,8 @@ public:
         f32 helium_pressure  = 1.0f;
         f32 wind_speed_ms    = 0;
         f32 tilt_rad         = 0;
-        f64 lat              = 30.5023;
-        f64 lon              = 114.4047;
+        f64 lat              = 28.0000;
+        f64 lon              = 112.0000;
         f32 distance_home_m  = 0;
     };
 

@@ -43,8 +43,8 @@ Attitude::AttitudeEstimator::GPSRaw SensorMock::generateGPS(const PhysicsState& 
     Attitude::AttitudeEstimator::GPSRaw gps;
 
     // NED → 经纬度转换
-    f32 ref_lat = 30.5023f;
-    f32 ref_lon = 114.4047f;
+    f32 ref_lat = 28.0000f;
+    f32 ref_lon = 112.0000f;
     gps.lat = ref_lat + state.position.north / 111320.0;
     gps.lon = ref_lon + state.position.east  / (111320.0 * cosf(ref_lat * M_PI / 180.0f));
     gps.alt = -state.position.down;

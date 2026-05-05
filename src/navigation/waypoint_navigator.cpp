@@ -97,8 +97,8 @@ WaypointNavigator::NavOutput WaypointNavigator::update(const NEDPosition& curren
     const auto& wp = waypoints_[wp_idx_];
     // 简化：直接用NED目标（实际应从GPS转NED）
     NEDPosition target;
-    target.north = static_cast<f32>((wp.pos.lat - 30.5023) * 111320.0f);
-    target.east  = static_cast<f32>((wp.pos.lon - 114.4047) * 111320.0f * cosf(wp.pos.lat * M_PI / 180.0f));
+    target.north = static_cast<f32>((wp.pos.lat - 28.0000) * 111320.0f);
+    target.east  = static_cast<f32>((wp.pos.lon - 112.0000) * 111320.0f * cosf(wp.pos.lat * M_PI / 180.0f));
     target.down  = -wp.pos.alt;
 
     f32 dn = target.north - current.north;
