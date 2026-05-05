@@ -9,6 +9,8 @@
 namespace FlyteOS::Control {
 
 // ══════════════════ PID ══════════════════════════════════════════
+PID::PID(PIDConfig cfg) : cfg_(cfg) {}
+
 f32 PID::update(f32 error, f32 dt) {
     if (dt <= 0) return 0;
     integral_ += error * dt;

@@ -40,7 +40,8 @@ public:
         f32 bias_rw      = 0.0001f;  // 偏差随机游走
     };
 
-    explicit AttitudeEstimator(NoiseParams np = {});
+    explicit AttitudeEstimator(NoiseParams np);
+    AttitudeEstimator() : AttitudeEstimator(NoiseParams{}) {}
 
     Estimate update(const IMURaw& imu);
     Estimate updateWithGPS(const IMURaw& imu, const GPSRaw& gps);

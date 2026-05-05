@@ -44,7 +44,8 @@ public:
         std::string diag;
     };
 
-    explicit SolarMPPT(Config cfg = {}) : cfg_(cfg) {}
+    explicit SolarMPPT(Config cfg);
+    SolarMPPT() : SolarMPPT(Config{}) {}
 
     Output update(const Reading& now, const Reading& prev);
     f32    estimated_irradiance(f32 voltage, f32 current, f32 temp) const;
