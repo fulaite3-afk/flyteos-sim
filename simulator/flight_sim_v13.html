@@ -130,6 +130,7 @@ body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',s
     <div class="tr"><span class="tl">速度 SPD</span><span><span class="tv" id="tv-spd">0.0</span><span class="tu">m/s</span></span></div>
     <div class="tr"><span class="tl">航向 HDG</span><span><span class="tv" id="tv-hdg">000</span><span class="tu">°</span></span></div>
     <div class="tr"><span class="tl">爬升率 VS</span><span><span class="tv" id="tv-vs">+0.0</span><span class="tu">m/s</span></span></div>
+    <div class="tr"><span class="tl">离地高 AGL</span><span><span class="tv" id="tv-agl">0.0</span><span class="tu">m</span></span></div>
     <div class="tr"><span class="tl">航点 WP</span><span><span class="tv" id="tv-wp" style="font-size:11px">---</span></span></div>
     <div class="tr"><span class="tl">距离 DIST</span><span><span class="tv" id="tv-dist">---</span><span class="tu">m</span></span></div>
     <div class="tr"><span class="tl">纬度 LAT</span><span><span class="tv" id="tv-lat" style="font-size:12px">28.00°</span><span class="tu">N</span></span></div>
@@ -209,7 +210,7 @@ body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',s
 
   <!-- 航高竖条 -->
   <div id="altbar"><div id="altbar-fill" style="height:0%"></div></div>
-  <div id="altbar-label">ALT 0-300m</div>
+  <div id="altbar-label">AGL 0-320m</div>
 
   <!-- 底部速度表 -->
   <div id="speedmeter">
@@ -455,6 +456,22 @@ function generateTerrainHeight(geo) {
   }
   pos.needsUpdate = true;
   geo.computeVertexNormals();
+  return geo;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  地形高度查询（Raycaster）
+// ════════════════════════════════════════════════════════════════
+let _terrainMesh = null;
+const _rayDown = new THREE.Raycaster();
+const _rayOrigin = new THREE.Vector3();
+
+function getTerrainHeight(x, z) {
+  if (!_terrainMesh) return 0;
+  _rayOrigin.set(x, 2000, z); // 从高空向下发射
+  _rayDown.set(_rayOrigin, new THREE.Vector3(0, -1, 0));
+  const hits = _rayDown.intersectObject(_terrainMesh);
+  return hits.length > 0 ? hits[0].point.y : 0;
 }
 
 // 组装地形 Mesh
@@ -899,6 +916,13 @@ function updateFlight(dt) {
 
   ds.vs = (ds.alt - prevAlt) / Math.max(dt, 0.001);
 
+  // 地面碰撞保护：飞机Y坐标不能低于地形高度
+  const groundY = getTerrainHeight(ds.pos.x, ds.pos.z);
+  if (ds.alt < groundY + 1) {
+    ds.alt = groundY + 1;  // 最低离地1米
+    if (ds.vs < 0) ds.vs = 0;
+  }
+
   drone.position.set(ds.pos.x, ds.alt, ds.pos.z);
   drone.rotation.y = ds.hdg * Math.PI / 180;
   drone.rotation.x = Math.min(ds.spd / DRONE_SPEED, 1) * 0.12;
@@ -1064,7 +1088,7 @@ function updateCamera() {
 //  HUD 更新
 // ════════════════════════════════════════════════════════════════
 function updateHUD() {
-  document.getElementById('tv-alt').textContent  = ds.alt.toFixed(1);
+  document.getElementById('tv-alt').textContent  = ds.alt.toFixed(1);  // MSL绝对高度
   document.getElementById('tv-spd').textContent  = ds.spd.toFixed(1);
   document.getElementById('tv-hdg').textContent  = String(Math.round(ds.hdg)).padStart(3, '0');
   document.getElementById('sm-spd').textContent  = ds.spd.toFixed(1);
@@ -1084,7 +1108,13 @@ function updateHUD() {
     document.getElementById('tv-dist').textContent = '---';
   }
 
-  const pct = Math.min(ds.alt / MAX_ALT * 100, 100);
+  // AGL（离地高度）= 绝对高度 - 地形高度
+  const groundY = getTerrainHeight(ds.pos.x, ds.pos.z);
+  const agl = Math.max(0, ds.alt - groundY);
+  const aglEl = document.getElementById('tv-agl');
+  if (aglEl) aglEl.textContent = agl.toFixed(1);
+
+  const pct = Math.min(agl / MAX_ALT * 100, 100);
   document.getElementById('altbar-fill').style.height = pct + '%';
 
   drawMinimap();
@@ -1483,6 +1513,7 @@ async function init() {
         mesh.receiveShadow = true;
         mesh.name = 'terrain';
         scene.add(mesh);
+        _terrainMesh = mesh;  // 保存引用供高度查询
         resolve(mesh);
       });
     });
