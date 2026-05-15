@@ -58,9 +58,16 @@ add_executable(flyteos_test
 )
 target_link_libraries(flyteos_test flyteos_core pthread)
 
+# ── SITL集成测试 ──────────────────────────────────────────────────────
+add_executable(flyteos_sitl_test
+    tests/test_sitl_integration.cpp
+)
+target_link_libraries(flyteos_sitl_test flyteos_core pthread)
+
 # 启用测试
 enable_testing()
 add_test(NAME FlightControlTest COMMAND flyteos_test)
+add_test(NAME SITLIntegrationTest COMMAND flyteos_sitl_test)
 
 message(STATUS "FlyteOS v${PROJECT_VERSION} - 武汉福莱特航空科技有限公司")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
