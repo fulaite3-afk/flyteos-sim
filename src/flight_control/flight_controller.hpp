@@ -81,7 +81,11 @@ public:
         PIDConfig pitch = {4.5f, 0.2f, 0.5f, 5.0f, 1.0f};
         PIDConfig yaw   = {3.0f, 0.1f, 0.3f, 3.0f, 0.8f};
 
-        f32 buoyancy_ratio      = 0.60f;  // 氦气分担60%升力
+        // ── 5轴控制：浮力轴参数 ──
+        // 注意：buoyancy_ratio不再硬编码，由gas_cell动态计算
+        // 以下为浮力补偿的基准值，仅用于推力减除计算
+        f32 buoyancy_comp_base = 0.90f;  // 默认浮力补偿基准（90%升力由浮力承担）
+
         f32 max_roll_rad        = 0.35f;
         f32 max_pitch_rad       = 0.35f;
         f32 max_yaw_rate_rads   = 1.5f;
@@ -90,10 +94,17 @@ public:
     explicit AttitudeController(Config cfg);
     AttitudeController() : AttitudeController(Config{}) {}
 
+    /// 5轴控制：4轴电机 + 浮力轴
+    /// @param cmd        姿态指令
+    /// @param est        姿态估计
+    /// @param buoy        浮力状态（动态B/W比从此获取）
+    /// @param gas_buoyancy_n 气囊实际浮力(N)，来自GasCell
+    /// @param dt          时间步长
     ActuatorOutput update(
         const AttitudeCmd& cmd,
         const Attitude::AttitudeEstimator::Estimate& est,
         const Power::HeliumBuoyancy::Status& buoy,
+        f32 gas_buoyancy_n,
         f32 dt
     );
 
@@ -106,9 +117,11 @@ private:
     Mode   mode_ = Mode::STABILIZE;
     PID    pid_roll_, pid_pitch_, pid_yaw_;
 
-    // 浮空器专用混控矩阵（四旋翼 + 氦气补偿）
+    // 5轴混控：4轴电机(roll/pitch/yaw/thrust) + 浮力轴(vent/pump)
     void mixActuators(f32 roll_cmd, f32 pitch_cmd, f32 yaw_cmd,
-                      f32 thrust, f32 buoyancy_ratio, ActuatorOutput& out);
+                      f32 thrust, f32 dynamic_bw,
+                      f32 gas_buoyancy_n,
+                      ActuatorOutput& out);
 };
 
 // ─── 飞行状态机 ────────────────────────────────────────────────────
