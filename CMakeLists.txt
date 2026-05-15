@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(FlyteOS VERSION 1.0.0 LANGUAGES CXX)
+project(FlyteOS VERSION 2.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -14,7 +14,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/simulator
 )
 
-# ── 核心库 ───────────────────────────────────────────────────────────
+# ── 核心库（飞控+导航+浮力+安全+姿态+桥接+总线）──────────────────────
 file(GLOB_RECURSE CORE_SOURCES
     "src/flyteos_types.cpp"
     "src/core/*.cpp"
@@ -24,11 +24,20 @@ file(GLOB_RECURSE CORE_SOURCES
     "src/navigation/*.cpp"
     "src/safety/*.cpp"
     "src/dji_bridge/*.cpp"
+    "src/bus/*.cpp"
+    "src/sitl/*.cpp"
+    "src/bridge/*.cpp"
 )
 
 add_library(flyteos_core STATIC ${CORE_SOURCES})
 
-# ── 模拟器可执行文件 ─────────────────────────────────────────────────
+# ── SITL仿真器（v2.0 闭环仿真入口）──────────────────────────────────
+add_executable(flyteos_sitl
+    simulator/main_sitl.cpp
+)
+target_link_libraries(flyteos_sitl flyteos_core pthread)
+
+# ── 旧版模拟器（兼容保留）─────────────────────────────────────────────
 add_executable(flyteos_sim
     simulator/main_simulator.cpp
     simulator/physics_engine.cpp
@@ -55,3 +64,4 @@ add_test(NAME FlightControlTest COMMAND flyteos_test)
 
 message(STATUS "FlyteOS v${PROJECT_VERSION} - 武汉福莱特航空科技有限公司")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "Targets: flyteos_sitl (SITL闭环), flyteos_sim (旧版), flyteos_main (嵌入式)")
