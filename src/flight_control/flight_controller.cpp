@@ -92,6 +92,7 @@ ActuatorOutput AttitudeController::update(
     const AttitudeCmd& cmd,
     const Attitude::AttitudeEstimator::Estimate& est,
     const Power::HeliumBuoyancy::Status& buoy,
+    f32 gas_buoyancy_n,
     f32 dt)
 {
     f32 e_roll  = cmd.roll  - est.euler_rad.x;
@@ -105,26 +106,38 @@ ActuatorOutput AttitudeController::update(
     f32 pitch_out = pid_pitch_.update(e_pitch, dt);
     f32 yaw_out   = pid_yaw_.update(e_yaw,   dt);
 
-    // 浮力补偿：氦气承担部分推力
-    f32 buoy_comp = std::clamp(buoy.buoyancy_ratio * cfg_.buoyancy_ratio, 0.0f, 0.9f);
+    // ── 5轴控制：动态浮力补偿 ──
+    // 从GasCell获取实际的B/W比，而非硬编码0.60
+    f32 dynamic_bw = buoy.buoyancy_ratio;  // 来自气囊物理模型
+    // 安全限幅：浮力补偿不超过95%（至少5%推力冗余用于姿态控制）
+    f32 buoy_comp = std::clamp(dynamic_bw * cfg_.buoyancy_comp_base, 0.0f, 0.95f);
     f32 effective_thrust = cmd.thrust * (1.0f - buoy_comp);
 
     ActuatorOutput out;
     out.ts = now_us();
-    mixActuators(roll_out, pitch_out, yaw_out, effective_thrust, buoy_comp, out);
+    mixActuators(roll_out, pitch_out, yaw_out, effective_thrust, dynamic_bw, gas_buoyancy_n, out);
     return out;
 }
 
 void AttitudeController::mixActuators(
-    f32 roll, f32 pitch, f32 yaw, f32 thrust, f32 /*buoy*/, ActuatorOutput& out)
+    f32 roll, f32 pitch, f32 yaw, f32 thrust, f32 /*dynamic_bw*/,
+    f32 /*gas_buoyancy_n*/,
+    ActuatorOutput& out)
 {
-    // 标准四旋翼混控 (X型)
+    // ── 4轴电机混控（X型四旋翼）──
     // M1:前左  M2:前右  M3:后右  M4:后左
     out.motor[0] = std::clamp(thrust + roll - pitch + yaw, 0.0f, 1.0f);
     out.motor[1] = std::clamp(thrust - roll - pitch - yaw, 0.0f, 1.0f);
     out.motor[2] = std::clamp(thrust - roll + pitch + yaw, 0.0f, 1.0f);
     out.motor[3] = std::clamp(thrust + roll + pitch - yaw, 0.0f, 1.0f);
-    out.thrust_n = thrust * 60.0f;  // 假设最大推力60N
+    out.thrust_n = thrust * 60.0f;  // 最大推力60N
+
+    // ── 第5轴：浮力控制输出 ──
+    // vent_open 和 pump_01 由SITL管理器中的GasCell直接控制
+    // 此处仅记录浮力指令用于日志
+    out.vent_open = 0;    // 由BuoyancyOptimizer设置
+    out.pump_01   = 0;    // 由BuoyancyOptimizer设置
+    out.buoyancy_cmd_n = 0;  // 浮力指令值
 }
 
 void AttitudeController::reset() {

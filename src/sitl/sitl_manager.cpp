@@ -334,7 +334,9 @@ void SITLManager::runFlightControl() {
     }
 
     f32 dt = cfg_.sim_dt;
-    ActuatorOutput act_out = att_ctrl_.update(cmd, est, buoy_status, dt);
+    f32 gas_buoyancy_n = 0;
+    if (sub_gas.has()) gas_buoyancy_n = static_cast<f32>(sub_gas.get()->buoyancy_n);
+    ActuatorOutput act_out = att_ctrl_.update(cmd, est, buoy_status, gas_buoyancy_n, dt);
 
     // 发布执行器输出
     Bus::MsgActuatorOutput msg_act;

@@ -196,6 +196,12 @@ struct ActuatorOutput {
     f32 motor[4]  = {};            // PWM 0.0~1.0（对应1000~2000μs）
     f32 thrust_n  = 0;             // 总推力 N
     f32 torque[3] = {};            // 力矩 Nm (roll,pitch,yaw)
+
+    // ── 第5轴：浮力控制（浮空器专属）──
+    f32 vent_open = 0;             // 放气阀开度 0.0~1.0
+    f32 pump_01   = 0;             // 压气机状态 0.0~1.0
+    f32 buoyancy_cmd_n = 0;        // 浮力指令输出 N（用于日志/遥测）
+
     TimeUs ts = 0;
 };
 
