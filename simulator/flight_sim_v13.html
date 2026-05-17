@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FlyteOS v1.4 - 浮空飞行器模拟器 | 武汉福莱特航空科技</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+SC:wght@400;700&display=swap');
+/* 字体使用系统字体回退，避免外部依赖阻塞 */
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',sans-serif}
 #c{position:fixed;top:0;left:0;width:100vw;height:100vh}
 #hud{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10}
-.panel{position:absolute;background:rgba(0,8,18,0.82);border:1px solid rgba(0,200,255,0.35);border-radius:5px;padding:12px 15px;color:#00d4ff;font-family:'Orbitron',monospace;font-size:11px;backdrop-filter:blur(6px);pointer-events:auto}
+.panel{position:absolute;background:rgba(0,8,18,0.82);border:1px solid rgba(0,200,255,0.35);border-radius:5px;padding:12px 15px;color:#00d4ff;font-family:'Courier New',monospace;font-size:11px;backdrop-filter:blur(6px);pointer-events:auto}
 /* 顶部标题 */
 #title{top:12px;left:50%;transform:translateX(-50%);text-align:center;white-space:nowrap}
 #title h1{font-size:16px;font-weight:900;letter-spacing:4px;color:#00d4ff;text-shadow:0 0 12px #00d4ff}
@@ -56,7 +56,7 @@ body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',s
 .le.warn{color:#ffaa00}
 /* 任务控制 */
 #mission{bottom:155px;right:14px;text-align:center;min-width:240px}
-#btn-mission{background:linear-gradient(135deg,#ff6b35,#f7931e);border:3px solid #fff;color:#fff;font-family:'Orbitron',monospace;font-size:13px;padding:12px 28px;border-radius:50px;cursor:pointer;width:100%;letter-spacing:2px;transition:.3s;box-shadow:0 0 20px rgba(255,107,53,0.4);font-weight:700}
+#btn-mission{background:linear-gradient(135deg,#ff6b35,#f7931e);border:3px solid #fff;color:#fff;font-family:'Courier New',monospace;font-size:13px;padding:12px 28px;border-radius:50px;cursor:pointer;width:100%;letter-spacing:2px;transition:.3s;box-shadow:0 0 20px rgba(255,107,53,0.4);font-weight:700}
 #btn-mission:hover{background:linear-gradient(135deg,#ff8855,#ffaa44);box-shadow:0 0 35px rgba(255,107,53,0.7);transform:scale(1.03)}
 #btn-mission:disabled{background:#0a1520;color:#334;border-color:#223;cursor:not-allowed;box-shadow:none;transform:none}
 #mission-status{font-size:9px;color:#5ba3b8;margin-top:5px;font-family:'Noto Sans SC',sans-serif}
@@ -64,7 +64,7 @@ body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',s
 #help{bottom:14px;left:50%;transform:translateX(-50%);font-size:9px;color:#2a4a5a;line-height:2;text-align:center;font-family:'Noto Sans SC',sans-serif;white-space:nowrap}
 /* 加载 */
 #loading{position:fixed;top:0;left:0;width:100%;height:100%;background:#000010;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;transition:opacity .6s}
-#loading h1{font-family:'Orbitron',monospace;font-size:24px;color:#00d4ff;text-shadow:0 0 24px #00d4ff,0 0 60px rgba(0,212,255,.3);letter-spacing:8px;margin-bottom:8px}
+#loading h1{font-family:'Courier New',monospace;font-size:24px;color:#00d4ff;text-shadow:0 0 24px #00d4ff,0 0 60px rgba(0,212,255,.3);letter-spacing:8px;margin-bottom:8px}
 #loading .ver{font-size:11px;color:#5ba3b8;letter-spacing:3px;margin-bottom:40px}
 #prog-bar{width:360px;height:3px;background:#0a1520;border-radius:2px;overflow:hidden;margin-bottom:10px}
 #prog-fill{height:100%;background:linear-gradient(90deg,#0066cc,#00d4ff,#00ff88);width:0%;transition:width .4s}
@@ -72,7 +72,7 @@ body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',s
 /* 航高竖条 */
 #altbar{position:fixed;right:270px;top:50%;transform:translateY(-50%);width:16px;height:200px;background:rgba(0,8,18,.7);border:1px solid rgba(0,200,255,.2);border-radius:8px;overflow:hidden;z-index:11}
 #altbar-fill{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,#0066cc,#00d4ff,#00ff88);border-radius:8px;transition:height .2s}
-#altbar-label{position:fixed;right:292px;top:50%;transform:translateY(-50%);font-family:'Orbitron',monospace;font-size:9px;color:#5ba3b8;writing-mode:vertical-rl;z-index:11}
+#altbar-label{position:fixed;right:292px;top:50%;transform:translateY(-50%);font-family:'Courier New',monospace;font-size:9px;color:#5ba3b8;writing-mode:vertical-rl;z-index:11}
 /* 穿云效果 */
 #through-cloud{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at center,rgba(220,235,255,0.35),rgba(180,210,255,0.1) 50%,transparent 75%);pointer-events:none;z-index:9;opacity:0;transition:opacity .6s}
 /* 系统面板 */
@@ -97,7 +97,7 @@ body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',s
 .ver-badge{display:inline-block;font-size:8px;background:linear-gradient(135deg,#00cc66,#00aaff);color:#000;font-weight:700;padding:1px 6px;border-radius:8px;margin-left:6px;letter-spacing:1px;vertical-align:middle}
 /* 速度表 */
 #speedmeter{position:fixed;left:50%;bottom:46px;transform:translateX(-50%);width:90px;height:26px;background:rgba(0,8,18,.75);border:1px solid rgba(0,200,255,.2);border-radius:13px;display:flex;align-items:center;justify-content:center;z-index:11;gap:4px}
-#speedmeter .sm-val{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:#00d4ff}
+#speedmeter .sm-val{font-family:'Courier New',monospace;font-size:14px;font-weight:700;color:#00d4ff}
 #speedmeter .sm-unit{font-size:9px;color:#3a7a8f}
 </style>
 </head>
@@ -219,8 +219,8 @@ body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',s
   </div>
 </div>
 
-<!-- Three.js -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js" integrity="sha256-170c6789f43217c96b3170f4b42fafe135de7f7cd48497a4218f9757ee1d49fa" crossorigin="anonymous"></script>
+<!-- Three.js 本地加载 -->
+<script src="three.min.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
 //  FlyteOS v1.4  ·  武汉福莱特航空科技有限公司
@@ -1421,14 +1421,14 @@ function buildTerrainTextureAsync(sz, onProgress, onComplete) {
     }
 
     if (py < sz) {
-      requestAnimationFrame(processBatch);
+      setTimeout(processBatch, 0);
     } else {
       ctx.putImageData(img, 0, 0);
       onComplete(cv);
     }
   }
 
-  requestAnimationFrame(processBatch);
+  setTimeout(processBatch, 0);
 }
 
 // ── 同步版本保留（用于小纹理）─
