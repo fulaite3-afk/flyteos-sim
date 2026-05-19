@@ -217,6 +217,9 @@ body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',s
     <span class="sm-val" id="sm-spd">0.0</span>
     <span class="sm-unit">m/s</span>
   </div>
+
+  <!-- FPS 计数器 -->
+  <div id="fps-counter" style="position:fixed;top:14px;right:14px;font-family:'Courier New',monospace;font-size:10px;color:#00ff88;z-index:12;background:rgba(0,8,18,.7);padding:3px 8px;border-radius:4px;border:1px solid rgba(0,255,136,.3)">FPS: --</div>
 </div>
 
 <!-- Three.js: 本地优先，CDN备用 -->
@@ -916,20 +919,37 @@ function buildWaypointMarkers() {
 }
 
 // ── 轨迹线 ──
-function updateTrailLine() {
-  if (trailLine) { scene.remove(trailLine); trailLine.geometry.dispose(); }
-  if (trail3D.length < 2) return;
+let _trailGeo = null;
+let _trailMat = null;
 
-  const pts    = trail3D.map(p => new THREE.Vector3(p.x, p.y, p.z));
-  const geo    = new THREE.BufferGeometry().setFromPoints(pts);
+function updateTrailLine() {
+  if (trail3D.length < 2) {
+    if (trailLine) { scene.remove(trailLine); trailLine = null; }
+    return;
+  }
+
+  const pts = trail3D.map(p => new THREE.Vector3(p.x, p.y, p.z));
+
+  // 复用 geometry 避免每帧重建
+  if (!_trailGeo) {
+    _trailGeo = new THREE.BufferGeometry();
+    _trailMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.85 });
+  }
+
+  _trailGeo.setFromPoints(pts);
   const colors = [];
   for (const p of pts) {
     const t = Math.min(p.y / MAX_ALT, 1);
     colors.push(0.05, 0.2 + t * 0.8, 1.0 - t * 0.4);
   }
-  geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-  trailLine = new THREE.Line(geo, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.85 }));
-  scene.add(trailLine);
+  _trailGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+  if (!trailLine) {
+    trailLine = new THREE.Line(_trailGeo, _trailMat);
+    scene.add(trailLine);
+  } else {
+    trailLine.geometry = _trailGeo;
+  }
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1253,6 +1273,10 @@ function updateHUD() {
   const curLng = lngRef + lngOff;
   document.getElementById('tv-lat').textContent = curLat.toFixed(2) + '°';
   document.getElementById('tv-lng').textContent = curLng.toFixed(2) + '°';
+
+  // FPS 显示
+  const fpsEl = document.getElementById('fps-counter');
+  if (fpsEl) fpsEl.textContent = 'FPS: ' + (_fpsDisplay || '--');
 }
 
 // ── 迷你地图 ──
@@ -1408,6 +1432,10 @@ function addLog(msg, type = 'info') {
 const keys = {};
 window.addEventListener('keydown', e => {
   keys[e.code] = true;
+
+  // 防抖：忽略按键自动重复（按住不放产生的重复 keydown）
+  if (e.repeat) return;
+
   if (e.code === 'Space' && !ds.isAuto) {
     if (ds.phase === 'GROUNDED') {
       ds.phase = 'TAKEOFF';
@@ -1428,7 +1456,7 @@ window.addEventListener('keydown', e => {
 window.addEventListener('keyup', e => { keys[e.code] = false; });
 
 // ════════════════════════════════════════════════════════════════
-//  渲染循环（异常保护 + FPS监控 + rAF自适应）
+//  渲染循环（异常保护 + FPS监控 + rAF自适应 + WebGL降级）
 // ════════════════════════════════════════════════════════════════
 let _useRAF = true;
 let _fpsFrames = 0, _fpsTime = 0, _fpsDisplay = 0;
@@ -1570,7 +1598,15 @@ function startRenderLoop() {
     lastTime = performance.now();
     _fpsTime = performance.now();
     animate(performance.now());
-  }, 100); // 缩短到100ms
+  }, 100);
+} flash = Math.sin(now * 0.0025) > 0;
+      scene.traverse(o => {
+        if (o.userData.isNavLight && o.material) o.material.opacity = flash ? 1 : 0.15;
+      });
+
+      renderer.render(scene, camera);
+    } catch (err) {
+      console.error('渲染帧错误:', err);
 }
 
 // ── 异步地形纹理生成（分帧处理，不卡UI）─
