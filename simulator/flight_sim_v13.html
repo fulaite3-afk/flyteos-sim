@@ -1599,14 +1599,6 @@ function startRenderLoop() {
     _fpsTime = performance.now();
     animate(performance.now());
   }, 100);
-} flash = Math.sin(now * 0.0025) > 0;
-      scene.traverse(o => {
-        if (o.userData.isNavLight && o.material) o.material.opacity = flash ? 1 : 0.15;
-      });
-
-      renderer.render(scene, camera);
-    } catch (err) {
-      console.error('渲染帧错误:', err);
 }
 
 // ── 异步地形纹理生成（分帧处理，不卡UI）─
