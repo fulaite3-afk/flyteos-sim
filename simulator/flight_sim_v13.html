@@ -9,10 +9,10 @@
 body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',sans-serif}
 #c{position:fixed;top:0;left:0;width:100vw;height:100vh}
 #hud{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10}
-.panel{position:absolute;background:rgba(0,8,18,0.82);border:1px solid rgba(0,200,255,0.35);border-radius:5px;padding:12px 15px;color:#00d4ff;font-family:'Courier New',monospace;font-size:11px;backdrop-filter:blur(6px);pointer-events:auto}
+.panel{position:absolute;background:rgba(0,8,18,0.82);border:1px solid rgba(0,200,255,0.35);border-radius:5px;padding:12px 15px;color:#00d4ff;font-family:'Courier New',monospace;font-size:11px;backdrop-filter:blur(6px);pointer-events:auto;transition:filter .8s}
 #title{top:12px;left:50%;transform:translateX(-50%);text-align:center;white-space:nowrap}
 #title h1{font-size:16px;font-weight:900;letter-spacing:4px;color:#00d4ff;text-shadow:0 0 12px #00d4ff}
-#title .sub{font-size:9px;color:#5ba3b8;margin-top:3px;font-family:'Noto Sans SC',sans-serif;letter-spacing:1px}
+#title .sub{font-size:9px;color:#5ba3b8;margin-top:3px}
 #tele{top:76px;left:14px;min-width:190px}
 .tr{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
 .tr:last-child{margin-bottom:0}
@@ -27,47 +27,38 @@ body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',s
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.5}}
 #phase-panel{top:76px;left:50%;transform:translateX(-50%);text-align:center;min-width:200px}
 #phase-text{font-size:14px;font-weight:700;letter-spacing:2px;color:#00ff88;text-shadow:0 0 8px #00ff88}
-#phase-desc{font-size:9px;color:#5ba3b8;margin-top:4px;font-family:'Noto Sans SC',sans-serif}
+#phase-desc{font-size:9px;color:#5ba3b8;margin-top:4px}
 #mission{bottom:155px;right:14px;text-align:center;min-width:240px}
 #btn-mission{background:linear-gradient(135deg,#ff6b35,#f7931e);border:3px solid #fff;color:#fff;font-family:'Courier New',monospace;font-size:13px;padding:12px 28px;border-radius:50px;cursor:pointer;width:100%;letter-spacing:2px;transition:.3s;box-shadow:0 0 20px rgba(255,107,53,0.4);font-weight:700}
 #btn-mission:hover{background:linear-gradient(135deg,#ff8855,#ffaa44);box-shadow:0 0 35px rgba(255,107,53,0.7);transform:scale(1.03)}
 #btn-mission:disabled{background:#0a1520;color:#334;border-color:#223;cursor:not-allowed;box-shadow:none;transform:none}
-#mission-status{font-size:9px;color:#5ba3b8;margin-top:5px;font-family:'Noto Sans SC',sans-serif}
-#help{bottom:14px;left:50%;transform:translateX(-50%);font-size:9px;color:#2a4a5a;line-height:2;text-align:center;font-family:'Noto Sans SC',sans-serif;white-space:nowrap}
+#mission-status{font-size:9px;color:#5ba3b8;margin-top:5px}
+#help{bottom:14px;left:50%;transform:translateX(-50%);font-size:9px;color:#2a4a5a;line-height:2;text-align:center;white-space:nowrap}
 #loading{position:fixed;top:0;left:0;width:100%;height:100%;background:#000010;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;transition:opacity .6s}
-#loading h1{font-family:'Courier New',monospace;font-size:24px;color:#00d4ff;text-shadow:0 0 24px #00d4ff,0 0 60px rgba(0,212,255,.3);letter-spacing:8px;margin-bottom:8px}
+#loading h1{font-family:'Courier New',monospace;font-size:24px;color:#00d4ff;text-shadow:0 0 24px #00d4ff;letter-spacing:8px;margin-bottom:8px}
 #loading .ver{font-size:11px;color:#5ba3b8;letter-spacing:3px;margin-bottom:40px}
 #prog-bar{width:360px;height:3px;background:#0a1520;border-radius:2px;overflow:hidden;margin-bottom:10px}
 #prog-fill{height:100%;background:linear-gradient(90deg,#0066cc,#00d4ff,#00ff88);width:0%;transition:width .4s}
-#prog-text{font-size:10px;color:#5ba3b8;font-family:'Noto Sans SC',sans-serif}
+#prog-text{font-size:10px;color:#5ba3b8}
 #speedmeter{position:fixed;left:50%;bottom:46px;transform:translateX(-50%);width:90px;height:26px;background:rgba(0,8,18,.75);border:1px solid rgba(0,200,255,.2);border-radius:13px;display:flex;align-items:center;justify-content:center;z-index:11;gap:4px}
 #speedmeter .sm-val{font-family:'Courier New',monospace;font-size:14px;font-weight:700;color:#00d4ff}
 #speedmeter .sm-unit{font-size:9px;color:#3a7a8f}
 #fps-counter{position:fixed;top:14px;right:14px;font-family:'Courier New',monospace;font-size:10px;color:#00ff88;z-index:12;background:rgba(0,8,18,.7);padding:3px 8px;border-radius:4px;border:1px solid rgba(0,255,136,.3)}
-#cloud-indicator{top:148px;left:50%;transform:translateX(-50%);background:rgba(0,8,18,.8);border:1px solid rgba(100,180,255,.25);border-radius:16px;padding:5px 18px;color:#fff;font-size:10px;font-family:'Noto Sans SC',sans-serif;z-index:11;position:fixed;white-space:nowrap;pointer-events:none}
 #altbar{position:fixed;right:270px;top:50%;transform:translateY(-50%);width:16px;height:200px;background:rgba(0,8,18,.7);border:1px solid rgba(0,200,255,.2);border-radius:8px;overflow:hidden;z-index:11}
 #altbar-fill{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,#0066cc,#00d4ff,#00ff88);border-radius:8px;transition:height .2s}
-#through-cloud{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9;opacity:0;transition:opacity .6s}
+#through-cloud{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at center,rgba(230,240,255,0.5),rgba(200,220,245,0.3) 40%,rgba(180,200,230,0.1) 70%,transparent 90%);pointer-events:none;z-index:9;opacity:0;transition:opacity .3s}
+#cloud-indicator{position:fixed;top:148px;left:50%;transform:translateX(-50%);background:rgba(0,8,18,.85);border:1px solid rgba(100,180,255,.3);border-radius:16px;padding:5px 18px;color:#fff;font-size:10px;z-index:11;white-space:nowrap;pointer-events:none;transition:all .4s}
 #log{position:fixed;top:280px;left:14px;width:210px;max-height:160px;overflow:hidden;background:rgba(0,8,18,0.82);border:1px solid rgba(0,200,255,0.35);border-radius:5px;padding:12px 15px;color:#00d4ff;font-family:'Courier New',monospace;font-size:11px;z-index:10;pointer-events:auto}
-#log-title{font-size:9px;color:#5ba3b8;margin-bottom:5px}
-.le{font-size:9px;color:#7ec8e3;line-height:1.7;font-family:'Noto Sans SC',sans-serif}
+.le{font-size:9px;color:#7ec8e3;line-height:1.7}
 .le.warn{color:#ffaa00}
+/* 穿云时HUD模糊效果 */
+.hud-fog{filter:blur(1.5px) brightness(1.2)}
 </style>
 </head>
 <body>
-
-<!-- 加载界面 -->
-<div id="loading">
-  <h1>FLYTEOS</h1>
-  <div class="ver">v1.4 · 浮空飞行器</div>
-  <div id="prog-bar"><div id="prog-fill"></div></div>
-  <div id="prog-text">正在初始化...</div>
-</div>
-
+<div id="loading"><h1>FLYTEOS</h1><div class="ver">v1.4 · 浮空飞行器 · 沉浸版</div><div id="prog-bar"><div id="prog-fill"></div></div><div id="prog-text">正在初始化...</div></div>
 <canvas id="c"></canvas>
 <div id="through-cloud"></div>
-
-<!-- HUD -->
 <div id="hud">
   <div class="panel" id="title"><h1>FLYTEOS v1.4</h1><div class="sub">武汉福莱特航空科技 · 浮空飞行器模拟器</div></div>
   <div class="panel" id="tele">
@@ -92,64 +83,33 @@ body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',s
   <div id="altbar"><div id="altbar-fill" style="height:0%"></div></div>
   <div id="speedmeter"><span class="sm-val" id="sm-spd">0.0</span><span class="sm-unit">m/s</span></div>
   <div id="fps-counter">FPS: --</div>
-  <div id="cloud-indicator"><span>云层: 晴朗</span></div>
-  <div id="log"><div id="log-title">飞行日志</div><div id="log-entries"></div></div>
+  <div id="cloud-indicator"><span id="cloud-status">&#9729; 晴朗</span></div>
+  <div id="log"><div id="log-entries"></div></div>
 </div>
 
-<!-- Three.js 本地优先 -->
 <script src="three.min.js" onerror="this.src='https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js'"></script>
-
 <script>
-// ═══════════════════════════════════════════════════════════════
-//  FlyteOS v1.4 — 重写版：同步初始化、零await、保证画面能动
-// ═══════════════════════════════════════════════════════════════
-
 'use strict';
-
-// ── 安全检查 ──
-if (typeof THREE === 'undefined') {
-  document.getElementById('prog-text').textContent = 'Three.js 加载失败';
-  throw new Error('Three.js not loaded');
-}
+if (typeof THREE === 'undefined') { document.getElementById('prog-text').textContent = 'Three.js 加载失败'; throw new Error('No THREE'); }
 
 // ═══════════════════════════════════════════════════════════════
 //  常量
 // ═══════════════════════════════════════════════════════════════
-const TERRAIN_SIZE = 6000;
-const TERRAIN_SEG  = 150;    // 150x150分段，足够好看又不卡
-const MAX_ALT      = 320;
-const DRONE_SPEED  = 18;
-const DRONE_VS_UP  = 8;
-const DRONE_VS_DN  = 5;
-const DRONE_TURN   = 60;
-const TAKEOFF_ALT  = 30;
+const TERRAIN_SIZE = 6000, TERRAIN_SEG = 200, MAX_ALT = 320;
+const DRONE_SPEED = 18, DRONE_VS_UP = 8, DRONE_VS_DN = 5, DRONE_TURN = 60, TAKEOFF_ALT = 30;
+const CLOUD_MIN = 100, CLOUD_MAX = 260, CLOUD_COUNT = 45;
 
 // ═══════════════════════════════════════════════════════════════
-//  飞行状态（全局可变对象）
+//  飞行状态
 // ═══════════════════════════════════════════════════════════════
-const flight = {
-  x: 0, z: 0,          // 水平位置
-  alt: 2,               // 离地高度
-  hdg: 0,               // 航向度
-  spd: 0,               // 水平速度
-  vs: 0,                // 垂直速度
-  propRPM: 0,
-  phase: 'GROUNDED',    // GROUNDED / TAKEOFF / HOVER / FLIGHT / LANDING
-  isAuto: false,
-  autoIdx: 0,
-  autoTimer: 0,
-};
-
+const flight = { x:0, z:0, alt:2, hdg:0, spd:0, vs:0, propRPM:0, phase:'GROUNDED', isAuto:false, autoIdx:0, cloudDensity:0 };
 const keys = {};
 
 // ═══════════════════════════════════════════════════════════════
-//  Three.js 核心 — 全部同步初始化
+//  Three.js 核心
 // ═══════════════════════════════════════════════════════════════
-
-// 渲染器（WebGL检测+降级）
 const canvas = document.getElementById('c');
-let _fallback2D = false;
-let renderer;
+let _fallback2D = false, renderer;
 try {
   const tc = document.createElement('canvas');
   const gl = tc.getContext('webgl2') || tc.getContext('webgl');
@@ -159,530 +119,551 @@ try {
   renderer.setSize(innerWidth, innerHeight);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.1;
-} catch(e) {
-  console.warn('[FlyteOS] WebGL不可用，使用2D模式:', e.message);
-  _fallback2D = true;
-  renderer = null;
-}
+} catch(e) { _fallback2D = true; renderer = null; }
 
-// 场景
 const scene = new THREE.Scene();
-if (!_fallback2D) {
-  scene.background = new THREE.Color(0x8abed8);
-  scene.fog = new THREE.FogExp2(0x8abed8, 0.00008);
-}
+const fogColor = new THREE.Color(0x8abed8);
+if (!_fallback2D) { scene.background = fogColor.clone(); scene.fog = new THREE.FogExp2(fogColor, 0.00008); }
 
-// 相机
 const camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.5, 26000);
 camera.position.set(0, 16, -32);
-camera.lookAt(0, 2, 0);
 
-// 光照
+let sunLight, ambLight, hemiLight;
 if (!_fallback2D) {
-  const sun = new THREE.DirectionalLight(0xfff5e0, 1.8);
-  sun.position.set(300, 500, 200);
-  scene.add(sun);
-  scene.add(new THREE.AmbientLight(0x446688, 0.6));
-  scene.add(new THREE.HemisphereLight(0x8abed8, 0x3a5a3a, 0.4));
+  sunLight = new THREE.DirectionalLight(0xfff5e0, 1.8); sunLight.position.set(300, 500, 200); scene.add(sunLight);
+  ambLight = new THREE.AmbientLight(0x446688, 0.6); scene.add(ambLight);
+  hemiLight = new THREE.HemisphereLight(0x8abed8, 0x3a5a3a, 0.4); scene.add(hemiLight);
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  地形（同步生成，无异步）
+//  噪声函数
 // ═══════════════════════════════════════════════════════════════
-
-// 简单2D噪声
-function _hash(x, y) {
-  let n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
-  return n - Math.floor(n);
-}
+function _hash(x, y) { let n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return n - Math.floor(n); }
 function _smooth(x, y) {
-  const ix = Math.floor(x), iy = Math.floor(y);
-  const fx = x - ix, fy = y - iy;
-  const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
-  const a = _hash(ix, iy), b = _hash(ix+1, iy);
-  const c = _hash(ix, iy+1), d = _hash(ix+1, iy+1);
-  return a + (b-a)*sx + (c-a)*sy + (a-b-c+d)*sx*sy;
+  const ix = Math.floor(x), iy = Math.floor(y), fx = x - ix, fy = y - iy;
+  const sx = fx*fx*(3-2*fx), sy = fy*fy*(3-2*fy);
+  return _hash(ix,iy) + (_hash(ix+1,iy)-_hash(ix,iy))*sx + (_hash(ix,iy+1)-_hash(ix,iy))*sy + (_hash(ix,iy)-_hash(ix+1,iy)-_hash(ix,iy+1)+_hash(ix+1,iy+1))*sx*sy;
 }
-function terrainNoise(x, y) {
-  let v = 0, amp = 1, freq = 1, total = 0;
-  for (let i = 0; i < 5; i++) {
-    v += _smooth(x * freq, y * freq) * amp;
-    total += amp;
-    amp *= 0.5;
-    freq *= 2;
-  }
-  return v / total;
-}
+function fbm(x, y, oct) { let v=0,a=1,f=1,t=0; for(let i=0;i<(oct||5);i++){v+=_smooth(x*f,y*f)*a;t+=a;a*=0.5;f*=2;} return v/t; }
+function getTerrainY(wx, wz) { const nx=wx/TERRAIN_SIZE*6, nz=wz/TERRAIN_SIZE*6; const e=fbm(nx+10,nz+10,6); return Math.max(0,(e-0.3)*130); }
 
-// 地形高度函数（给飞行物理用）
-function getTerrainY(wx, wz) {
-  const nx = wx / TERRAIN_SIZE * 6;
-  const nz = wz / TERRAIN_SIZE * 6;
-  const e = terrainNoise(nx + 10, nz + 10);
-  return Math.max(0, (e - 0.3) * 120);
-}
-
-// 生成地形Mesh（3D模式）
+// ═══════════════════════════════════════════════════════════════
+//  地形 — 7层着色 + 细节噪声
+// ═══════════════════════════════════════════════════════════════
 if (!_fallback2D) {
-  const terrainGeo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, TERRAIN_SEG, TERRAIN_SEG);
-  terrainGeo.rotateX(-Math.PI / 2);
-
-  const pos = terrainGeo.attributes.position;
+  const geo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, TERRAIN_SEG, TERRAIN_SEG);
+  geo.rotateX(-Math.PI / 2);
+  const pos = geo.attributes.position;
   const colors = new Float32Array(pos.count * 3);
 
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i), z = pos.getZ(i);
-    const nx = x / TERRAIN_SIZE * 6, nz = z / TERRAIN_SIZE * 6;
-    const e = terrainNoise(nx + 10, nz + 10);
-    const h = Math.max(0, (e - 0.3) * 120);
+    const nx = x/TERRAIN_SIZE*6, nz = z/TERRAIN_SIZE*6;
+    const e = fbm(nx+10, nz+10, 6);
+    // 细节噪声叠加
+    const detail = fbm(nx*3+50, nz*3+50, 3) * 8;
+    const h = Math.max(-2, (e - 0.3) * 130 + detail);
     pos.setY(i, h);
 
+    // 7层着色 + 过渡插值
     let r, g, b;
-    if (h < 1)       { r = 0.12; g = 0.25; b = 0.45; }
-    else if (h < 15)  { r = 0.25; g = 0.50; b = 0.22; }
-    else if (h < 40)  { r = 0.18; g = 0.38; b = 0.16; }
-    else if (h < 70)  { r = 0.40; g = 0.36; b = 0.28; }
-    else              { r = 0.65; g = 0.63; b = 0.60; }
-    colors[i*3] = r; colors[i*3+1] = g; colors[i*3+2] = b;
+    if (h < -0.5)      { r=0.06; g=0.14; b=0.35; }       // 深水
+    else if (h < 0.5)   { const t=(h+0.5)/1; r=0.06+t*0.12; g=0.14+t*0.18; b=0.35+t*0.15; } // 浅水→沙滩过渡
+    else if (h < 3)     { const t=(h-0.5)/2.5; r=0.18+t*0.08; g=0.32+t*0.18; b=0.50-t*0.28; } // 沙滩→草地
+    else if (h < 20)    { const t=(h-3)/17; r=0.26-t*0.06; g=0.50+t*0.05; b=0.22-t*0.04; }    // 草地→森林
+    else if (h < 50)    { const t=(h-20)/30; r=0.20+t*0.22; g=0.55-t*0.18; b=0.18+t*0.08; }    // 森林→岩石
+    else if (h < 80)    { const t=(h-50)/30; r=0.42+t*0.20; g=0.37+t*0.15; b=0.26+t*0.18; }   // 岩石→雪山
+    else                { const t=Math.min(1,(h-80)/30); r=0.62+t*0.30; g=0.52+t*0.40; b=0.44+t*0.50; } // 雪山
+    colors[i*3]=r; colors[i*3+1]=g; colors[i*3+2]=b;
   }
-  terrainGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-  terrainGeo.computeVertexNormals();
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geo.computeVertexNormals();
+  scene.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.85, metalness:0.02 })));
 
-  const terrainMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.88, metalness: 0.02 });
-  const terrainMesh = new THREE.Mesh(terrainGeo, terrainMat);
-  terrainMesh.receiveShadow = true;
-  scene.add(terrainMesh);
+  // 水面 — 半透明波光平面
+  const waterGeo = new THREE.PlaneGeometry(TERRAIN_SIZE*1.2, TERRAIN_SIZE*1.2);
+  waterGeo.rotateX(-Math.PI / 2);
+  const waterMat = new THREE.MeshStandardMaterial({ color:0x1a5588, transparent:true, opacity:0.55, roughness:0.1, metalness:0.3 });
+  const water = new THREE.Mesh(waterGeo, waterMat);
+  water.position.y = 0.3;
+  water.name = 'water';
+  scene.add(water);
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  飞行器模型（简洁的浮空器）
+//  飞行器模型
 // ═══════════════════════════════════════════════════════════════
 function createAerostat() {
-  const group = new THREE.Group();
-
-  // 气囊（椭球体）
-  const envelopeGeo = new THREE.SphereGeometry(1, 20, 14);
-  envelopeGeo.scale(0.7, 0.5, 1.0);
-  const envelopeMat = new THREE.MeshStandardMaterial({ color: 0xe8e8f0, roughness: 0.4, metalness: 0.1 });
-  const envelope = new THREE.Mesh(envelopeGeo, envelopeMat);
-  envelope.position.y = 0.6;
-  group.add(envelope);
-
+  const g = new THREE.Group();
+  // 气囊
+  const env = new THREE.Mesh(new THREE.SphereGeometry(1,20,14).scale(0.7,0.5,1.0), new THREE.MeshStandardMaterial({color:0xe8e8f0, roughness:0.4}));
+  env.position.y = 0.6; g.add(env);
   // 吊舱
-  const gondolaGeo = new THREE.BoxGeometry(0.35, 0.2, 0.5);
-  const gondolaMat = new THREE.MeshStandardMaterial({ color: 0x2a3a4a, roughness: 0.6 });
-  const gondola = new THREE.Mesh(gondolaGeo, gondolaMat);
-  gondola.position.y = -0.15;
-  group.add(gondola);
-
-  // 螺旋桨x4
+  const gon = new THREE.Mesh(new THREE.BoxGeometry(0.35,0.2,0.5), new THREE.MeshStandardMaterial({color:0x2a3a4a}));
+  gon.position.y = -0.15; g.add(gon);
+  // 螺旋桨
   for (let i = 0; i < 4; i++) {
-    const propGeo = new THREE.BoxGeometry(0.03, 0.25, 0.02);
-    const propMat = new THREE.MeshStandardMaterial({ color: 0x44ddff, emissive: 0x226688, transparent: true, opacity: 0.8 });
-    const prop = new THREE.Mesh(propGeo, propMat);
-    prop.userData.isProp = true;
-    const angle = (i / 4) * Math.PI * 2;
-    prop.position.set(Math.cos(angle) * 0.55, 0.25, Math.sin(angle) * 0.55);
-    group.add(prop);
+    const p = new THREE.Mesh(new THREE.BoxGeometry(0.03,0.25,0.02), new THREE.MeshStandardMaterial({color:0x44ddff,emissive:0x226688,transparent:true,opacity:0.8}));
+    p.userData.isProp = true;
+    const a = (i/4)*Math.PI*2;
+    p.position.set(Math.cos(a)*0.55, 0.25, Math.sin(a)*0.55);
+    g.add(p);
   }
-
-  // 底部指示灯
-  const lightGeo = new THREE.SphereGeometry(0.05, 6, 6);
-  const lightMat = new THREE.MeshBasicMaterial({ color: 0x00ff88 });
-  const light = new THREE.Mesh(lightGeo, lightMat);
-  light.position.y = -0.3;
-  group.add(light);
-
-  return group;
+  // 指示灯
+  const lt = new THREE.Mesh(new THREE.SphereGeometry(0.05,6,6), new THREE.MeshBasicMaterial({color:0x00ff88}));
+  lt.position.y = -0.3; g.add(lt);
+  return g;
 }
-
 const drone = _fallback2D ? new THREE.Group() : createAerostat();
 if (!_fallback2D) drone.scale.setScalar(2.5);
 drone.position.set(0, flight.alt, 0);
 scene.add(drone);
 
 // ═══════════════════════════════════════════════════════════════
-//  云层（3D模式）
+//  云层系统 — Sprite + 程序化纹理
 // ═══════════════════════════════════════════════════════════════
+
+// 生成蓬松云纹理
+function makeCloudTexture(sz) {
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = sz;
+  const ctx = cv.getContext('2d');
+  const cx = sz/2, cy = sz/2, r = sz*0.42;
+  // 主径向渐变
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+  grad.addColorStop(0, 'rgba(255,255,255,0.95)');
+  grad.addColorStop(0.3, 'rgba(245,248,255,0.75)');
+  grad.addColorStop(0.6, 'rgba(220,230,245,0.35)');
+  grad.addColorStop(1, 'rgba(200,215,235,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, sz, sz);
+  // 噪声扰动
+  const img = ctx.getImageData(0, 0, sz, sz);
+  for (let y = 0; y < sz; y++) for (let x = 0; x < sz; x++) {
+    const idx = (y*sz+x)*4;
+    const n = _smooth(x*0.08, y*0.08) * 40 - 20;
+    img.data[idx]   = Math.min(255, Math.max(0, img.data[idx] + n));
+    img.data[idx+1] = Math.min(255, Math.max(0, img.data[idx+1] + n));
+    img.data[idx+2] = Math.min(255, Math.max(0, img.data[idx+2] + n));
+  }
+  ctx.putImageData(img, 0, 0);
+  return cv;
+}
+
+const cloudSpriteTex = !_fallback2D ? new THREE.CanvasTexture(makeCloudTexture(256)) : null;
 const clouds = [];
+
 if (!_fallback2D) {
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < CLOUD_COUNT; i++) {
     const cloudGroup = new THREE.Group();
-    const count = 3 + Math.floor(Math.random() * 4);
+    // 每朵云5-8个sprite叠加
+    const count = 5 + Math.floor(Math.random() * 4);
+    const baseScale = 40 + Math.random() * 60;
     for (let j = 0; j < count; j++) {
-      const r = 15 + Math.random() * 25;
-      const geo = new THREE.SphereGeometry(r, 8, 6);
-      const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.65 });
-      const puff = new THREE.Mesh(geo, mat);
-      puff.position.set((Math.random()-0.5)*30, (Math.random()-0.5)*5, (Math.random()-0.5)*30);
-      cloudGroup.add(puff);
+      const mat = new THREE.SpriteMaterial({ map: cloudSpriteTex, transparent: true, opacity: 0.55 + Math.random()*0.2, depthWrite: false });
+      const sp = new THREE.Sprite(mat);
+      const s = baseScale * (0.5 + Math.random() * 0.8);
+      sp.scale.set(s, s * 0.5, 1);
+      sp.position.set((Math.random()-0.5)*baseScale*1.2, (Math.random()-0.5)*baseScale*0.2, (Math.random()-0.5)*baseScale*1.2);
+      cloudGroup.add(sp);
     }
     cloudGroup.position.set(
-      (Math.random()-0.5) * TERRAIN_SIZE * 0.7,
-      100 + Math.random() * 190,
-      (Math.random()-0.5) * TERRAIN_SIZE * 0.7
+      (Math.random()-0.5) * TERRAIN_SIZE * 0.75,
+      CLOUD_MIN + Math.random() * (CLOUD_MAX - CLOUD_MIN),
+      (Math.random()-0.5) * TERRAIN_SIZE * 0.75
     );
+    // 云朵半径用于穿云检测
+    cloudGroup.userData.radius = baseScale * 1.2;
+    cloudGroup.userData.driftX = (0.2 + Math.random()*0.5) * (Math.random()>0.5?1:-1);
+    cloudGroup.userData.driftZ = (0.1 + Math.random()*0.2) * (Math.random()>0.5?1:-1);
     scene.add(cloudGroup);
     clouds.push(cloudGroup);
   }
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  键盘输入
+//  穿云粒子系统
+// ═══════════════════════════════════════════════════════════════
+const cloudParticles = [];
+if (!_fallback2D) {
+  const particleTex = (() => {
+    const cv = document.createElement('canvas'); cv.width = cv.height = 32;
+    const ctx = cv.getContext('2d');
+    const g = ctx.createRadialGradient(16,16,0,16,16,16);
+    g.addColorStop(0, 'rgba(255,255,255,0.8)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g; ctx.fillRect(0,0,32,32);
+    return new THREE.CanvasTexture(cv);
+  })();
+
+  for (let i = 0; i < 60; i++) {
+    const mat = new THREE.SpriteMaterial({ map: particleTex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+    const sp = new THREE.Sprite(mat);
+    sp.scale.set(3 + Math.random()*4, 3 + Math.random()*4, 1);
+    sp.visible = false;
+    scene.add(sp);
+    cloudParticles.push({ sprite: sp, vx: (Math.random()-0.5)*8, vy: (Math.random()-0.5)*3, vz: (Math.random()-0.5)*8, life: Math.random() });
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  音效系统 — Web Audio API，零外部文件
+// ═══════════════════════════════════════════════════════════════
+let audioCtx = null, windGain, windFilter, engineGains = [], cloudGain, cloudFilter;
+
+function initAudio() {
+  if (audioCtx) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // ── 风声：白噪声 → 低通滤波 → 增益 ──
+    const windBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate);
+    const windData = windBuf.getChannelData(0);
+    for (let i = 0; i < windData.length; i++) windData[i] = Math.random() * 2 - 1;
+    const windSrc = audioCtx.createBufferSource();
+    windSrc.buffer = windBuf; windSrc.loop = true;
+    windFilter = audioCtx.createBiquadFilter();
+    windFilter.type = 'lowpass'; windFilter.frequency.value = 600;
+    windGain = audioCtx.createGain(); windGain.gain.value = 0;
+    windSrc.connect(windFilter); windFilter.connect(windGain); windGain.connect(audioCtx.destination);
+    windSrc.start();
+
+    // ── 引擎声：多谐波锯齿波 ──
+    const engineMaster = audioCtx.createGain(); engineMaster.gain.value = 0;
+    engineMaster.connect(audioCtx.destination);
+    const freqs = [55, 110, 220, 330];
+    for (const f of freqs) {
+      const osc = audioCtx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.value = f;
+      const g = audioCtx.createGain(); g.gain.value = 0.02;
+      osc.connect(g); g.connect(engineMaster);
+      osc.start();
+      engineGains.push(g);
+    }
+    // 延迟反馈 → 螺旋桨共振
+    const delay = audioCtx.createDelay(0.05); delay.delayTime.value = 0.018;
+    const fb = audioCtx.createGain(); fb.gain.value = 0.3;
+    engineMaster.connect(delay); delay.connect(fb); fb.connect(delay); fb.connect(audioCtx.destination);
+    engineGains.push(engineMaster);
+
+    // ── 穿云声：带通滤波噪声 ──
+    const cBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate);
+    const cData = cBuf.getChannelData(0);
+    for (let i = 0; i < cData.length; i++) cData[i] = Math.random() * 2 - 1;
+    const cSrc = audioCtx.createBufferSource(); cSrc.buffer = cBuf; cSrc.loop = true;
+    cloudFilter = audioCtx.createBiquadFilter(); cloudFilter.type = 'bandpass'; cloudFilter.frequency.value = 500; cloudFilter.Q.value = 2;
+    cloudGain = audioCtx.createGain(); cloudGain.gain.value = 0;
+    cSrc.connect(cloudFilter); cloudFilter.connect(cloudGain); cloudGain.connect(audioCtx.destination);
+    cSrc.start();
+
+    addLog('音效系统已启动', 'info');
+  } catch(e) { console.warn('音频初始化失败:', e); }
+}
+
+function updateAudio() {
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime;
+  // 风声：速度越快，滤波越开，音量越大
+  if (windFilter) { windFilter.frequency.setTargetAtTime(500 + flight.spd * 40 + Math.sin(t*0.3)*100, t, 0.1); }
+  if (windGain) { windGain.gain.setTargetAtTime(0.03 + flight.spd * 0.006, t, 0.2); }
+  // 引擎：RPM映射频率和音量
+  const rpmFrac = flight.propRPM / 2800;
+  const baseHz = 40 + rpmFrac * 80;
+  engineGains.forEach((g, i) => {
+    if (i < 4) { // 振荡器增益
+      g.gain.setTargetAtTime(rpmFrac * 0.025, t, 0.3);
+    } else { // master
+      g.gain.setTargetAtTime(rpmFrac * 0.06, t, 0.3);
+    }
+  });
+  // 穿云声
+  if (cloudGain) { cloudGain.gain.setTargetAtTime(flight.cloudDensity * 0.15, t, 0.3); }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  键盘输入 + 首次交互初始化音频
 // ═══════════════════════════════════════════════════════════════
 window.addEventListener('keydown', e => {
   keys[e.code] = true;
+  initAudio(); // 首次按键启动音频
   if (e.code === 'Space') {
     e.preventDefault();
-    if (flight.phase === 'GROUNDED') {
-      flight.phase = 'TAKEOFF';
-      flight.propRPM = 1500;
-      addLog('手动起飞！', 'info');
-      setPhase('起飞', '爬升中...');
-    }
+    if (flight.phase === 'GROUNDED') { flight.phase = 'TAKEOFF'; flight.propRPM = 1500; addLog('手动起飞！','info'); setPhase('起飞','爬升中...'); }
   }
+  if (e.code === 'Digit1') camMode = 1;
+  if (e.code === 'Digit2') camMode = 2;
+  if (e.code === 'Digit3') camMode = 3;
 });
 window.addEventListener('keyup', e => { keys[e.code] = false; });
+document.addEventListener('click', initAudio, { once: true });
 
 // ═══════════════════════════════════════════════════════════════
 //  自动任务
 // ═══════════════════════════════════════════════════════════════
 const MISSION = [
-  { cmd: 'takeoff', alt: 80 },
-  { cmd: 'goto', x: 300, z: -200, alt: 100 },
-  { cmd: 'goto', x: -150, z: -400, alt: 120 },
-  { cmd: 'goto', x: -300, z: 100, alt: 90 },
-  { cmd: 'goto', x: 0, z: 0, alt: 80 },
-  { cmd: 'land' },
+  { cmd:'takeoff', alt:80 }, { cmd:'goto', x:300, z:-200, alt:120 },
+  { cmd:'goto', x:-150, z:-400, alt:160 }, { cmd:'goto', x:-300, z:100, alt:140 },
+  { cmd:'goto', x:0, z:0, alt:100 }, { cmd:'land' },
 ];
-
 function startAutoMission() {
   if (flight.isAuto) return;
-  flight.isAuto = true;
-  flight.autoIdx = 0;
-  flight.autoTimer = 0;
-  flight.phase = 'TAKEOFF';
-  flight.propRPM = 1500;
-  addLog('自动任务启动', 'info');
-  setPhase('起飞', '自动任务进行中');
+  flight.isAuto = true; flight.autoIdx = 0; flight.phase = 'TAKEOFF'; flight.propRPM = 1500;
+  addLog('自动任务启动','info'); setPhase('起飞','自动任务进行中');
   document.getElementById('btn-mission').disabled = true;
   document.getElementById('mission-status').textContent = '任务执行中...';
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  飞行物理更新（每帧调用）
+//  飞行物理
 // ═══════════════════════════════════════════════════════════════
 function updateFlight(dt) {
   const groundY = getTerrainY(flight.x, flight.z);
 
-  // ── 自动任务 ──
-  if (flight.isAuto) {
-    updateAutoMission(dt, groundY);
+  // 自动任务
+  if (flight.isAuto) updateAutoMission(dt);
+
+  // 手动控制
+  if (!flight.isAuto && (flight.phase === 'HOVER' || flight.phase === 'FLIGHT')) {
+    const rad = flight.hdg * Math.PI / 180;
+    if (keys['KeyW']) { flight.x += Math.sin(rad)*DRONE_SPEED*dt; flight.z -= Math.cos(rad)*DRONE_SPEED*dt; flight.spd = DRONE_SPEED; }
+    else if (keys['KeyS']) { flight.x -= Math.sin(rad)*DRONE_SPEED*0.5*dt; flight.z += Math.cos(rad)*DRONE_SPEED*0.5*dt; flight.spd = DRONE_SPEED*0.5; }
+    else { flight.spd *= Math.max(0, 1-3*dt); }
+    if (keys['KeyA']) flight.hdg = (flight.hdg - DRONE_TURN*dt + 360) % 360;
+    if (keys['KeyD']) flight.hdg = (flight.hdg + DRONE_TURN*dt + 360) % 360;
+    if (keys['KeyQ']) { flight.vs = DRONE_VS_UP; flight.alt += flight.vs*dt; }
+    else if (keys['KeyE']) { flight.vs = -DRONE_VS_DN; flight.alt += flight.vs*dt; }
+    else { flight.vs *= Math.max(0, 1-5*dt); }
   }
 
-  // ── 手动控制（非自动或手动飞行阶段）──
-  if (!flight.isAuto) {
-    if (flight.phase === 'HOVER' || flight.phase === 'FLIGHT') {
-      if (keys['KeyW']) {
-        const rad = flight.hdg * Math.PI / 180;
-        flight.x += Math.sin(rad) * DRONE_SPEED * dt;
-        flight.z -= Math.cos(rad) * DRONE_SPEED * dt;
-        flight.spd = DRONE_SPEED;
-      } else if (keys['KeyS']) {
-        const rad = flight.hdg * Math.PI / 180;
-        flight.x -= Math.sin(rad) * DRONE_SPEED * 0.5 * dt;
-        flight.z += Math.cos(rad) * DRONE_SPEED * 0.5 * dt;
-        flight.spd = DRONE_SPEED * 0.5;
-      } else {
-        flight.spd *= Math.max(0, 1 - 3 * dt);
-      }
-      if (keys['KeyA']) flight.hdg = (flight.hdg - DRONE_TURN * dt + 360) % 360;
-      if (keys['KeyD']) flight.hdg = (flight.hdg + DRONE_TURN * dt) % 360;
-      if (keys['KeyQ']) { flight.vs = DRONE_VS_UP; flight.alt += flight.vs * dt; }
-      else if (keys['KeyE']) { flight.vs = -DRONE_VS_DN; flight.alt += flight.vs * dt; }
-      else { flight.vs *= Math.max(0, 1 - 5 * dt); }
-    }
-  }
-
-  // ── 起飞阶段 ──
+  // 起飞
   if (flight.phase === 'TAKEOFF') {
-    flight.alt += DRONE_VS_UP * dt;
-    flight.vs = DRONE_VS_UP;
-    flight.propRPM = Math.min(flight.propRPM + 800 * dt, 2800);
-    if (flight.alt >= TAKEOFF_ALT) {
-      flight.alt = TAKEOFF_ALT;
-      flight.phase = 'HOVER';
-      flight.vs = 0;
-      setPhase('悬停', 'WASD移动 Q/E升降');
-      addLog('到达起飞高度', 'info');
-    }
+    flight.alt += DRONE_VS_UP * dt; flight.vs = DRONE_VS_UP;
+    flight.propRPM = Math.min(flight.propRPM + 800*dt, 2800);
+    if (flight.alt >= TAKEOFF_ALT) { flight.alt = TAKEOFF_ALT; flight.phase = 'HOVER'; flight.vs = 0; setPhase('悬停','WASD移动 Q/E升降'); addLog('到达起飞高度','info'); }
   }
 
-  // ── 安全限制 ──
-  if (flight.alt < groundY + 0.5) {
-    flight.alt = groundY + 0.5;
-    if (flight.vs < 0) flight.vs = 0;
-    if (flight.phase === 'LANDING') {
-      flight.phase = 'GROUNDED';
-      flight.propRPM = 0;
-      flight.spd = 0;
-      flight.vs = 0;
-      flight.isAuto = false;
-      setPhase('待机', '按 [空格] 起飞');
-      addLog('着陆完成', 'info');
-      document.getElementById('btn-mission').disabled = false;
-      document.getElementById('mission-status').textContent = '点击开始';
-    }
-  }
+  // 安全限制
+  if (flight.alt < groundY + 0.5) { flight.alt = groundY + 0.5; if (flight.vs < 0) flight.vs = 0; if (flight.phase === 'LANDING') { flight.phase = 'GROUNDED'; flight.propRPM = 0; flight.spd = 0; flight.vs = 0; flight.isAuto = false; setPhase('待机','按 [空格] 起飞'); addLog('着陆完成','info'); document.getElementById('btn-mission').disabled = false; document.getElementById('mission-status').textContent = '点击开始'; } }
   if (flight.alt > MAX_ALT) { flight.alt = MAX_ALT; if (flight.vs > 0) flight.vs = 0; }
 
-  // ── 更新3D模型位置 ──
+  // 3D模型位置
   if (!_fallback2D) {
     drone.position.set(flight.x, flight.alt, flight.z);
     drone.rotation.y = flight.hdg * Math.PI / 180;
-    // 螺旋桨旋转
-    if (flight.propRPM > 0) {
-      drone.traverse(o => {
-        if (o.userData.isProp) o.rotation.x += dt * flight.propRPM * 0.001;
-      });
-    }
+    if (flight.propRPM > 0) drone.traverse(o => { if (o.userData.isProp) o.rotation.x += dt * flight.propRPM * 0.001; });
   }
 
-  // HOVER/FLIGHT阶段有移动则切换
   if (flight.phase === 'HOVER' && flight.spd > 1) flight.phase = 'FLIGHT';
   if (flight.phase === 'FLIGHT' && flight.spd < 0.5) flight.phase = 'HOVER';
 }
 
-function updateAutoMission(dt, groundY) {
-  if (flight.autoIdx >= MISSION.length) {
-    flight.isAuto = false;
-    return;
-  }
+function updateAutoMission(dt) {
+  if (flight.autoIdx >= MISSION.length) { flight.isAuto = false; return; }
   const step = MISSION[flight.autoIdx];
-
   if (step.cmd === 'takeoff') {
-    flight.alt += DRONE_VS_UP * dt;
-    flight.vs = DRONE_VS_UP;
-    flight.propRPM = Math.min(flight.propRPM + 800 * dt, 2800);
-    if (flight.alt >= step.alt) {
-      flight.alt = step.alt;
-      flight.phase = 'HOVER';
-      flight.vs = 0;
-      flight.autoIdx++;
-      setPhase('巡航', '航点 ' + flight.autoIdx + '/' + MISSION.length);
-      addLog('到达巡航高度 ' + step.alt + 'm', 'info');
-    }
+    flight.alt += DRONE_VS_UP*dt; flight.vs = DRONE_VS_UP; flight.propRPM = Math.min(flight.propRPM+800*dt, 2800);
+    if (flight.alt >= step.alt) { flight.alt = step.alt; flight.phase = 'HOVER'; flight.vs = 0; flight.autoIdx++; setPhase('巡航','航点 '+flight.autoIdx+'/'+MISSION.length); addLog('到达巡航高度 '+step.alt+'m','info'); }
   } else if (step.cmd === 'goto') {
-    const dx = step.x - flight.x, dz = step.z - flight.z;
-    const dist = Math.sqrt(dx*dx + dz*dz);
-    // 调整航向
-    const targetHdg = (Math.atan2(dx, -dz) * 180 / Math.PI + 360) % 360;
-    let diff = targetHdg - flight.hdg;
-    if (diff > 180) diff -= 360;
-    if (diff < -180) diff += 360;
-    flight.hdg = (flight.hdg + diff * 3 * dt + 360) % 360;
-    // 移动
-    const spd = Math.min(DRONE_SPEED, dist * 0.5 + 2);
-    flight.spd = spd;
-    const rad = flight.hdg * Math.PI / 180;
-    flight.x += Math.sin(rad) * spd * dt;
-    flight.z -= Math.cos(rad) * spd * dt;
-    // 高度调整
-    const altDiff = step.alt - flight.alt;
-    flight.vs = Math.max(-DRONE_VS_DN, Math.min(DRONE_VS_UP, altDiff * 0.5));
-    flight.alt += flight.vs * dt;
-    flight.propRPM = 2400;
-    // 到达判定
-    if (dist < 15) {
-      flight.autoIdx++;
-      addLog('到达航点 ' + flight.autoIdx, 'info');
-      if (flight.autoIdx < MISSION.length) {
-        setPhase('巡航', '航点 ' + flight.autoIdx + '/' + MISSION.length);
-      }
-    }
+    const dx=step.x-flight.x, dz=step.z-flight.z, dist=Math.sqrt(dx*dx+dz*dz);
+    const tHdg = (Math.atan2(dx,-dz)*180/Math.PI+360)%360;
+    let diff = tHdg - flight.hdg; if (diff>180) diff-=360; if (diff<-180) diff+=360;
+    flight.hdg = (flight.hdg + diff*3*dt + 360)%360;
+    const spd = Math.min(DRONE_SPEED, dist*0.5+2); flight.spd = spd;
+    const rad = flight.hdg*Math.PI/180;
+    flight.x += Math.sin(rad)*spd*dt; flight.z -= Math.cos(rad)*spd*dt;
+    flight.vs = Math.max(-DRONE_VS_DN, Math.min(DRONE_VS_UP, (step.alt-flight.alt)*0.5));
+    flight.alt += flight.vs*dt; flight.propRPM = 2400;
+    if (dist < 15) { flight.autoIdx++; addLog('到达航点 '+flight.autoIdx,'info'); if (flight.autoIdx<MISSION.length) setPhase('巡航','航点 '+flight.autoIdx+'/'+MISSION.length); }
   } else if (step.cmd === 'land') {
-    flight.vs = -DRONE_VS_DN * 0.6;
-    flight.alt += flight.vs * dt;
-    flight.spd *= Math.max(0, 1 - dt);
-    flight.propRPM = Math.max(800, flight.propRPM - 200 * dt);
-    flight.phase = 'LANDING';
-    setPhase('降落', '自动降落中...');
+    flight.vs = -DRONE_VS_DN*0.6; flight.alt += flight.vs*dt; flight.spd *= Math.max(0,1-dt); flight.propRPM = Math.max(800,flight.propRPM-200*dt); flight.phase = 'LANDING'; setPhase('降落','自动降落中...');
   }
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  相机跟随
+//  穿云检测 + 效果
 // ═══════════════════════════════════════════════════════════════
-let camMode = 1;  // 1=跟随 2=俯瞰 3=远景
-const camOffset = { 1: {x:0, y:14, z:-32}, 2: {x:0, y:80, z:-5}, 3: {x:0, y:300, z:-100} };
+function updateCloudEffects(dt, now) {
+  // 云朵漂移
+  const boundary = TERRAIN_SIZE * 0.4;
+  for (const c of clouds) {
+    c.position.x += c.userData.driftX * dt;
+    c.position.z += c.userData.driftZ * dt;
+    if (c.position.x > boundary) c.position.x = -boundary;
+    if (c.position.x < -boundary) c.position.x = boundary;
+    if (c.position.z > boundary) c.position.z = -boundary;
+    if (c.position.z < -boundary) c.position.z = boundary;
+  }
 
+  // 穿云检测
+  let density = 0;
+  for (const c of clouds) {
+    const dx = flight.x - c.position.x, dy = flight.alt - c.position.y, dz = flight.z - c.position.z;
+    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+    const r = c.userData.radius;
+    if (dist < r) density += (1 - dist/r) * 0.8;
+  }
+  flight.cloudDensity = Math.min(1, density);
+
+  // 动态雾密度
+  if (scene.fog) {
+    const targetDensity = 0.00008 + flight.cloudDensity * 0.015;
+    scene.fog.density += (targetDensity - scene.fog.density) * 3 * dt;
+  }
+
+  // 白化覆盖层
+  const cloudOverlay = document.getElementById('through-cloud');
+  if (cloudOverlay) cloudOverlay.style.opacity = flight.cloudDensity * 0.8;
+
+  // 光照变化
+  if (sunLight) {
+    sunLight.intensity += ((1.8 - flight.cloudDensity * 1.3) - sunLight.intensity) * 2 * dt;
+    ambLight.intensity += ((0.6 + flight.cloudDensity * 0.5) - ambLight.intensity) * 2 * dt;
+    ambLight.color.setRGB(0.27 + flight.cloudDensity*0.2, 0.40 + flight.cloudDensity*0.15, 0.53 + flight.cloudDensity*0.2);
+  }
+
+  // 穿云粒子
+  for (const p of cloudParticles) {
+    if (flight.cloudDensity > 0.1) {
+      p.sprite.visible = true;
+      p.sprite.material.opacity = flight.cloudDensity * 0.4;
+      p.life += dt * 0.5;
+      if (p.life > 1) p.life = 0;
+      p.sprite.position.set(
+        camera.position.x + Math.sin(p.life*6.28+p.vx)*15,
+        camera.position.y + Math.sin(p.life*3+p.vy)*5,
+        camera.position.z + Math.cos(p.life*6.28+p.vz)*15
+      );
+    } else {
+      p.sprite.visible = false;
+    }
+  }
+
+  // HUD模糊
+  const hud = document.getElementById('hud');
+  if (hud) {
+    if (flight.cloudDensity > 0.3) hud.classList.add('hud-fog');
+    else hud.classList.remove('hud-fog');
+  }
+
+  // 云层指示器
+  const cs = document.getElementById('cloud-status');
+  if (cs) {
+    if (flight.cloudDensity < 0.05) cs.innerHTML = '&#9728; 晴朗';
+    else if (flight.cloudDensity < 0.3) cs.innerHTML = '&#9729; 薄云';
+    else if (flight.cloudDensity < 0.6) cs.innerHTML = '&#9729; 浓云 · 能见度低';
+    else cs.innerHTML = '&#9729; 穿云中 · 白化';
+  }
+
+  // 水面波动
+  const water = scene.getObjectByName('water');
+  if (water) water.position.y = 0.3 + Math.sin(now * 0.001) * 0.15;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  相机
+// ═══════════════════════════════════════════════════════════════
+let camMode = 1;
+const camOff = { 1:{x:0,y:14,z:-32}, 2:{x:0,y:80,z:-5}, 3:{x:0,y:300,z:-100} };
 function updateCamera() {
-  const off = camOffset[camMode];
-  const targetX = flight.x + off.x;
-  const targetY = flight.alt + off.y;
-  const targetZ = flight.z + off.z;
-  camera.position.x += (targetX - camera.position.x) * 0.05;
-  camera.position.y += (targetY - camera.position.y) * 0.05;
-  camera.position.z += (targetZ - camera.position.z) * 0.05;
+  const o = camOff[camMode];
+  camera.position.x += (flight.x+o.x - camera.position.x)*0.05;
+  camera.position.y += (flight.alt+o.y - camera.position.y)*0.05;
+  camera.position.z += (flight.z+o.z - camera.position.z)*0.05;
   camera.lookAt(flight.x, flight.alt, flight.z);
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  HUD更新
+//  HUD
 // ═══════════════════════════════════════════════════════════════
 function updateHUD() {
   const groundY = getTerrainY(flight.x, flight.z);
   const agl = Math.max(0, flight.alt - groundY);
-
   document.getElementById('tv-alt').textContent = flight.alt.toFixed(1);
   document.getElementById('tv-spd').textContent = flight.spd.toFixed(1);
-  document.getElementById('tv-hdg').textContent = String(Math.round(flight.hdg)).padStart(3, '0');
+  document.getElementById('tv-hdg').textContent = String(Math.round(flight.hdg)).padStart(3,'0');
   document.getElementById('tv-agl').textContent = agl.toFixed(1);
   document.getElementById('sm-spd').textContent = flight.spd.toFixed(1);
-
   const vsEl = document.getElementById('tv-vs');
-  vsEl.textContent = (flight.vs >= 0 ? '+' : '') + flight.vs.toFixed(1);
-  vsEl.style.color = flight.vs > 0.5 ? '#00ff88' : flight.vs < -0.5 ? '#ffaa00' : '#00d4ff';
-
-  document.getElementById('altbar-fill').style.height = Math.min(agl / MAX_ALT * 100, 100) + '%';
-
-  // 电机状态
+  vsEl.textContent = (flight.vs>=0?'+':'') + flight.vs.toFixed(1);
+  vsEl.style.color = flight.vs>0.5?'#00ff88':flight.vs<-0.5?'#ffaa00':'#00d4ff';
+  document.getElementById('altbar-fill').style.height = Math.min(agl/MAX_ALT*100,100)+'%';
   const motorEl = document.getElementById('sd-motor');
-  if (motorEl && flight.propRPM > 100) motorEl.classList.add('on');
+  if (motorEl && flight.propRPM>100) motorEl.classList.add('on');
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  辅助函数
+//  辅助
 // ═══════════════════════════════════════════════════════════════
 function addLog(msg, type) {
-  const el = document.getElementById('log-entries');
-  if (!el) return;
-  const d = document.createElement('div');
-  d.className = 'le' + (type === 'warn' ? ' warn' : '');
-  const now = new Date();
-  d.textContent = `[${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}] ${msg}`;
-  el.prepend(d);
-  if (el.children.length > 20) el.removeChild(el.lastChild);
+  const el = document.getElementById('log-entries'); if (!el) return;
+  const d = document.createElement('div'); d.className = 'le'+(type==='warn'?' warn':'');
+  const n = new Date(); d.textContent = `[${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}] ${msg}`;
+  el.prepend(d); if (el.children.length > 20) el.removeChild(el.lastChild);
 }
+function setPhase(t, d) { document.getElementById('phase-text').textContent = t; document.getElementById('phase-desc').textContent = d; }
 
-function setPhase(title, desc) {
-  document.getElementById('phase-text').textContent = title;
-  document.getElementById('phase-desc').textContent = desc;
+// ═══════════════════════════════════════════════════════════════
+//  2D降级渲染
+// ═══════════════════════════════════════════════════════════════
+function render2D() {
+  const c = document.getElementById('c'); const ctx = c.getContext('2d'); if (!ctx) return;
+  const W = c.width = innerWidth, H = c.height = innerHeight;
+  const grad = ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'#4a8ab8'); grad.addColorStop(0.5,'#8abed8'); grad.addColorStop(1,'#2a5a3a');
+  ctx.fillStyle = grad; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(0,180,255,0.08)'; ctx.lineWidth=1;
+  const gs=60; for(let x=W/2%gs;x<W;x+=gs){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=H/2%gs;y<H;y+=gs){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  ctx.save(); ctx.translate(W/2,H/2); ctx.rotate(flight.hdg*Math.PI/180);
+  ctx.beginPath();ctx.moveTo(0,-18);ctx.lineTo(-10,10);ctx.lineTo(0,4);ctx.lineTo(10,10);ctx.closePath();
+  ctx.fillStyle='#00ff88';ctx.fill();ctx.strokeStyle='#00ffaa';ctx.lineWidth=2;ctx.stroke();ctx.restore();
+  ctx.fillStyle='#ffaa00';ctx.font='bold 13px monospace';ctx.textAlign='center';
+  ctx.fillText('2D模式 (WebGL不可用)',W/2,28);
+  ctx.fillStyle='#00d4ff';ctx.font='11px monospace';
+  ctx.fillText(`ALT:${flight.alt.toFixed(1)}m  SPD:${flight.spd.toFixed(1)}m/s  HDG:${String(Math.round(flight.hdg)).padStart(3,'0')}°  FPS:${fpsDisplay}`,W/2,48);
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  渲染循环（setTimeout，最可靠）
+//  渲染循环
 // ═══════════════════════════════════════════════════════════════
-let lastTime = performance.now();
-let fpsFrames = 0, fpsTime = 0, fpsDisplay = 0;
+let lastTime = performance.now(), fpsFrames = 0, fpsTime = 0, fpsDisplay = 0;
 
 function tick() {
   const now = performance.now();
   const dt = Math.min((now - lastTime) / 1000, 0.1);
   lastTime = now;
+  fpsFrames++; if (now - fpsTime >= 1000) { fpsDisplay = fpsFrames; fpsFrames = 0; fpsTime = now; document.getElementById('fps-counter').textContent = 'FPS: ' + fpsDisplay; }
 
-  // FPS
-  fpsFrames++;
-  if (now - fpsTime >= 1000) {
-    fpsDisplay = fpsFrames;
-    fpsFrames = 0;
-    fpsTime = now;
-    document.getElementById('fps-counter').textContent = 'FPS: ' + fpsDisplay;
-  }
+  try { updateFlight(dt); } catch(e) { console.error('flight:', e); }
+  try { if (!_fallback2D) updateCloudEffects(dt, now); } catch(e) { console.error('cloud:', e); }
+  try { updateCamera(); } catch(e) { console.error('camera:', e); }
+  try { updateHUD(); } catch(e) { console.error('hud:', e); }
+  try { updateAudio(); } catch(e) {}
 
-  try { updateFlight(dt); } catch(e) { console.error('updateFlight:', e); }
-  try { updateCamera(); } catch(e) { console.error('updateCamera:', e); }
-  try { updateHUD(); } catch(e) { console.error('updateHUD:', e); }
-
-  if (_fallback2D) {
-    render2D();
-  } else {
-    try { renderer.render(scene, camera); } catch(e) {
-      console.error('render:', e);
-      _fallback2D = true;
-    }
-  }
+  if (_fallback2D) { render2D(); }
+  else { try { renderer.render(scene, camera); } catch(e) { _fallback2D = true; } }
 
   setTimeout(tick, 16);
 }
 
-// ── 2D降级渲染 ──
-function render2D() {
-  const c = document.getElementById('c');
-  const ctx = c.getContext('2d');
-  if (!ctx) return;
-  const W = c.width = innerWidth, H = c.height = innerHeight;
-
-  // 天空渐变
-  const grad = ctx.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0, '#4a8ab8');
-  grad.addColorStop(0.5, '#8abed8');
-  grad.addColorStop(1, '#2a5a3a');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, H);
-
-  // 网格
-  ctx.strokeStyle = 'rgba(0,180,255,0.08)';
-  ctx.lineWidth = 1;
-  const gs = 60;
-  for (let x = W/2 % gs; x < W; x += gs) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-  for (let y = H/2 % gs; y < H; y += gs) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
-
-  // 飞行器图标
-  ctx.save();
-  ctx.translate(W/2, H/2);
-  ctx.rotate(flight.hdg * Math.PI / 180);
-  ctx.beginPath(); ctx.moveTo(0,-18); ctx.lineTo(-10,10); ctx.lineTo(0,4); ctx.lineTo(10,10); ctx.closePath();
-  ctx.fillStyle = '#00ff88'; ctx.fill();
-  ctx.strokeStyle = '#00ffaa'; ctx.lineWidth = 2; ctx.stroke();
-  ctx.restore();
-
-  // HUD叠加
-  ctx.fillStyle = '#ffaa00'; ctx.font = 'bold 13px monospace'; ctx.textAlign = 'center';
-  ctx.fillText('2D模式 (WebGL不可用)', W/2, 28);
-  ctx.fillStyle = '#00d4ff'; ctx.font = '11px monospace';
-  ctx.fillText(`ALT:${flight.alt.toFixed(1)}m  SPD:${flight.spd.toFixed(1)}m/s  HDG:${String(Math.round(flight.hdg)).padStart(3,'0')}°  FPS:${fpsDisplay}`, W/2, 48);
-}
-
 // ═══════════════════════════════════════════════════════════════
-//  视角切换
-// ═══════════════════════════════════════════════════════════════
-window.addEventListener('keydown', e => {
-  if (e.code === 'Digit1') camMode = 1;
-  if (e.code === 'Digit2') camMode = 2;
-  if (e.code === 'Digit3') camMode = 3;
-});
-
-// ═══════════════════════════════════════════════════════════════
-//  窗口resize
+//  resize
 // ═══════════════════════════════════════════════════════════════
 window.addEventListener('resize', () => {
-  try {
-    camera.aspect = innerWidth / innerHeight;
-    camera.updateProjectionMatrix();
-    if (renderer && !_fallback2D) renderer.setSize(innerWidth, innerHeight);
-  } catch(e) {}
+  try { camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix(); if (renderer && !_fallback2D) renderer.setSize(innerWidth, innerHeight); } catch(e) {}
 });
 
 // ═══════════════════════════════════════════════════════════════
-//  启动！同步完成，零延迟
+//  启动
 // ═══════════════════════════════════════════════════════════════
 document.getElementById('prog-fill').style.width = '100%';
 document.getElementById('prog-text').textContent = '就绪！';
-
-addLog('FlyteOS v1.4 就绪', 'info');
-addLog('按 [空格] 起飞 | WASD移动 | Q/E升降', 'info');
-
-// 隐藏加载屏
+addLog('FlyteOS v1.4 沉浸版就绪','info');
+addLog('按 [空格] 起飞 | WASD移动 | Q/E升降','info');
+addLog('穿云效果：爬升到100m以上进入云层体验','info');
 const loadEl = document.getElementById('loading');
-loadEl.style.opacity = '0';
-setTimeout(() => { loadEl.style.display = 'none'; }, 600);
-
-// 启动渲染循环
-lastTime = performance.now();
-fpsTime = lastTime;
+loadEl.style.opacity = '0'; setTimeout(() => { loadEl.style.display = 'none'; }, 600);
+lastTime = performance.now(); fpsTime = lastTime;
 tick();
-
 </script>
 </body>
 </html>
