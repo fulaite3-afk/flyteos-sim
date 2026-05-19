@@ -219,13 +219,33 @@ body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',s
   </div>
 </div>
 
-<!-- Three.js 本地加载 -->
-<script src="three.min.js"></script>
+<!-- Three.js: 本地优先，CDN备用 -->
+<script src="three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js'"></script>
+<script>
+// 检测Three.js是否加载成功
+if (typeof THREE === 'undefined') {
+  document.getElementById('loading').innerHTML =
+    '<h1 style="font-family:Courier New,monospace;font-size:24px;color:#ff4455;letter-spacing:4px">LOAD ERROR</h1>' +
+    '<div style="color:#ffaa00;font-size:13px;margin-top:20px">Three.js 加载失败，请检查网络连接</div>' +
+    '<div style="color:#5ba3b8;font-size:11px;margin-top:10px">尝试刷新页面，或使用支持WebGL的浏览器</div>';
+  throw new Error('Three.js not loaded');
+}
+</script>
 <script>
 // ═══════════════════════════════════════════════════════════════
 //  FlyteOS v1.4  ·  武汉福莱特航空科技有限公司
 //  核心特性: 程序化真实3D地形 + 低空云层系统 + 穿云效果
+//  v1.4.1: WebGL降级 + 异常保护 + FPS监控 + 无人机定位修复
 // ═══════════════════════════════════════════════════════════════
+
+// ── WebGL检测 ──
+let _webglOk = false;
+let _fallback2D = false;
+try {
+  const tc = document.createElement('canvas');
+  const gl = tc.getContext('webgl2') || tc.getContext('webgl') || tc.getContext('experimental-webgl');
+  _webglOk = !!gl;
+} catch(e) { _webglOk = false; }
 
 // ── 常量 ──
 const TERRAIN_SIZE   = 6000;
@@ -253,20 +273,49 @@ const PRESET_WAYPOINTS = [
   { ox:-280, oz:-420, alt:  90, name:'WP6',  phase:'DESCENT'},
 ];
 
-// ── Three.js 核心 ──
-const canvas   = document.getElementById('c');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(innerWidth, innerHeight);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
-renderer.toneMapping        = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.15;
+// ── Three.js 核心（带WebGL降级） ──
+const canvas = document.getElementById('c');
+let renderer, scene, camera;
 
-const scene  = new THREE.Scene();
-scene.fog    = new THREE.FogExp2(0x8abed8, 0.00007);
+if (_webglOk) {
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
+    renderer.toneMapping        = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
 
-const camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.5, 26000);
+    // 验证WebGL上下文确实可用
+    const ctx = renderer.getContext();
+    if (!ctx || ctx.isContextLost()) {
+      console.warn('[FlyteOS] WebGL上下文无效，降级到2D模式');
+      _fallback2D = true;
+      renderer.dispose();
+      renderer = null;
+    }
+  } catch(e) {
+    console.warn('[FlyteOS] WebGL初始化异常:', e.message);
+    _fallback2D = true;
+    renderer = null;
+  }
+} else {
+  console.warn('[FlyteOS] 浏览器不支持WebGL，降级到2D模式');
+  _fallback2D = true;
+}
+
+if (_fallback2D) {
+  // 更新加载界面文字，保留进度条元素
+  const verEl = document.querySelector('#loading .ver');
+  if (verEl) verEl.textContent = 'v1.4 · 2D降级模式 · WebGL不可用';
+  const progText = document.getElementById('prog-text');
+  if (progText) progText.textContent = '⚠ WebGL不可用，使用2D地图模式';
+}
+
+scene  = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x8abed8, 0.00007);
+camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.5, 26000);
 
 // ── 灯光 ──
 scene.add(new THREE.AmbientLight(0xd0e8ff, 0.55));
@@ -460,18 +509,33 @@ function generateTerrainHeight(geo) {
 }
 
 // ════════════════════════════════════════════════════════════════
-//  地形高度查询（Raycaster）
+//  地形高度查询（Raycaster + 缓存）
 // ════════════════════════════════════════════════════════════════
 let _terrainMesh = null;
 const _rayDown = new THREE.Raycaster();
 const _rayOrigin = new THREE.Vector3();
+const _terrainCache = {};  // 缓存地形高度，避免每帧raycast
+const _CACHE_RES = 20;     // 缓存精度20米
 
 function getTerrainHeight(x, z) {
-  if (!_terrainMesh) return 0;
-  _rayOrigin.set(x, 2000, z); // 从高空向下发射
-  _rayDown.set(_rayOrigin, new THREE.Vector3(0, -1, 0));
-  const hits = _rayDown.intersectObject(_terrainMesh);
-  return hits.length > 0 ? hits[0].point.y : 0;
+  if (!_terrainMesh || _fallback2D) return 0; // 2D模式或无地形返回0
+  try {
+    // 查缓存
+    const ck = `${Math.round(x/_CACHE_RES)*_CACHE_RES},${Math.round(z/_CACHE_RES)*_CACHE_RES}`;
+    if (_terrainCache[ck] !== undefined) return _terrainCache[ck];
+
+    _rayOrigin.set(x, 2000, z);
+    _rayDown.set(_rayOrigin, new THREE.Vector3(0, -1, 0));
+    const hits = _rayDown.intersectObject(_terrainMesh);
+    const h = hits.length > 0 ? hits[0].point.y : 0;
+    _terrainCache[ck] = h;
+    // 缓存上限
+    const keys = Object.keys(_terrainCache);
+    if (keys.length > 500) delete _terrainCache[keys[0]];
+    return h;
+  } catch(e) {
+    return 0;
+  }
 }
 
 // 组装地形 Mesh
@@ -556,9 +620,25 @@ function createCloudSystem() {
     const scale = 0.55 + Math.random() * 1.3;
     const x     = (Math.random() - 0.5) * TERRAIN_SIZE * 0.78;
     const z     = (Math.random() - 0.5) * TERRAIN_SIZE * 0.78;
-    const cloud = createCloud(x, y, z, scale);
-    scene.add(cloud);
-    clouds.push(cloud);
+
+    if (!_fallback2D) {
+      // 3D模式：创建完整云朵模型
+      const cloud = createCloud(x, y, z, scale);
+      scene.add(cloud);
+      clouds.push(cloud);
+    } else {
+      // 2D模式：只记录位置数据
+      clouds.push({
+        position: { x, y, z },
+        userData: {
+          baseY: y, scale,
+          speedX: (0.25 + Math.random() * 0.6) * (Math.random() > 0.5 ? 1 : -1),
+          speedZ: (0.08 + Math.random() * 0.25) * (Math.random() > 0.5 ? 1 : -1),
+          amplitude: 2 + Math.random() * 5,
+          phase: Math.random() * Math.PI * 2
+        }
+      });
+    }
   }
 }
 
@@ -899,19 +979,25 @@ function activateAllSystems() {
 // ════════════════════════════════════════════════════════════════
 //  飞行逻辑
 // ════════════════════════════════════════════════════════════════
-const drone = createAerostat();
+const drone = _fallback2D ? new THREE.Group() : createAerostat();
 scene.add(drone);
-drone.scale.setScalar(3.5);
+if (!_fallback2D) drone.scale.setScalar(3.5);
 
 function updateFlight(dt) {
   if (!ds.isAuto && ds.phase === 'GROUNDED') {
-    // 地面待机：仍更新螺旋桨和无人机位置
-    drone.position.set(ds.pos.x, ds.alt, ds.pos.z);
-    drone.rotation.y = ds.hdg * Math.PI / 180;
-    if (ds.propRPM > 0) {
-      drone.traverse(o => {
-        if (o.userData.isProp) o.rotation.x += dt * ds.propRPM * 0.0012;
-      });
+    // 地面待机：确保无人机在地形上方，显示待机动画
+    const groundY = getTerrainHeight(ds.pos.x, ds.pos.z);
+    ds.alt = groundY + 0.5; // 贴地
+    if (!_fallback2D) {
+      drone.position.set(ds.pos.x, ds.alt, ds.pos.z);
+      drone.rotation.y = ds.hdg * Math.PI / 180;
+      // 待机呼吸动画
+      drone.position.y += Math.sin(performance.now() * 0.002) * 0.15;
+      if (ds.propRPM > 0) {
+        drone.traverse(o => {
+          if (o.userData.isProp) o.rotation.x += dt * ds.propRPM * 0.0012;
+        });
+      }
     }
     return;
   }
@@ -928,25 +1014,29 @@ function updateFlight(dt) {
 
   // 地面碰撞保护：飞机Y坐标不能低于地形高度
   const groundY = getTerrainHeight(ds.pos.x, ds.pos.z);
-  if (ds.alt < groundY + 1) {
-    ds.alt = groundY + 1;  // 最低离地1米
+  const minAlt = groundY + 0.5; // 最低离地0.5米
+  if (ds.alt < minAlt) {
+    ds.alt = minAlt;
     if (ds.vs < 0) ds.vs = 0;
   }
 
-  drone.position.set(ds.pos.x, ds.alt, ds.pos.z);
-  drone.rotation.y = ds.hdg * Math.PI / 180;
-  drone.rotation.x = Math.min(ds.spd / DRONE_SPEED, 1) * 0.12;
+  // 3D无人机位置/旋转更新
+  if (!_fallback2D) {
+    drone.position.set(ds.pos.x, ds.alt, ds.pos.z);
+    drone.rotation.y = ds.hdg * Math.PI / 180;
+    drone.rotation.x = Math.min(ds.spd / DRONE_SPEED, 1) * 0.12;
 
-  // 螺旋桨旋转
-  if (ds.propRPM > 0) {
-    drone.traverse(o => {
-      if (o.userData.isProp) o.rotation.x += dt * ds.propRPM * 0.0012;
-    });
+    // 螺旋桨旋转
+    if (ds.propRPM > 0) {
+      drone.traverse(o => {
+        if (o.userData.isProp) o.rotation.x += dt * ds.propRPM * 0.0012;
+      });
+    }
   }
 
-  // 轨迹记录（每0.5秒一个点）
-  if (trail3D.length === 0 || (trail3D.length > 0 &&
-      Math.abs(ds.pos.x - trail3D[trail3D.length - 1].x) + Math.abs(ds.pos.z - trail3D[trail3D.length - 1].z) > 8)) {
+  // 轨迹记录（3D模式，每0.5秒一个点）
+  if (!_fallback2D && (trail3D.length === 0 || (trail3D.length > 0 &&
+      Math.abs(ds.pos.x - trail3D[trail3D.length - 1].x) + Math.abs(ds.pos.z - trail3D[trail3D.length - 1].z) > 8))) {
     trail3D.push({ x: ds.pos.x, y: ds.alt, z: ds.pos.z });
     if (trail3D.length > 600) trail3D.shift();
     updateTrailLine();
@@ -955,9 +1045,11 @@ function updateFlight(dt) {
   altHistory.push(ds.alt);
   if (altHistory.length > 500) altHistory.shift();
 
-  // 穿云效果
-  const { inCloud, density } = checkCloudPenetration(ds.alt, ds.pos.x, ds.pos.z);
-  updateCloudEffect(inCloud, density, ds.alt);
+  // 穿云效果（3D模式下检测）
+  if (!_fallback2D) {
+    const { inCloud, density } = checkCloudPenetration(ds.alt, ds.pos.x, ds.pos.z);
+    updateCloudEffect(inCloud, density, ds.alt);
+  }
 }
 
 function updateAutoFlight(dt) {
@@ -1074,6 +1166,7 @@ function updateManualFlight(dt) {
 //  相机
 // ════════════════════════════════════════════════════════════════
 function updateCamera() {
+  if (_fallback2D) return; // 2D模式不需要3D相机
   const dp = drone.position;
   const hr = ds.hdg * Math.PI / 180;
   switch (cameraMode) {
@@ -1112,7 +1205,7 @@ function updateCamera() {
 //  HUD 更新
 // ════════════════════════════════════════════════════════════════
 function updateHUD() {
-  document.getElementById('tv-alt').textContent  = ds.alt.toFixed(1);  // MSL绝对高度
+  document.getElementById('tv-alt').textContent  = ds.alt.toFixed(1);
   document.getElementById('tv-spd').textContent  = ds.spd.toFixed(1);
   document.getElementById('tv-hdg').textContent  = String(Math.round(ds.hdg)).padStart(3, '0');
   document.getElementById('sm-spd').textContent  = ds.spd.toFixed(1);
@@ -1132,21 +1225,29 @@ function updateHUD() {
     document.getElementById('tv-dist').textContent = '---';
   }
 
-  // AGL（离地高度）= 绝对高度 - 地形高度
+  // AGL（离地高度）= 绝对高度 - 地形高度（安全保护）
   const groundY = getTerrainHeight(ds.pos.x, ds.pos.z);
   const agl = Math.max(0, ds.alt - groundY);
   const aglEl = document.getElementById('tv-agl');
   if (aglEl) aglEl.textContent = agl.toFixed(1);
 
   const pct = Math.min(agl / MAX_ALT * 100, 100);
-  document.getElementById('altbar-fill').style.height = pct + '%';
+  const altFill = document.getElementById('altbar-fill');
+  if (altFill) altFill.style.height = pct + '%';
+
+  // FPS/调试面板（更新到phase-panel描述区）
+  const phaseDesc = document.getElementById('phase-desc');
+  if (phaseDesc && _fpsDisplay > 0) {
+    const modeTag = _fallback2D ? '2D' : '3D';
+    phaseDesc.textContent = `FPS:${_fpsDisplay} [${modeTag}] | 按 [空格] 起飞`;
+  }
 
   drawMinimap();
   drawAltProfile();
 
-  // FLIGHT DATA: LAT/LNG based on aircraft position (generic reference 28.00N, 112.00E)
+  // 经纬度
   const latRef = 28.0, lngRef = 112.0;
-  const latOff = ds.pos.z / 111320; // ~111320m per degree latitude
+  const latOff = ds.pos.z / 111320;
   const lngOff = ds.pos.x / (111320 * Math.cos(latRef * Math.PI / 180));
   const curLat = latRef + latOff;
   const curLng = lngRef + lngOff;
@@ -1327,15 +1428,17 @@ window.addEventListener('keydown', e => {
 window.addEventListener('keyup', e => { keys[e.code] = false; });
 
 // ════════════════════════════════════════════════════════════════
-//  渲染循环（rAF 自适应，兼容 iframe 受限环境）
+//  渲染循环（异常保护 + FPS监控 + rAF自适应）
 // ════════════════════════════════════════════════════════════════
-let _useRAF = true; // 默认尝试 rAF，失败自动降级 setTimeout
+let _useRAF = true;
+let _fpsFrames = 0, _fpsTime = 0, _fpsDisplay = 0;
+let _loopErrors = 0;
 
 function scheduleNext(fn) {
   if (_useRAF) {
     requestAnimationFrame(fn);
   } else {
-    setTimeout(() => fn(performance.now()), 16); // ~60fps
+    setTimeout(() => fn(performance.now()), 16);
   }
 }
 
@@ -1345,36 +1448,129 @@ function animate(t) {
   const dt = Math.min((t - lastTime) / 1000, 0.1);
   lastTime = t;
 
-  updateFlight(dt);
-  updateCamera();
-  updateHUD();
-  updateClouds(t);
+  // FPS计数
+  _fpsFrames++;
+  if (t - _fpsTime >= 1000) {
+    _fpsDisplay = _fpsFrames;
+    _fpsFrames = 0;
+    _fpsTime = t;
+  }
 
-  // 公告板始终朝向相机
-  scene.traverse(o => { if (o.userData.isBillboard) o.lookAt(camera.position); });
+  // ── 安全执行各子系统（异常不会杀死渲染循环） ──
+  try { updateFlight(dt); } catch(e) { if (_loopErrors < 5) console.error('[FlyteOS] updateFlight异常:', e); _loopErrors++; }
+  try { updateCamera(); } catch(e) { if (_loopErrors < 5) console.error('[FlyteOS] updateCamera异常:', e); _loopErrors++; }
+  try { updateHUD(); } catch(e) { if (_loopErrors < 5) console.error('[FlyteOS] updateHUD异常:', e); _loopErrors++; }
+  try { updateClouds(t); } catch(e) { if (_loopErrors < 5) console.error('[FlyteOS] updateClouds异常:', e); _loopErrors++; }
 
-  // 导航灯闪烁
-  const flash = Math.sin(t * 0.0025) > 0;
-  scene.traverse(o => {
-    if (o.userData.isNavLight && o.material) o.material.opacity = flash ? 1 : 0.15;
-  });
-
-  renderer.render(scene, camera);
+  if (_fallback2D) {
+    // ── 2D降级渲染 ──
+    render2DFallback(dt);
+  } else {
+    // ── 3D渲染（带WebGL状态检查） ──
+    try {
+      if (renderer && !renderer.getContext()?.isContextLost()) {
+        // 公告板
+        scene.traverse(o => { if (o.userData.isBillboard) o.lookAt(camera.position); });
+        // 导航灯闪烁
+        const flash = Math.sin(t * 0.0025) > 0;
+        scene.traverse(o => {
+          if (o.userData.isNavLight && o.material) o.material.opacity = flash ? 1 : 0.15;
+        });
+        renderer.render(scene, camera);
+      } else if (!_fallback2D) {
+        // WebGL上下文丢失，切换到2D
+        console.warn('[FlyteOS] WebGL上下文丢失，降级到2D');
+        _fallback2D = true;
+      }
+    } catch(e) {
+      if (!_fallback2D) {
+        console.warn('[FlyteOS] 3D渲染异常，降级到2D:', e.message);
+        _fallback2D = true;
+      }
+    }
+  }
 }
 
-// 检测 rAF 是否在当前环境可用（超过300ms未回调则降级）
+// ── 2D降级渲染器（俯视地图+HUD） ──
+function render2DFallback(dt) {
+  const c = document.getElementById('c');
+  const ctx = c.getContext('2d');
+  if (!ctx) return;
+  const W = c.width = innerWidth, H = c.height = innerHeight;
+
+  // 深色背景
+  ctx.fillStyle = '#000810';
+  ctx.fillRect(0, 0, W, H);
+
+  // 网格
+  ctx.strokeStyle = 'rgba(0,180,255,0.06)';
+  ctx.lineWidth = 1;
+  const gridSize = 80;
+  for (let x = W/2 % gridSize; x < W; x += gridSize) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = H/2 % gridSize; y < H; y += gridSize) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  // 地形色块（简化）
+  const cx = W/2 + ds.pos.x * 0.12, cy = H/2 + ds.pos.z * 0.12;
+  ctx.fillStyle = 'rgba(0,60,30,0.4)';
+  ctx.fillRect(cx - 250, cy - 250, 500, 500);
+
+  // 云层（蓝色半透明圆）
+  for (const cloud of clouds) {
+    const clx = W/2 + cloud.position.x * 0.12;
+    const cly = H/2 + cloud.position.z * 0.12;
+    const r = 80 * cloud.userData.scale * 0.12;
+    ctx.beginPath(); ctx.arc(clx, cly, r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(100,160,220,${0.12 + (cloud.position.y - 100) / 500})`;
+    ctx.fill();
+  }
+
+  // 航点标记
+  for (let i = 1; i < PRESET_WAYPOINTS.length; i++) {
+    const wp = PRESET_WAYPOINTS[i];
+    const wpx = W/2 + wp.ox * 0.12;
+    const wpy = H/2 + wp.oz * 0.12;
+    const isCurrent = ds.wps.length > 0 && ds.wpIdx < ds.wps.length &&
+      ds.wps[ds.wpIdx].x === wp.ox && ds.wps[ds.wpIdx].z === wp.oz;
+    ctx.beginPath(); ctx.arc(wpx, wpy, isCurrent ? 8 : 4, 0, Math.PI * 2);
+    ctx.fillStyle = isCurrent ? '#00ff88' : 'rgba(0,212,255,0.5)';
+    ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = '10px monospace'; ctx.textAlign = 'center';
+    ctx.fillText(`${wp.name} ${wp.alt}m`, wpx, wpy - 10);
+  }
+
+  // 飞行器图标
+  ctx.save();
+  ctx.translate(W/2, H/2);
+  ctx.rotate(ds.hdg * Math.PI / 180);
+  ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(-8, 8); ctx.lineTo(0, 3); ctx.lineTo(8, 8); ctx.closePath();
+  ctx.fillStyle = '#00ff88'; ctx.fill();
+  ctx.strokeStyle = '#00ffaa'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.restore();
+
+  // 2D模式标识
+  ctx.fillStyle = '#ffaa00'; ctx.font = 'bold 14px monospace'; ctx.textAlign = 'center';
+  ctx.fillText('⚠ 2D降级模式 (WebGL不可用)', W/2, 30);
+  ctx.fillStyle = '#5ba3b8'; ctx.font = '11px monospace';
+  ctx.fillText(`ALT:${ds.alt.toFixed(1)}m  SPD:${ds.spd.toFixed(1)}m/s  HDG:${String(Math.round(ds.hdg)).padStart(3,'0')}°  FPS:${_fpsDisplay}`, W/2, 50);
+}
+
+// 检测 rAF 是否在当前环境可用
 function startRenderLoop() {
   let rafFired = false;
   const rafId = requestAnimationFrame(() => { rafFired = true; });
   setTimeout(() => {
     if (!rafFired) {
-      // rAF 被冻结/拦截，降级到 setTimeout 模式
       _useRAF = false;
       cancelAnimationFrame(rafId);
     }
     lastTime = performance.now();
+    _fpsTime = performance.now();
     animate(performance.now());
-  }, 300);
+  }, 100); // 缩短到100ms
 }
 
 // ── 异步地形纹理生成（分帧处理，不卡UI）─
@@ -1385,7 +1581,7 @@ function buildTerrainTextureAsync(sz, onProgress, onComplete) {
   const img  = ctx.createImageData(sz, sz);
   const d    = img.data;
 
-  const BATCH = 64; // 每帧处理64行
+  const BATCH = 128; // 每帧处理128行（减少setTimeout开销，加速生成）
   let py = 0;
 
   function processBatch() {
@@ -1443,7 +1639,7 @@ function buildTerrainTextureAsync(sz, onProgress, onComplete) {
         d[idx + 2] = Math.min(255, Math.max(0, b + detail));
         d[idx + 3] = 255;
       }
-      if (onProgress) onProgress(py / sz);
+    if (onProgress && py % 64 === 0) onProgress(py / sz); // 每64行更新一次进度
     }
 
     if (py < sz) {
@@ -1524,62 +1720,93 @@ function buildTerrainTexture(sz) {
 }
 
 // ════════════════════════════════════════════════════════════════
-//  初始化
+//  初始化（WebGL检测 + 定位修复 + 超时保护）
 // ════════════════════════════════════════════════════════════════
 async function init() {
   const progFill = document.getElementById('prog-fill');
   const progText = document.getElementById('prog-text');
 
+  // 安全更新进度条
+  const setProgress = (pct, text) => {
+    if (progFill) progFill.style.width = pct + '%';
+    if (progText) progText.textContent = text;
+  };
+
+  // 加载超时保护：30秒后强制进入2D模式
+  const loadTimeout = setTimeout(() => {
+    if (!_fallback2D) {
+      console.warn('[FlyteOS] 加载超时，降级到2D模式');
+      _fallback2D = true;
+      try { startRenderLoop(); } catch(e) {}
+      const loadEl = document.getElementById('loading');
+      if (loadEl) { loadEl.style.opacity = '0'; setTimeout(() => loadEl.style.display = 'none', 650); }
+    }
+  }, 30000);
+
   try {
-    progFill.style.width = '5%';
-    progText.textContent = '生成地形高程...';
+    setProgress(5, '初始化渲染引擎...');
     await new Promise(r => setTimeout(r, 30));
 
-    // 先创建地形几何体（快速）
-    const geo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, TERRAIN_SEG, TERRAIN_SEG);
-    geo.rotateX(-Math.PI / 2);
-    generateTerrainHeight(geo);
+    if (_fallback2D) {
+      // 2D降级模式 - 只需要最小化场景
+      setProgress(30, '2D模式初始化...');
+      await new Promise(r => setTimeout(r, 30));
+    } else {
+      // ── 3D模式 ──
+      setProgress(8, '生成地形高程...');
+      const geo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, TERRAIN_SEG, TERRAIN_SEG);
+      geo.rotateX(-Math.PI / 2);
+      generateTerrainHeight(geo);
 
-    progFill.style.width = '15%';
-    progText.textContent = '生成地貌纹理（分帧）...';
+      setProgress(15, '生成地貌纹理（分帧）...');
 
-    // 使用异步纹理生成，显示进度
-    const terrainMesh = await new Promise((resolve) => {
-      buildTerrainTextureAsync(1024, (p) => {
-        // 15% -> 45% 映射纹理生成进度
-        progFill.style.width = (15 + p * 30) + '%';
-      }, (texCanvas) => {
-        const tex = new THREE.CanvasTexture(texCanvas);
-        tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
-        tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      // 异步纹理生成（纹理大小从1024降到512，加速加载）
+      const terrainMesh = await new Promise((resolve) => {
+        buildTerrainTextureAsync(512, (p) => {
+          setProgress(15 + p * 30, '生成地貌纹理...');
+        }, (texCanvas) => {
+          const tex = new THREE.CanvasTexture(texCanvas);
+          tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+          tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
-        const mat = new THREE.MeshStandardMaterial({
-          map:       tex,
-          roughness: 0.88,
-          metalness: 0.02,
+          const mat = new THREE.MeshStandardMaterial({
+            map:       tex,
+            roughness: 0.88,
+            metalness: 0.02,
+          });
+
+          const mesh = new THREE.Mesh(geo, mat);
+          mesh.receiveShadow = true;
+          mesh.name = 'terrain';
+          scene.add(mesh);
+          _terrainMesh = mesh;
+          resolve(mesh);
         });
-
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.receiveShadow = true;
-        mesh.name = 'terrain';
-        scene.add(mesh);
-        _terrainMesh = mesh;  // 保存引用供高度查询
-        resolve(mesh);
       });
-    });
+    }
 
-    progFill.style.width = '50%';
-    progText.textContent = '创建低空云层系统...';
+    setProgress(50, '创建云层系统...');
     await new Promise(r => setTimeout(r, 30));
 
     createCloudSystem();
-    progFill.style.width = '75%';
-    progText.textContent = '加载航点标记...';
+
+    setProgress(75, '加载航点标记...');
     await new Promise(r => setTimeout(r, 30));
 
-    buildWaypointMarkers();
-    progFill.style.width = '90%';
-    progText.textContent = '初始化飞控系统...';
+    if (!_fallback2D) {
+      buildWaypointMarkers();
+    }
+
+    // ── 修复无人机初始位置：确保在地形上方 ──
+    const spawnGroundY = getTerrainHeight(0, 0);
+    ds.alt = Math.max(spawnGroundY + 2, 2); // 最低离地2米
+    ds.pos.set(0, 0, 0);
+
+    // 设置初始相机位置（确保能看到无人机）
+    camera.position.set(0, ds.alt + 14, -32);
+    camera.lookAt(0, ds.alt, 0);
+
+    setProgress(90, '初始化飞控系统...');
     await new Promise(r => setTimeout(r, 30));
 
     // 初始系统状态
@@ -1587,25 +1814,40 @@ async function init() {
     document.getElementById('sd-gps').classList.add('on');
 
     addLog('FlyteOS v1.4 就绪', 'info');
+    if (_fallback2D) {
+      addLog('⚠ 2D降级模式 (WebGL不可用)', 'warn');
+    }
     addLog('按 [空格] 手动起飞 | 点击按钮执行自动任务', 'info');
     addLog('WASD移动 Q/E升降 1/2/3切换视角', 'info');
     addLog('☁ 低空云层: 100-290m 高度带 (38朵)', 'info');
-    addLog('点击「执行完整飞行任务」开始', 'info');
 
-    progFill.style.width = '100%';
-    progText.textContent = '就绪！';
-    await new Promise(r => setTimeout(r, 500));
+    setProgress(100, '就绪！');
+    await new Promise(r => setTimeout(r, 400));
+
+    clearTimeout(loadTimeout);
 
     const loadEl = document.getElementById('loading');
-    loadEl.style.opacity = '0';
-    setTimeout(() => loadEl.style.display = 'none', 650);
+    if (loadEl) {
+      loadEl.style.opacity = '0';
+      setTimeout(() => { if (loadEl) loadEl.style.display = 'none'; }, 650);
+    }
 
     startRenderLoop();
 
   } catch (err) {
-    console.error('初始化失败:', err);
-    progText.textContent = '❌ 加载失败: ' + err.message;
-    progText.style.color = '#ff4444';
+    clearTimeout(loadTimeout);
+    console.error('[FlyteOS] 初始化失败:', err);
+    setProgress(0, '❌ 加载失败: ' + err.message);
+    if (progText) progText.style.color = '#ff4444';
+
+    // 5秒后尝试降级到2D
+    setTimeout(() => {
+      if (!_fallback2D) {
+        _fallback2D = true;
+        setProgress(50, '正在降级到2D模式...');
+        setTimeout(() => startRenderLoop(), 1000);
+      }
+    }, 5000);
   }
 }
 
@@ -1613,7 +1855,7 @@ async function init() {
 let simTick = 0;
 function updateSimPanels() {
   simTick++;
-  const t = simTick * 0.5; // each tick = 500ms
+  const t = simTick * 0.5;
 
   // NAV DATA simulation
   const curWp = ((simTick % 60) < 10) ? 3 : ((simTick % 60) < 30) ? 4 : 5;
@@ -1622,35 +1864,43 @@ function updateSimPanels() {
   const navStates = ['EN ROUTE', 'EN ROUTE', 'TURNING', 'EN ROUTE', 'APPROACH'];
   const navState = navStates[Math.floor(t * 0.15) % navStates.length];
 
-  document.getElementById('nv-curwp').textContent = curWp + '/6';
-  document.getElementById('nv-dist').textContent = navDist.toFixed(1);
-  document.getElementById('nv-brg').textContent = String(navBrg).padStart(3, '0');
+  const nvCurEl = document.getElementById('nv-curwp');
+  const nvDistEl = document.getElementById('nv-dist');
+  const nvBrgEl = document.getElementById('nv-brg');
   const nvStateEl = document.getElementById('nv-state');
-  nvStateEl.textContent = navState;
-  nvStateEl.style.color = navState === 'APPROACH' ? '#ffaa00' : navState === 'TURNING' ? '#00d4ff' : '#00ff88';
+  if (nvCurEl) nvCurEl.textContent = curWp + '/6';
+  if (nvDistEl) nvDistEl.textContent = navDist.toFixed(1);
+  if (nvBrgEl) nvBrgEl.textContent = String(navBrg).padStart(3, '0');
+  if (nvStateEl) {
+    nvStateEl.textContent = navState;
+    nvStateEl.style.color = navState === 'APPROACH' ? '#ffaa00' : navState === 'TURNING' ? '#00d4ff' : '#00ff88';
+  }
 
-  // SYSTEMS panel - occasional state flicker
+  // SYSTEMS panel
   if (simTick % 20 === 0) {
-    // Rarely toggle DJI to active momentarily
     const djiDot = document.getElementById('sys-dji');
     const djiSt = document.getElementById('sys-dji-st');
-    if (Math.random() > 0.7) {
-      djiDot.className = 'sys-dot active';
-      djiSt.className = 'sys-state active';
-      djiSt.textContent = 'ACTIVE';
-    } else {
-      djiDot.className = 'sys-dot standby';
-      djiSt.className = 'sys-state standby';
-      djiSt.textContent = 'STANDBY';
+    if (djiDot && djiSt) {
+      if (Math.random() > 0.7) {
+        djiDot.className = 'sys-dot active';
+        djiSt.className = 'sys-state active';
+        djiSt.textContent = 'ACTIVE';
+      } else {
+        djiDot.className = 'sys-dot standby';
+        djiSt.className = 'sys-state standby';
+        djiSt.textContent = 'STANDBY';
+      }
     }
   }
 }
 setInterval(updateSimPanels, 500);
 
 window.addEventListener('resize', () => {
-  camera.aspect = innerWidth / innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
+  try {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    if (renderer) renderer.setSize(innerWidth, innerHeight);
+  } catch(e) {}
 });
 
 init();
