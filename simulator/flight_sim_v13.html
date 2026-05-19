@@ -541,8 +541,9 @@ function getTerrainHeight(x, z) {
   }
 }
 
-// 组装地形 Mesh
+// 组装地形 Mesh（已整合到init()中，此函数保留备用）
 function createTerrain() {
+  if (!renderer) return; // 安全保护
   const geo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, TERRAIN_SEG, TERRAIN_SEG);
   geo.rotateX(-Math.PI / 2);
   generateTerrainHeight(geo);
@@ -550,7 +551,7 @@ function createTerrain() {
   const texCanvas = buildTerrainTexture(2048);
   const tex = new THREE.CanvasTexture(texCanvas);
   tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
-  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  try { tex.anisotropy = renderer.capabilities.getMaxAnisotropy(); } catch(e) { tex.anisotropy = 1; }
 
   const mat = new THREE.MeshStandardMaterial({
     map:       tex,
@@ -562,6 +563,7 @@ function createTerrain() {
   mesh.receiveShadow = true;
   mesh.name = 'terrain';
   scene.add(mesh);
+  _terrainMesh = mesh;
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1587,7 +1589,10 @@ function render2DFallback(dt) {
 }
 
 // 检测 rAF 是否在当前环境可用
+let _renderStarted = false; // 防重入标志
 function startRenderLoop() {
+  if (_renderStarted) return; // 防止双重启动
+  _renderStarted = true;
   let rafFired = false;
   const rafId = requestAnimationFrame(() => { rafFired = true; });
   setTimeout(() => {
@@ -1616,8 +1621,8 @@ function buildTerrainTextureAsync(sz, onProgress, onComplete) {
     const endPy = Math.min(py + BATCH, sz);
     for (; py < endPy; py++) {
       for (let px = 0; px < sz; px++) {
-        const nx = (px / sz) * 7 + 0.5;
-        const ny = (py / sz) * 7 + 0.5;
+        const nx = (px / sz) * 7;  // 与generateTerrainHeight一致，无+0.5偏移
+        const ny = (py / sz) * 7;
 
         let e = fbm(nx, ny, 7) + 0.5;
         const ridge = 1 - Math.abs(fbm(nx * 0.6 + 80, ny * 0.6 + 80, 4));
@@ -1667,7 +1672,8 @@ function buildTerrainTextureAsync(sz, onProgress, onComplete) {
         d[idx + 2] = Math.min(255, Math.max(0, b + detail));
         d[idx + 3] = 255;
       }
-    if (onProgress && py % 64 === 0) onProgress(py / sz); // 每64行更新一次进度
+      // 进度回调（每64行更新一次，在行循环外）
+      if (onProgress && py % 64 === 0) onProgress(py / sz);
     }
 
     if (py < sz) {
@@ -1691,8 +1697,8 @@ function buildTerrainTexture(sz) {
 
   for (let py = 0; py < sz; py++) {
     for (let px = 0; px < sz; px++) {
-      const nx = (px / sz) * 7 + 0.5;
-      const ny = (py / sz) * 7 + 0.5;
+      const nx = (px / sz) * 7;  // 与generateTerrainHeight一致
+      const ny = (py / sz) * 7;
 
       let e = fbm(nx, ny, 7) + 0.5;
       const ridge = 1 - Math.abs(fbm(nx * 0.6 + 80, ny * 0.6 + 80, 4));
@@ -1788,27 +1794,40 @@ async function init() {
 
       setProgress(15, '生成地貌纹理（分帧）...');
 
-      // 异步纹理生成（纹理大小从1024降到512，加速加载）
+      // 异步纹理生成（1024分辨率，异步回调有异常保护）
       const terrainMesh = await new Promise((resolve) => {
-        buildTerrainTextureAsync(512, (p) => {
+        buildTerrainTextureAsync(1024, (p) => {
           setProgress(15 + p * 30, '生成地貌纹理...');
         }, (texCanvas) => {
-          const tex = new THREE.CanvasTexture(texCanvas);
-          tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
-          tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+          try {
+            const tex = new THREE.CanvasTexture(texCanvas);
+            tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+            // 安全获取anisotropy，失败回退1
+            try { tex.anisotropy = renderer.capabilities.getMaxAnisotropy(); } catch(e) { tex.anisotropy = 1; }
 
-          const mat = new THREE.MeshStandardMaterial({
-            map:       tex,
-            roughness: 0.88,
-            metalness: 0.02,
-          });
+            const mat = new THREE.MeshStandardMaterial({
+              map:       tex,
+              roughness: 0.88,
+              metalness: 0.02,
+            });
 
-          const mesh = new THREE.Mesh(geo, mat);
-          mesh.receiveShadow = true;
-          mesh.name = 'terrain';
-          scene.add(mesh);
-          _terrainMesh = mesh;
-          resolve(mesh);
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.receiveShadow = true;
+            mesh.name = 'terrain';
+            scene.add(mesh);
+            _terrainMesh = mesh;
+            resolve(mesh);
+          } catch(e) {
+            console.error('[FlyteOS] 纹理创建异常:', e);
+            // 纹理失败仍创建地形（用纯色材质）
+            const mat = new THREE.MeshStandardMaterial({ color: 0x4a7a3a, roughness: 0.9 });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.receiveShadow = true;
+            mesh.name = 'terrain';
+            scene.add(mesh);
+            _terrainMesh = mesh;
+            resolve(mesh);
+          }
         });
       });
     }
@@ -1925,9 +1944,11 @@ setInterval(updateSimPanels, 500);
 
 window.addEventListener('resize', () => {
   try {
-    camera.aspect = innerWidth / innerHeight;
-    camera.updateProjectionMatrix();
-    if (renderer) renderer.setSize(innerWidth, innerHeight);
+    if (camera) {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+    }
+    if (renderer && !_fallback2D) renderer.setSize(innerWidth, innerHeight);
   } catch(e) {}
 });
 
