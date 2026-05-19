@@ -140,7 +140,7 @@ body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',s
   <!-- 飞行阶段 -->
   <div class="panel" id="phase-panel">
     <div id="phase-text">待机</div>
-    <div id="phase-desc">等待任务指令</div>
+    <div id="phase-desc">按 [空格] 起飞 或 点击右侧按钮</div>
   </div>
 
   <!-- 云层指示器 -->
@@ -904,7 +904,17 @@ scene.add(drone);
 drone.scale.setScalar(3.5);
 
 function updateFlight(dt) {
-  if (!ds.isAuto && ds.phase === 'GROUNDED') return;
+  if (!ds.isAuto && ds.phase === 'GROUNDED') {
+    // 地面待机：仍更新螺旋桨和无人机位置
+    drone.position.set(ds.pos.x, ds.alt, ds.pos.z);
+    drone.rotation.y = ds.hdg * Math.PI / 180;
+    if (ds.propRPM > 0) {
+      drone.traverse(o => {
+        if (o.userData.isProp) o.rotation.x += dt * ds.propRPM * 0.0012;
+      });
+    }
+    return;
+  }
 
   const prevAlt = ds.alt;
 
@@ -951,7 +961,11 @@ function updateFlight(dt) {
 }
 
 function updateAutoFlight(dt) {
-  if (ds.phase === 'ARMING') return;
+  // ARMING阶段：显示自检动画，螺旋桨缓慢旋转
+  if (ds.phase === 'ARMING') {
+    ds.propRPM = Math.min(ds.propRPM + 200 * dt, 800);
+    return;
+  }
 
   if (ds.phase === 'TAKEOFF') {
     ds.alt = Math.min(ds.alt + DRONE_VS_UP * 2 * dt, TAKEOFF_ALT);
@@ -1030,6 +1044,16 @@ function updateAutoFlight(dt) {
 }
 
 function updateManualFlight(dt) {
+  // 手动起飞阶段：自动垂直上升到起飞高度
+  if (ds.phase === 'TAKEOFF' && !ds.isAuto) {
+    ds.alt = Math.min(ds.alt + DRONE_VS_UP * dt, TAKEOFF_ALT);
+    ds.propRPM = Math.min(ds.propRPM + 600 * dt, 2800);
+    if (ds.alt >= TAKEOFF_ALT) {
+      ds.phase = 'HOVER';
+      addLog('到达起飞高度，WASD移动 Q/E升降', 'info');
+    }
+    return;
+  }
   if (keys['KeyA']) ds.hdg = (ds.hdg - DRONE_TURN * dt + 360) % 360;
   if (keys['KeyD']) ds.hdg = (ds.hdg + DRONE_TURN * dt) % 360;
   if (keys['KeyW']) {
@@ -1537,7 +1561,8 @@ async function init() {
     document.getElementById('sd-gps').classList.add('on');
 
     addLog('FlyteOS v1.4 就绪', 'info');
-    addLog('🏔 程序化地形: 水体/草地/森林/山地/雪山', 'info');
+    addLog('按 [空格] 手动起飞 | 点击按钮执行自动任务', 'info');
+    addLog('WASD移动 Q/E升降 1/2/3切换视角', 'info');
     addLog('☁ 低空云层: 100-290m 高度带 (38朵)', 'info');
     addLog('点击「执行完整飞行任务」开始', 'info');
 
