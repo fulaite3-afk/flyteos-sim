@@ -1327,10 +1327,21 @@ window.addEventListener('keydown', e => {
 window.addEventListener('keyup', e => { keys[e.code] = false; });
 
 // ════════════════════════════════════════════════════════════════
-//  渲染循环
+//  渲染循环（rAF 自适应，兼容 iframe 受限环境）
 // ════════════════════════════════════════════════════════════════
+let _useRAF = true; // 默认尝试 rAF，失败自动降级 setTimeout
+
+function scheduleNext(fn) {
+  if (_useRAF) {
+    requestAnimationFrame(fn);
+  } else {
+    setTimeout(() => fn(performance.now()), 16); // ~60fps
+  }
+}
+
 function animate(t) {
-  requestAnimationFrame(animate);
+  scheduleNext(animate);
+  if (t === undefined) t = performance.now();
   const dt = Math.min((t - lastTime) / 1000, 0.1);
   lastTime = t;
 
@@ -1349,6 +1360,21 @@ function animate(t) {
   });
 
   renderer.render(scene, camera);
+}
+
+// 检测 rAF 是否在当前环境可用（超过300ms未回调则降级）
+function startRenderLoop() {
+  let rafFired = false;
+  const rafId = requestAnimationFrame(() => { rafFired = true; });
+  setTimeout(() => {
+    if (!rafFired) {
+      // rAF 被冻结/拦截，降级到 setTimeout 模式
+      _useRAF = false;
+      cancelAnimationFrame(rafId);
+    }
+    lastTime = performance.now();
+    animate(performance.now());
+  }, 300);
 }
 
 // ── 异步地形纹理生成（分帧处理，不卡UI）─
@@ -1574,8 +1600,7 @@ async function init() {
     loadEl.style.opacity = '0';
     setTimeout(() => loadEl.style.display = 'none', 650);
 
-    lastTime = performance.now();
-    requestAnimationFrame(animate);
+    startRenderLoop();
 
   } catch (err) {
     console.error('初始化失败:', err);
