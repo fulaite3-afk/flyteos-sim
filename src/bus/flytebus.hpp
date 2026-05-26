@@ -307,4 +307,54 @@ struct MsgRcInput {
     TimeUs ts = 0;
 };
 
+/// 涡轮状态（TurbineModel输出）
+struct MsgTurbineState {
+    f32 throttle_01      = 0;    // 油门指令 0~1
+    f32 actual_rpm       = 0;    // 实际转速 RPM
+    f32 thrust_n         = 0;    // 推力 N
+    f32 torque_nm        = 0;    // 扭矩 Nm
+    f32 motor_voltage_v  = 0;    // 电机电压 V
+    f32 motor_current_a  = 0;    // 电机电流 A
+    f32 battery_voltage_v = 0;   // 电池电压 V
+    f32 power_elec_w     = 0;    // 电功率 W
+    f32 efficiency_pct   = 0;    // 推进效率 %
+    f32 battery_pct      = 100;  // 电池剩余 %
+    TimeUs ts = 0;
+};
+
+/// 太阳能膜状态（SolarMembrane输出）
+struct MsgSolarState {
+    f64 power_gross_w    = 0;    // 毛发电功率 W
+    f64 power_net_w      = 0;    // 净发电功率 W
+    f64 energy_wh        = 0;    // 累计发电量 Wh
+    f64 sun_elevation_rad = 0;   // 太阳仰角 rad
+    f64 sun_azimuth_rad  = 0;    // 太阳方位角 rad
+    f64 membrane_irr_wm2 = 0;   // 膜面辐照度 W/m²
+    f64 effective_efficiency = 0; // 综合效率
+    bool is_day           = false;
+    TimeUs ts = 0;
+};
+
+/// 温度预测（ThermalPredictor输出）
+struct MsgThermalPrediction {
+    f64 temp_now_k       = 0;    // 当前温度 K
+    f64 temp_30s_k       = 0;    // 30秒预测 K
+    f64 temp_1min_k      = 0;    // 1分钟预测 K
+    f64 temp_5min_k      = 0;    // 5分钟预测 K
+    f64 trend_kps        = 0;    // 温度趋势 K/s
+    bool heating         = false;
+    bool overheat_risk   = false;
+    bool superheat_risk  = false;
+    TimeUs ts = 0;
+};
+
+/// 载荷称重（PayloadScale输出）
+struct MsgPayloadState {
+    f32 payload_kg       = 0;    // 有效载荷 kg
+    f32 total_mass_kg    = 0;    // 总质量 kg
+    f32 rate_of_change_kg_s = 0; // 载荷变化率 kg/s
+    bool overload        = false;
+    TimeUs ts = 0;
+};
+
 } // namespace FlyteOS::Bus

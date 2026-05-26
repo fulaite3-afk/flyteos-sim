@@ -269,7 +269,7 @@ std::string WSBridge::telemetryToJson(const Sim::SITLManager::TelemetrySnapshot&
     f32 speed = sqrtf(snap.vel_n * snap.vel_n + snap.vel_e * snap.vel_e);
     f32 heading = snap.yaw_rad * 180.0f / (f32)M_PI;
 
-    char buf[2048];
+    char buf[4096];
     snprintf(buf, sizeof(buf),
         "{"
         "\"sim_time_s\":%.3f,"
@@ -296,7 +296,20 @@ std::string WSBridge::telemetryToJson(const Sim::SITLManager::TelemetrySnapshot&
         "\"pump_active\":%.2f,"
         "\"thrust_n\":%.2f,"
         "\"motor\":[%.3f,%.3f,%.3f,%.3f],"
-        "\"battery_pct\":%.1f"
+        "\"battery_pct\":%.1f,"
+        "\"turbine_rpm\":%.0f,"
+        "\"turbine_thrust_n\":%.2f,"
+        "\"turbine_eff_pct\":%.1f,"
+        "\"motor_current_a\":%.2f,"
+        "\"motor_voltage_v\":%.2f,"
+        "\"solar_power_w\":%.1f,"
+        "\"solar_energy_wh\":%.1f,"
+        "\"solar_is_day\":%s,"
+        "\"thermal_now_k\":%.2f,"
+        "\"thermal_5min_k\":%.2f,"
+        "\"thermal_overheat\":%s,"
+        "\"payload_kg\":%.2f,"
+        "\"total_mass_kg\":%.2f"
         "}",
         snap.sim_time_s,
         (unsigned long long)snap.step_count,
@@ -310,7 +323,20 @@ std::string WSBridge::telemetryToJson(const Sim::SITLManager::TelemetrySnapshot&
         snap.vent_open, snap.pump_active,
         snap.thrust_n,
         snap.motor[0], snap.motor[1], snap.motor[2], snap.motor[3],
-        snap.battery_pct
+        snap.battery_pct,
+        snap.turbine_rpm,
+        snap.turbine_thrust_n,
+        snap.turbine_eff_pct,
+        snap.motor_current_a,
+        snap.motor_voltage_v,
+        snap.solar_power_w,
+        snap.solar_energy_wh,
+        snap.solar_is_day ? "true" : "false",
+        snap.thermal_now_k,
+        snap.thermal_5min_k,
+        snap.thermal_overheat ? "true" : "false",
+        snap.payload_kg,
+        snap.total_mass_kg
     );
     return std::string(buf);
 }
