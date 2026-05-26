@@ -23,6 +23,10 @@
 #include "../power/helium_buoyancy.hpp"
 #include "../power/gas_cell.hpp"
 #include "../power/solar_mppt.hpp"
+#include "../power/turbine_model.hpp"
+#include "../power/solar_membrane.hpp"
+#include "../power/thermal_predictor.hpp"
+#include "../power/payload_scale.hpp"
 #include "../navigation/waypoint_navigator.hpp"
 #include "../safety/safety_monitor.hpp"
 #include <cstdio>
@@ -85,6 +89,27 @@ public:
         // 电池
         f32 battery_pct = 100;
 
+        // 涡轮
+        f32 turbine_rpm      = 0;
+        f32 turbine_thrust_n = 0;
+        f32 turbine_eff_pct  = 0;
+        f32 motor_current_a  = 0;
+        f32 motor_voltage_v  = 0;
+
+        // 太阳能
+        f64 solar_power_w   = 0;
+        f64 solar_energy_wh = 0;
+        bool solar_is_day   = false;
+
+        // 温度预测
+        f64 thermal_now_k    = 0;
+        f64 thermal_5min_k   = 0;
+        bool thermal_overheat = false;
+
+        // 载荷
+        f32 payload_kg      = 0;
+        f32 total_mass_kg   = 0;
+
         // 仿真
         f64 sim_time_s    = 0;
         u64  step_count   = 0;
@@ -134,6 +159,10 @@ private:
     Control::AttitudeController    att_ctrl_;
     Power::GasCell                 gas_cell_;
     Power::HeliumBuoyancy          buoyancy_ctrl_;
+    Power::TurbineModel            turbine_;
+    Power::SolarMembrane           solar_membrane_;
+    Power::ThermalPredictor        thermal_predictor_;
+    Power::PayloadScale            payload_scale_;
     Safety::SafetyMonitor          safety_;
 
     // ── 仿真内部流程 ──
@@ -141,6 +170,10 @@ private:
     void runAttitudeEstimation();    // 姿态估计
     void runFlightControl();         // 飞控三环PID
     void runBuoyancyControl();       // 浮力控制
+    void runTurbineControl();        // 涡轮推力模型
+    void runSolarEnergy();           // 太阳能膜发电
+    void runThermalPrediction();     // 温度预测
+    void runPayloadScale();          // 载荷称重
     void runPhysics();               // 物理引擎推进
     void runSafetyCheck();           // 安全检查
     void updateEnvironment();        // 环境更新
