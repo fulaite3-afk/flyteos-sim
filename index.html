@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlyteOS - Lighter-Than-Air Flight Simulator | Wuhan Flight Aviation Tech</title>
+<meta name="description" content="FlyteOS is a 100% open-source aerostat flight control system and simulator by Wuhan Flight Aviation Technology Co., Ltd.">
+<meta name="keywords" content="FlyteOS, aerostat, flight simulator, LTA, lighter-than-air, open source, buoyancy control, Wuhan">
+<meta property="og:title" content="FlyteOS - Open-Source Aerostat Flight Simulator">
+<meta property="og:description" content="100% open-source lighter-than-air flight control system with real-time 3D simulation">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎈</text></svg>">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--c0:#020a14;--c1:#0a1628;--c2:#00d4ff;--c3:#00ff88;--c4:#ff6b35;--c5:#1a3a5a;--c6:#0d2240}
+body{background:var(--c0);color:#c8dce8;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;overflow-x:hidden;line-height:1.7}
+a{color:var(--c2);text-decoration:none;transition:.3s}
+a:hover{color:var(--c3);text-shadow:0 0 12px var(--c3)}
+
+/* Hero */
+#hero{position:relative;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 20px;overflow:hidden}
+#hero::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 50% 20%,rgba(0,212,255,0.08) 0%,transparent 60%),radial-gradient(ellipse at 80% 80%,rgba(0,255,136,0.04) 0%,transparent 50%);pointer-events:none}
+.hero-title{font-size:clamp(2.8rem,7vw,5.5rem);font-weight:900;letter-spacing:6px;color:var(--c2);text-shadow:0 0 30px rgba(0,212,255,0.4),0 0 60px rgba(0,212,255,0.15);margin-bottom:8px;position:relative}
+.hero-sub{font-size:clamp(1rem,2.5vw,1.4rem);color:#5ba3b8;letter-spacing:4px;margin-bottom:32px}
+.hero-tagline{font-size:clamp(0.9rem,1.8vw,1.1rem);color:#7ec8e3;max-width:680px;margin:0 auto 48px;opacity:0.85}
+
+/* CTA buttons */
+.cta-group{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;margin-bottom:60px}
+.cta{display:inline-flex;align-items:center;gap:8px;padding:16px 36px;border-radius:50px;font-size:1rem;font-weight:700;letter-spacing:1px;cursor:pointer;transition:.3s;border:2px solid}
+.cta-primary{background:linear-gradient(135deg,var(--c4),#f7931e);border-color:#fff;color:#fff;box-shadow:0 0 30px rgba(255,107,53,0.35)}
+.cta-primary:hover{box-shadow:0 0 50px rgba(255,107,53,0.6);transform:translateY(-2px) scale(1.03)}
+.cta-secondary{background:transparent;border-color:var(--c2);color:var(--c2)}
+.cta-secondary:hover{background:rgba(0,212,255,0.1);box-shadow:0 0 20px rgba(0,212,255,0.3);transform:translateY(-2px)}
+
+/* Stats */
+.stats{display:flex;gap:40px;flex-wrap:wrap;justify-content:center;margin-bottom:40px}
+.stat{text-align:center}
+.stat-val{font-size:2rem;font-weight:900;color:var(--c3);text-shadow:0 0 12px rgba(0,255,136,0.4)}
+.stat-label{font-size:0.75rem;color:#5ba3b8;letter-spacing:2px;text-transform:uppercase;margin-top:4px}
+
+/* Sections */
+.section{max-width:1100px;margin:0 auto;padding:80px 24px}
+.section-title{font-size:clamp(1.6rem,3.5vw,2.4rem);font-weight:800;color:var(--c2);text-align:center;margin-bottom:12px;letter-spacing:2px}
+.section-desc{text-align:center;color:#5ba3b8;margin-bottom:48px;font-size:1.05rem;max-width:600px;margin-left:auto;margin-right:auto}
+
+/* Feature grid */
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+.feature{background:linear-gradient(135deg,var(--c1),var(--c6));border:1px solid rgba(0,212,255,0.15);border-radius:12px;padding:32px 28px;transition:.3s;position:relative;overflow:hidden}
+.feature:hover{border-color:rgba(0,212,255,0.4);transform:translateY(-4px);box-shadow:0 8px 30px rgba(0,212,255,0.1)}
+.feature::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--c2),transparent);opacity:0;transition:.3s}
+.feature:hover::before{opacity:1}
+.feature-icon{font-size:2rem;margin-bottom:16px}
+.feature h3{color:var(--c3);font-size:1.1rem;margin-bottom:8px;letter-spacing:1px}
+.feature p{color:#7ec8e3;font-size:0.9rem;line-height:1.6}
+
+/* Architecture */
+.arch-diagram{background:var(--c1);border:1px solid rgba(0,212,255,0.2);border-radius:12px;padding:40px 24px;margin-top:32px;font-family:'Courier New',monospace;font-size:0.85rem;color:#7ec8e3;overflow-x:auto;white-space:pre;line-height:1.8}
+.arch-highlight{color:var(--c3);font-weight:700}
+.arch-comment{color:#3a5a6a}
+
+/* Comparison table */
+.compare-table{width:100%;border-collapse:collapse;margin-top:24px}
+.compare-table th{background:var(--c6);color:var(--c2);padding:14px 20px;text-align:left;font-size:0.9rem;letter-spacing:1px;border-bottom:2px solid var(--c5)}
+.compare-table td{padding:12px 20px;border-bottom:1px solid rgba(0,212,255,0.08);font-size:0.9rem}
+.compare-table tr:hover td{background:rgba(0,212,255,0.03)}
+.yes{color:var(--c3);font-weight:700}
+.no{color:#ff4466}
+.opensource{color:var(--c4);font-weight:700}
+
+/* Footer */
+footer{background:var(--c1);border-top:1px solid rgba(0,212,255,0.1);padding:40px 24px;text-align:center}
+footer p{color:#3a5a6a;font-size:0.85rem}
+footer .footer-brand{color:var(--c2);font-weight:700;letter-spacing:2px;margin-bottom:8px;font-size:1rem}
+
+/* Scroll animation */
+.fade-in{opacity:0;transform:translateY(30px);transition:opacity 0.8s,transform 0.8s}
+.fade-in.visible{opacity:1;transform:translateY(0)}
+
+/* Floating particles */
+.particle{position:absolute;border-radius:50%;pointer-events:none;animation:float linear infinite}
+@keyframes float{0%{transform:translateY(0) rotate(0deg);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateY(-100vh) rotate(360deg);opacity:0}}
+
+/* Responsive */
+@media(max-width:768px){.stats{gap:20px}.stat-val{font-size:1.5rem}.cta-group{flex-direction:column;align-items:center}.cta{width:100%;max-width:320px;justify-content:center}}
+</style>
+</head>
+<body>
+
+<!-- Hero Section -->
+<section id="hero">
+  <div class="hero-title">FLYTEOS</div>
+  <div class="hero-sub">LIGHTER-THAN-AIR FLIGHT OPERATING SYSTEM</div>
+  <div class="hero-tagline">
+    The world's first 100% open-source aerostat flight control system and real-time 3D simulator.
+    Built for engineers, by engineers.
+  </div>
+  <div class="cta-group">
+    <a class="cta cta-primary" href="demo.html">&#9654; Live Demo</a>
+    <a class="cta cta-secondary" href="https://github.com/fulaite3-afk/flyteos-sim" target="_blank">&#128196; Source Code</a>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="stat-val">100%</div><div class="stat-label">Open Source (MIT)</div></div>
+    <div class="stat"><div class="stat-val">15+</div><div class="stat-label">FlyteBus Channels</div></div>
+    <div class="stat"><div class="stat-val">53</div><div class="stat-label">Unit Tests</div></div>
+    <div class="stat"><div class="stat-val">4</div><div class="stat-label">Power Modules</div></div>
+  </div>
+</section>
+
+<!-- Features Section -->
+<section class="section fade-in">
+  <div class="section-title">Core Capabilities</div>
+  <div class="section-desc">A complete flight control stack designed for lighter-than-air vehicles, from sensor fusion to actuator output.</div>
+  <div class="features">
+    <div class="feature">
+      <div class="feature-icon">&#9968;</div>
+      <h3>Buoyancy-Gas Model</h3>
+      <p>Helium gas cell simulation with real-time pressure, temperature, and superheat modeling. Buoyancy-to-weight ratio computed at 50Hz.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">&#9881;</div>
+      <h3>Three-Loop PID + 5-Axis Mixing</h3>
+      <p>Position &rarr; Velocity &rarr; Attitude cascade control with dedicated aerostat mixing matrix. Not a quadcopter port &mdash; built for LTA from day one.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">&#9729;</div>
+      <h3>Cloud Penetration FX</h3>
+      <p>Real-time volumetric cloud system with penetration detection, dynamic fog density, ambient lighting shift, and procedural Web Audio wind/cloud sounds.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">&#9889;</div>
+      <h3>Multi-Power Integration</h3>
+      <p>Turbine (400Hz), solar membrane (10Hz), thermal predictor (10Hz), and payload scale (50Hz) &mdash; all closing the loop in SITL simulation.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">&#128225;</div>
+      <h3>FlyteBus Message Bus</h3>
+      <p>PX4 uORB-inspired zero-copy, thread-safe, type-safe publish-subscribe system. 15+ channels for sensor, control, power, and navigation data.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">&#128274;</div>
+      <h3>Safety Monitor</h3>
+      <p>Continuous monitoring for overheat, superheat, low battery, altitude limits, payload overload, and emergency landing with graceful degradation.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Architecture Section -->
+<section class="section fade-in">
+  <div class="section-title">System Architecture</div>
+  <div class="section-desc">SITL closed-loop simulation: Sensor Injection &rarr; Attitude Estimation &rarr; Flight Control &rarr; Actuator Output &rarr; Physics Propagation</div>
+  <div class="arch-diagram">
+<span class="arch-comment">  FlyteOS SITL Closed-Loop Architecture</span>
+
+  ┌─────────────┐    ┌──────────────────┐    ┌───────────────────┐
+  │  Environment │───&gt;│  Sensor Injection │───&gt;│ Attitude Estimate │
+  │   (50Hz)    │    │    (400Hz)       │    │     (200Hz)       │
+  └──────┬──────┘    └──────────────────┘    └─────────┬─────────┘
+         │                                            │
+         │    ┌──────────────────┐    ┌───────────────┴─────────┐
+         │    │  Payload Scale   │    │    Flight Controller     │
+         │    │     (50Hz)      │    │  Position→Vel→Att PID    │
+         │    └────────┬────────┘    │       (400Hz)            │
+         │             │             └───────────┬───────────────┘
+         │    ┌────────┴────────┐                │
+         │    │ Helium Buoyancy │    ┌───────────┴─────────────┐
+         │    │     (50Hz)      │    │    Turbine Control      │
+         │    └────────┬────────┘    │  throttle = thrust/60   │
+         │             │             │       (400Hz)           │
+         │             │             └───────────┬─────────────┘
+         │    ┌────────┴────────┐                │
+         │    │  Solar Membrane │    ┌───────────┴─────────────┐
+         │    │     (10Hz)      │    │   <span class="arch-highlight">Physics Propagation</span>    │
+         │    └────────┬────────┘    │  F = buoyancy + thrust  │
+         │             │             │  + drag + gravity       │
+         │    ┌────────┴────────┐    └─────────────────────────┘
+         │    │Thermal Predictor │              │
+         │    │     (10Hz)      │              ▼
+         │    └────────┬────────┘    ┌─────────────────────────┐
+         │             │             │   <span class="arch-highlight">Safety Monitor</span> (10Hz)  │
+         └─────────────┴─────────────│ overheat|lowbat|overload │
+                                       └─────────────────────────┘
+  </div>
+</section>
+
+<!-- Comparison Section -->
+<section class="section fade-in">
+  <div class="section-title">Open vs. Closed</div>
+  <div class="section-desc">Why we believe 100% open-source data and code is the future of LTA flight control.</div>
+  <table class="compare-table">
+    <thead>
+      <tr><th>Feature</th><th>FlyteOS</th><th>Typical Closed-Source</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Source Code</td><td class="yes">MIT License, 100% open</td><td class="no">Proprietary, locked</td></tr>
+      <tr><td>Sim Data</td><td class="yes">All telemetry open</td><td class="no">Black-box data</td></tr>
+      <tr><td>Flight Controller</td><td class="yes">3-loop PID, LTA-native</td><td class="no">Quadcopter adaptation</td></tr>
+      <tr><td>Buoyancy Model</td><td class="yes">Real-time gas cell sim</td><td class="no">Simplified or none</td></tr>
+      <tr><td>Multi-Power SITL</td><td class="yes">Turbine + Solar + Thermal</td><td class="no">Battery-only sim</td></tr>
+      <tr><td>Extensibility</td><td class="yes">FlyteBus pub/sub, add channels</td><td class="no">Vendor lock-in</td></tr>
+      <tr><td>Cost</td><td class="opensource">Free forever</td><td class="no">License fees</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- Get Started Section -->
+<section class="section fade-in">
+  <div class="section-title">Get Started</div>
+  <div class="section-desc">Clone, build, and fly in under 5 minutes.</div>
+  <div class="arch-diagram" style="font-size:0.9rem">
+<span class="arch-comment"># Clone the repository</span>
+git clone https://github.com/fulaite3-afk/flyteos-sim.git
+cd flyteos-sim
+
+<span class="arch-comment"># Build with CMake</span>
+mkdir build && cd build
+cmake .. && make -j$(nproc)
+
+<span class="arch-comment"># Run SITL simulation</span>
+./flyteos_sitl
+
+<span class="arch-comment"># Or just open the web demo</span>
+<span class="arch-highlight">open simulator/flight_sim_v13.html</span>
+  </div>
+  <div style="text-align:center;margin-top:32px">
+    <a class="cta cta-primary" href="demo.html">&#9654; Try Live Demo Now</a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-brand">WUHAN FLIGHT AVIATION TECHNOLOGY</div>
+  <p>&copy; 2024-2026 Wuhan Flight Aviation Technology Co., Ltd. (武汉福莱特航空科技有限公司)</p>
+  <p style="margin-top:8px">FlyteOS is released under the <a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a></p>
+  <p style="margin-top:8px">
+    <a href="https://github.com/fulaite3-afk/flyteos-sim" target="_blank">GitHub</a> &nbsp;|&nbsp;
+    <a href="demo.html">Live Demo</a>
+  </p>
+</footer>
+
+<script>
+// Scroll fade-in animation
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.15 });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// Hero floating particles
+(function() {
+  const hero = document.getElementById('hero');
+  if (!hero) return;
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = 2 + Math.random() * 4;
+    p.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;bottom:${-10-Math.random()*20}%;background:${Math.random()>0.5?'rgba(0,212,255,0.3)':'rgba(0,255,136,0.2)'};animation-duration:${8+Math.random()*12}s;animation-delay:${Math.random()*10}s;`;
+    hero.appendChild(p);
+  }
+})();
+</script>
+</body>
+</html>
