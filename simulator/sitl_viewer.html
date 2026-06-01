@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlyteOS SITL 飞行仿真可视化</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;color:#e0e0e0;font-family:'Courier New',monospace;overflow:hidden}
+#c{width:100vw;height:100vh;display:block}
+#hud{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10}
+.panel{position:absolute;background:rgba(10,15,30,0.82);border:1px solid rgba(0,212,255,0.3);border-radius:6px;padding:10px 14px;font-size:12px;backdrop-filter:blur(4px)}
+.panel h3{color:#00d4ff;font-size:11px;margin-bottom:6px;letter-spacing:1px;border-bottom:1px solid rgba(0,212,255,0.2);padding-bottom:4px}
+.row{display:flex;justify-content:space-between;margin:2px 0}
+.lbl{color:#7788aa}.val{color:#00ff88;font-weight:bold}
+.warn{color:#ffaa00}.danger{color:#ff4444;animation:blink 0.8s infinite}
+@keyframes blink{50%{opacity:0.4}}
+#p-flight{top:12px;left:12px;min-width:200px}
+#p-power{top:12px;right:12px;min-width:220px}
+#p-nav{bottom:12px;left:12px;min-width:180px}
+#p-safety{bottom:12px;right:12px;min-width:200px}
+#phase{position:absolute;top:50%;left:50%;transform:translate(-50%,-120px);font-size:28px;font-weight:bold;text-shadow:0 0 20px currentColor;letter-spacing:2px;opacity:0;transition:opacity 0.5s}
+#phase.show{opacity:1}
+#conn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:16px;color:#ffaa00}
+.bw-ring{display:inline-block;width:12px;height:12px;border-radius:50%;border:2px solid;vertical-align:middle;margin-right:4px}
+.bar-bg{width:60px;height:6px;background:rgba(255,255,255,0.1);border-radius:3px;display:inline-block;vertical-align:middle}
+.bar-fill{height:100%;border-radius:3px;transition:width 0.3s}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud">
+  <div id="conn">正在连接 SITL 后端...</div>
+  <div class="panel" id="p-flight" style="display:none">
+    <h3>FLIGHT</h3>
+    <div class="row"><span class="lbl">状态</span><span class="val" id="v-state">--</span></div>
+    <div class="row"><span class="lbl">高度</span><span class="val" id="v-alt">--</span></div>
+    <div class="row"><span class="lbl">速度</span><span class="val" id="v-spd">--</span></div>
+    <div class="row"><span class="lbl">航向</span><span class="val" id="v-hdg">--</span></div>
+    <div class="row"><span class="lbl">垂直速度</span><span class="val" id="v-vs">--</span></div>
+  </div>
+  <div class="panel" id="p-power" style="display:none">
+    <h3>POWER / ENERGY</h3>
+    <div class="row"><span class="lbl">浮力</span><span class="val" id="v-buoy">--</span></div>
+    <div class="row"><span class="lbl">B/W比</span><span id="v-bw">--</span></div>
+    <div class="row"><span class="lbl">推力</span><span class="val" id="v-thr">--</span></div>
+    <div class="row"><span class="lbl">涡轮</span><span class="val" id="v-turb">--</span></div>
+    <div class="row"><span class="lbl">电池</span><span id="v-batt">--</span></div>
+    <div class="row"><span class="lbl">太阳能</span><span class="val" id="v-solar">--</span></div>
+    <div class="row"><span class="lbl">气囊温度</span><span class="val" id="v-gtemp">--</span></div>
+    <div class="row"><span class="lbl">温度预测</span><span class="val" id="v-tpred">--</span></div>
+  </div>
+  <div class="panel" id="p-nav" style="display:none">
+    <h3>NAV</h3>
+    <div class="row"><span class="lbl">N</span><span class="val" id="v-n">--</span></div>
+    <div class="row"><span class="lbl">E</span><span class="val" id="v-e">--</span></div>
+    <div class="row"><span class="lbl">仿真时间</span><span class="val" id="v-time">--</span></div>
+    <div class="row"><span class="lbl">载荷</span><span class="val" id="v-payload">--</span></div>
+  </div>
+  <div class="panel" id="p-safety" style="display:none">
+    <h3>SAFETY</h3>
+    <div id="v-safety-msg" style="color:#00ff88">系统正常</div>
+  </div>
+  <div id="phase"></div>
+</div>
+<script>
+// === SITL遥测驱动3D可视化 ===
+const SITL_URL = '';  // 同源代理，不需要跨域
+let tel = null, connected = false;
+
+// === Three.js 本地加载 ===
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H;
+function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight}
+resize(); window.onresize=resize;
+
+// === 飞行状态 ===
+let state = {
+  alt:0, spd:0, hdg:0, vs:0, lat:28.0, lon:112.0,
+  bw:0.95, buoy:0, thrust:0, turbRPM:0, turbThrust:0,
+  batt:100, solar:0, gtemp:15, tpred:15, overheat:false,
+  phase:'DISARMED', simTime:0, payload:0
+};
+
+// === SITL遥测获取 ===
+async function fetchTelemetry(){
+  try{
+    const r = await fetch(SITL_URL+'/api/telemetry');
+    tel = await r.json();
+    if(!connected){connected=true;document.getElementById('conn').style.display='none';
+      ['p-flight','p-power','p-nav','p-safety'].forEach(id=>document.getElementById(id).style.display='');
+    }
+    state.alt=tel.altitude; state.spd=tel.speed; state.hdg=tel.heading;
+    state.vs=-tel.vel_d; state.bw=tel.bw_ratio; state.buoy=tel.buoyancy_n;
+    state.thrust=tel.thrust_n; state.turbRPM=tel.turbine_rpm;
+    state.turbThrust=tel.turbine_thrust_n; state.batt=tel.battery_pct;
+    state.solar=tel.solar_power_w; state.gtemp=tel.gas_temp-273.15;
+    state.tpred=tel.thermal_5min_k-273.15; state.overheat=tel.thermal_overheat;
+    state.phase=tel.flight_state; state.simTime=tel.sim_time_s;
+    state.payload=tel.payload_kg;
+    updateHUD();
+  }catch(e){
+    if(connected){connected=false;document.getElementById('conn').style.display='';
+      document.getElementById('conn').textContent='SITL连接断开，重连中...';
+      ['p-flight','p-power','p-nav','p-safety'].forEach(id=>document.getElementById(id).style.display='none');
+    }
+  }
+}
+
+// === HUD更新 ===
+const phaseColors={DISARMED:'#888',STANDBY:'#00d4ff',TAKING_OFF:'#ffaa00',IN_FLIGHT:'#00ff88',HOVERING:'#00d4ff',LANDING:'#ffaa00',EMERGENCY_LANDING:'#ff4444',FAILSAFE:'#ff4444'};
+const phaseNames={DISARMED:'待命',STANDBY:'就绪',TAKING_OFF:'起飞中',IN_FLIGHT:'飞行中',HOVERING:'悬停',LANDING:'降落中',EMERGENCY_LANDING:'紧急降落',FAILSAFE:'故障保护'};
+
+function updateHUD(){
+  const s=state;
+  document.getElementById('v-state').textContent=phaseNames[s.phase]||s.phase;
+  document.getElementById('v-state').style.color=phaseColors[s.phase]||'#fff';
+  document.getElementById('v-alt').textContent=s.alt.toFixed(1)+' m';
+  document.getElementById('v-spd').textContent=s.spd.toFixed(1)+' m/s';
+  document.getElementById('v-hdg').textContent=s.hdg.toFixed(0)+'°';
+  document.getElementById('v-vs').textContent=(s.vs>0?'+':'')+s.vs.toFixed(1)+' m/s';
+  document.getElementById('v-vs').style.color=s.vs>0?'#00ff88':'#ffaa00';
+  document.getElementById('v-buoy').textContent=s.buoy.toFixed(1)+' N';
+  const bwEl=document.getElementById('v-bw');
+  bwEl.innerHTML='<span class="bw-ring" style="border-color:'+(s.bw>1.02?'#00ff88':s.bw>0.95?'#ffcc00':'#ff4444')+'"></span>'+s.bw.toFixed(3);
+  document.getElementById('v-thr').textContent=s.thrust.toFixed(1)+' N';
+  document.getElementById('v-turb').textContent=s.turbRPM.toFixed(0)+' RPM / '+s.turbThrust.toFixed(1)+' N';
+  const battEl=document.getElementById('v-batt');
+  battEl.innerHTML=s.batt.toFixed(1)+'% <span class="bar-bg"><span class="bar-fill" style="width:'+s.batt+'%;background:'+(s.batt>30?'#00ff88':s.batt>15?'#ffaa00':'#ff4444')+'"></span></span>';
+  document.getElementById('v-solar').textContent=s.solar.toFixed(0)+' W';
+  const gtEl=document.getElementById('v-gtemp');
+  gtEl.textContent=s.gtemp.toFixed(1)+'°C';
+  gtEl.className='val '+(s.gtemp>60?'danger':s.gtemp>40?'warn':'');
+  const tpEl=document.getElementById('v-tpred');
+  tpEl.textContent='5min→'+s.tpred.toFixed(1)+'°C';
+  tpEl.className='val '+(s.overheat?'danger':'');
+  document.getElementById('v-n').textContent=tel?tel.pos_n.toFixed(1)+' m':'--';
+  document.getElementById('v-e').textContent=tel?tel.pos_e.toFixed(1)+' m':'--';
+  document.getElementById('v-time').textContent=s.simTime.toFixed(1)+' s';
+  document.getElementById('v-payload').textContent=s.payload.toFixed(1)+' kg';
+  // Safety
+  const safeEl=document.getElementById('v-safety-msg');
+  let warns=[];
+  if(s.overheat)warns.push('<span class="danger">⚠ 气囊过热</span>');
+  if(s.batt<15)warns.push('<span class="warn">⚡ 电池低电量 '+s.batt.toFixed(0)+'%</span>');
+  if(s.alt>300)warns.push('<span class="warn">📏 超出高度限制</span>');
+  safeEl.innerHTML=warns.length?warns.join('<br>'):'<span style="color:#00ff88">✓ 系统正常</span>';
+}
+
+// === 2D渲染（Canvas伪3D飞行视图）===
+let camHdg=0, camPitch=0;
+const keys={};
+document.addEventListener('keydown',e=>keys[e.key]=true);
+document.addEventListener('keyup',e=>keys[e.key]=false);
+
+function render(){
+  // 天空渐变
+  const skyGrad=ctx.createLinearGradient(0,0,0,H);
+  const altFrac=Math.min(state.alt/500,1);
+  skyGrad.addColorStop(0,`rgb(${15+altFrac*5},${15+altFrac*10},${40+altFrac*20})`);
+  skyGrad.addColorStop(0.5,`rgb(${30+altFrac*10},${60+altFrac*20},${120+altFrac*30})`);
+  skyGrad.addColorStop(1,`rgb(${80+altFrac*40},${130+altFrac*30},${180+altFrac*20})`);
+  ctx.fillStyle=skyGrad;
+  ctx.fillRect(0,0,W,H);
+
+  // 地面
+  const horizonY=H*0.45;
+  const groundGrad=ctx.createLinearGradient(0,horizonY,0,H);
+  groundGrad.addColorStop(0,'#2a5a2a');
+  groundGrad.addColorStop(0.3,'#1e4a1e');
+  groundGrad.addColorStop(1,'#0a2a0a');
+  ctx.fillStyle=groundGrad;
+  ctx.fillRect(0,horizonY,W,H-horizonY);
+
+  // 地面网格线
+  ctx.strokeStyle='rgba(0,255,100,0.15)';
+  ctx.lineWidth=1;
+  const gridSpacing=80;
+  for(let i=0;i<20;i++){
+    const yOff=i*gridSpacing*(1+state.alt*0.01);
+    const y=horizonY+yOff*0.5;
+    if(y>H)break;
+    ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
+  }
+  // 透视竖线
+  for(let i=-10;i<=10;i++){
+    const xBase=W/2+i*gridSpacing;
+    const spread=1+state.alt*0.005;
+    ctx.beginPath();
+    ctx.moveTo(W/2+i*3,horizonY);
+    ctx.lineTo(W/2+i*gridSpacing*spread,H);
+    ctx.stroke();
+  }
+
+  // 水面（低高度时可见）
+  if(state.alt<100){
+    ctx.fillStyle='rgba(30,80,160,0.3)';
+    ctx.fillRect(W*0.3,horizonY+20,W*0.4,H*0.1);
+  }
+
+  // 云层（穿云效果）
+  const cloudDensity=state.alt>80&&state.alt<250?Math.min((state.alt-80)/50,1):state.alt>250?Math.max(1-(state.alt-250)/80,0):0;
+  if(cloudDensity>0){
+    ctx.fillStyle=`rgba(220,230,245,${cloudDensity*0.6})`;
+    ctx.fillRect(0,0,W,H);
+    // 云中HUD色散效果
+    if(cloudDensity>0.3){
+      ctx.fillStyle=`rgba(200,210,230,${cloudDensity*0.3})`;
+      ctx.fillRect(0,0,W,H);
+    }
+  }
+
+  // 飞行器（中央标记）
+  const cx=W/2, cy=H/2;
+  ctx.save();
+  ctx.translate(cx,cy);
+  // 气囊椭圆
+  ctx.fillStyle='rgba(200,200,220,0.7)';
+  ctx.beginPath();ctx.ellipse(0,-15,30,10,0,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='rgba(0,212,255,0.5)';ctx.lineWidth=1;ctx.stroke();
+  // 吊舱
+  ctx.fillStyle='rgba(100,120,140,0.8)';
+  ctx.fillRect(-8,0,16,8);
+  // 螺旋桨
+  const propAngle=performance.now()*0.02*(state.turbRPM/1000);
+  ctx.strokeStyle='rgba(0,255,136,0.6)';ctx.lineWidth=2;
+  for(let s=-1;s<=1;s+=2){
+    ctx.save();ctx.translate(s*20,-10);ctx.rotate(propAngle);
+    ctx.beginPath();ctx.moveTo(-8,0);ctx.lineTo(8,0);ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // 高度刻度（右侧）
+  ctx.fillStyle='rgba(0,212,255,0.3)';
+  ctx.fillRect(W-40,10,30,H-20);
+  ctx.fillStyle='rgba(0,255,136,0.8)';
+  const altBar=Math.min(state.alt/500,1);
+  ctx.fillRect(W-38,10+(1-altBar)*(H-40),26,altBar*(H-40));
+  ctx.fillStyle='#fff';ctx.font='10px monospace';ctx.textAlign='right';
+  ctx.fillText('500m',W-44,20);
+  ctx.fillText('0m',W-44,H-14);
+
+  // 速度刻度（左侧）
+  ctx.fillStyle='rgba(0,212,255,0.3)';
+  ctx.fillRect(10,H/2-80,30,160);
+  ctx.fillStyle='rgba(0,255,136,0.8)';
+  const spdBar=Math.min(state.spd/20,1);
+  ctx.fillRect(12,H/2+78-spdBar*156,26,spdBar*156);
+
+  // 罗盘（顶部中央）
+  ctx.save();ctx.translate(W/2,30);
+  ctx.strokeStyle='rgba(0,212,255,0.4)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(-60,0);ctx.lineTo(60,0);ctx.stroke();
+  ctx.fillStyle='#fff';ctx.font='11px monospace';ctx.textAlign='center';
+  ctx.fillText(state.hdg.toFixed(0)+'°',0,0);
+  ctx.restore();
+}
+
+// === 遥控指令发送 ===
+function sendRC(action,throttle){
+  fetch(SITL_URL+'/api/rc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,throttle:throttle||0})});
+}
+
+// === 键盘控制 ===
+function handleKeys(){
+  if(keys['a']||keys['A']){sendRC('arm');keys['a']=false;}
+  if(keys['t']||keys['T']){sendRC('takeoff',0.7);keys['t']=false;}
+  if(keys['l']||keys['L']){sendRC('land');keys['l']=false;}
+  if(keys['e']||keys['E']){sendRC('emergency');keys['e']=false;}
+}
+
+// === 主循环 ===
+let lastFetch=0;
+function tick(){
+  const now=performance.now();
+  // 5Hz获取遥测
+  if(now-lastFetch>200){lastFetch=now;fetchTelemetry();}
+  handleKeys();
+  render();
+  requestAnimationFrame(tick);
+}
+
+// === 操作提示 ===
+console.log('%c FlyteOS SITL 飞行仿真 ','background:#0a1a3a;color:#00d4ff;font-size:16px;padding:8px');
+console.log('A=ARM  T=TAKEOFF  L=LAND  E=EMERGENCY');
+
+tick();
+</script>
+</body>
+</html>
