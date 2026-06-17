@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlyteOS v2.0 - Mission &amp; Geofence Simulator</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0e14;--panel-bg:#11161e;--border:#1c2736;--text:#c8d0dc;--text-dim:#6a7380;
+  --green:#00e676;--yellow:#ffd740;--orange:#ff9100;--red:#ff1744;--cyan:#00e5ff;
+  --blue:#448aff;--magenta:#e040fb;--accent:#1e88e5;--font:'Consolas','Courier New','Source Code Pro',monospace;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+/* Top bar */
+.topbar{
+  background:var(--panel-bg);border-bottom:1px solid var(--border);
+  padding:0 16px;height:40px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.topbar h1{font-size:13px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase}
+.topbar .version{font-size:11px;color:var(--text-dim)}
+/* Main layout */
+.main{display:flex;flex:1;overflow:hidden;gap:1px;background:var(--border)}
+.left{width:320px;flex-shrink:0;background:var(--panel-bg);display:flex;flex-direction:column;overflow-y:auto}
+.center{flex:1;background:var(--bg);min-width:0}
+.right{width:300px;flex-shrink:0;background:var(--panel-bg);display:flex;flex-direction:column;overflow-y:auto}
+/* Bottom bar */
+.bottombar{
+  background:var(--panel-bg);border-top:1px solid var(--border);
+  padding:8px 16px;display:flex;align-items:center;gap:24px;flex-shrink:0;height:56px;font-size:12px;
+}
+.bottombar .metric{display:flex;align-items:center;gap:8px}
+.bottombar .metric .label{color:var(--text-dim);text-transform:uppercase;font-size:10px}
+.bottombar .metric .value{font-size:15px;font-weight:bold;color:var(--cyan)}
+.bottombar .metric .bar-bg{width:80px;height:6px;background:#1a1f2b;border-radius:3px;overflow:hidden}
+.bottombar .metric .bar-fg{height:100%;border-radius:3px;transition:width .5s}
+/* Panel headers */
+.panel-header{
+  padding:12px 16px;border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;
+  letter-spacing:1.5px;color:var(--text-dim);font-weight:bold;
+}
+/* State machine */
+.state-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:12px}
+.state-node{
+  border:1px solid var(--border);border-radius:4px;padding:8px;text-align:center;
+  font-size:10px;cursor:pointer;transition:all .2s;background:rgba(255,255,255,0.02);position:relative;
+}
+.state-node.active{border-color:var(--cyan);background:rgba(0,229,255,0.08);box-shadow:0 0 12px rgba(0,229,255,0.15)}
+.state-node .state-name{font-weight:bold;font-size:11px;margin-bottom:2px}
+.state-node .state-id{font-size:9px;color:var(--text-dim)}
+.state-node.state-green{border-color:var(--green)}.state-node.state-green.active{background:rgba(0,230,118,0.1);box-shadow:0 0 12px rgba(0,230,118,0.2)}
+.state-node.state-yellow{border-color:var(--yellow)}.state-node.state-yellow.active{background:rgba(255,215,64,0.1);box-shadow:0 0 12px rgba(255,215,64,0.2)}
+.state-node.state-red{border-color:var(--red)}.state-node.state-red.active{background:rgba(255,23,68,0.1);box-shadow:0 0 12px rgba(255,23,68,0.2)}
+.controls{padding:0 12px 8px;display:flex;flex-wrap:wrap;gap:4px}
+.controls button{
+  font-family:var(--font);font-size:10px;padding:5px 10px;border:1px solid var(--border);
+  background:rgba(255,255,255,0.03);color:var(--text);border-radius:3px;cursor:pointer;transition:all .2s;
+  text-transform:uppercase;letter-spacing:0.5px;
+}
+.controls button:hover{background:rgba(30,136,229,0.15);border-color:var(--accent)}
+.controls button:active{background:rgba(30,136,229,0.25)}
+.controls button.danger:hover{background:rgba(255,23,68,0.15);border-color:var(--red)}
+.log-section{flex:1;display:flex;flex-direction:column;min-height:150px}
+.log-list{flex:1;overflow-y:auto;padding:8px 12px;font-size:10px;line-height:1.6}
+.log-item{display:flex;gap:8px;padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.03)}
+.log-item .ts{color:var(--text-dim);white-space:nowrap}
+.log-item .msg{color:var(--text)}
+.log-item.warn .msg{color:var(--yellow)}
+.log-item.err .msg{color:var(--red)}
+.log-item.info .msg{color:var(--cyan)}
+.telemetry{padding:8px 12px;display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:10px;border-top:1px solid var(--border)}
+.telemetry .tl{color:var(--text-dim)}.telemetry .tv{color:var(--cyan);text-align:right;font-weight:bold}
+/* Map */
+#map{width:100%;height:100%}
+/* Right panel */
+.geo-list{padding:8px 12px;font-size:10px}
+.geo-item{
+  display:flex;align-items:center;justify-content:space-between;padding:8px 10px;
+  border:1px solid var(--border);border-radius:4px;margin-bottom:6px;background:rgba(255,255,255,0.01);
+}
+.geo-item .gi-name{font-weight:bold;font-size:11px}
+.geo-item .gi-type{font-size:9px;color:var(--text-dim)}
+.geo-item .gi-status{padding:2px 8px;border-radius:3px;font-size:9px;font-weight:bold}
+.gi-status.safe{background:rgba(0,230,118,0.15);color:var(--green)}
+.gi-status.warn{background:rgba(255,215,64,0.15);color:var(--yellow)}
+.gi-status.violation{background:rgba(255,23,68,0.15);color:var(--red)}
+.geo-toggle{cursor:pointer;width:32px;height:18px;background:#1a1f2b;border-radius:9px;position:relative;transition:all .3s}
+.geo-toggle.active{background:var(--accent)}
+.geo-toggle::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:all .3s}
+.geo-toggle.active::after{left:16px}
+.violation-log{flex:1;display:flex;flex-direction:column;min-height:120px}
+.vlog-list{flex:1;overflow-y:auto;padding:8px 12px;font-size:10px}
+.vlog-item{display:flex;gap:8px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.03)}
+.vlog-item .vt{color:var(--text-dim);white-space:nowrap}
+.vlog-item .vm{color:var(--red)}
+/* Info tooltip */
+.info-row{display:flex;justify-content:space-between;padding:4px 0;font-size:10px}
+.info-row span:first-child{color:var(--text-dim)}
+.info-row span:last-child{color:var(--text)}
+/* Scrollbar */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#2a3040;border-radius:2px}
+/* Leaflet overrides */
+.leaflet-container{background:#0a0e14;font-family:var(--font)}
+.leaflet-control-zoom a{background:var(--panel-bg)!important;color:var(--text)!important;border-color:var(--border)!important}
+.leaflet-popup-content-wrapper{background:var(--panel-bg);color:var(--text);font-family:var(--font);font-size:11px}
+.leaflet-popup-tip{background:var(--panel-bg)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>FlyteOS v2.0 — Mission &amp; Geofence Interactive Simulator</h1>
+  <span class="version">SIM v0.1 | Real-time</span>
+</div>
+
+<div class="main">
+  <!-- LEFT PANEL: State Machine -->
+  <div class="left">
+    <div class="panel-header">State Machine — 8-State FSM</div>
+    <div class="state-grid" id="stateGrid"></div>
+    <div class="controls" id="controls"></div>
+    <div class="log-section">
+      <div class="panel-header" style="border-top:1px solid var(--border)">State Transition Log</div>
+      <div class="log-list" id="stateLog"></div>
+    </div>
+    <div class="telemetry" id="telemetryPanel"></div>
+  </div>
+
+  <!-- CENTER: Map -->
+  <div class="center">
+    <div id="map"></div>
+  </div>
+
+  <!-- RIGHT PANEL: Geofence -->
+  <div class="right">
+    <div class="panel-header">Geofence Zones</div>
+    <div class="geo-list" id="geoList"></div>
+    <div class="violation-log">
+      <div class="panel-header" style="border-top:1px solid var(--border)">Violation Events</div>
+      <div class="vlog-list" id="vlogList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM BAR -->
+<div class="bottombar" id="bottomBar"></div>
+
+<script>
+// ======================================================================
+// FlyteOS v2.0 Simulator — mission_manager & geofence equivalent logic
+// ======================================================================
+
+// --- Constants ---
+const HOME_LAT = 31.2304;
+const HOME_LNG = 121.4737;
+const EARTH_RADIUS_M = 6371000;
+
+// --- Utility: Haversine distance (meters) ---
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = EARTH_RADIUS_M;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// --- Utility: Ray-casting (point-in-polygon) ---
+function pointInPolygon(lat, lng, polygon) {
+  let inside = false;
+  const n = polygon.length;
+  for (let i = 0, j = n - 1; i < n; j = i++) {
+    const xi = polygon[i][1], yi = polygon[i][0];
+    const xj = polygon[j][1], yj = polygon[j][0];
+    if ((yi > lat) !== (yj > lat) && lng < (xj - xi) * (lat - yi) / (yj - yi) + xi) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+// --- Utility: point in circle ---
+function pointInCircle(lat, lng, center, radiusM) {
+  return haversine(lat, lng, center[0], center[1]) <= radiusM;
+}
+
+// --- Utility: distance to polygon edge (approximate min-segment) ---
+function distToPolygonEdge(lat, lng, polygon) {
+  let minDist = Infinity;
+  const n = polygon.length;
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    const d = pointToSegmentDist(lat, lng, polygon[i], polygon[j]);
+    if (d < minDist) minDist = d;
+  }
+  return minDist;
+}
+
+function pointToSegmentDist(lat, lng, a, b) {
+  const ax = a[1], ay = a[0], bx = b[1], by = b[0];
+  const px = lng, py = lat;
+  const dx = bx - ax, dy = by - ay;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) return haversine(lat, lng, ay, ax);
+  let t = ((px - ax) * dx + (py - ay) * dy) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+  const projX = ax + t * dx, projY = ay + t * dy;
+  return haversine(lat, lng, projY, projX);
+}
+
+// --- Geofence definitions ---
+const geofences = [
+  {
+    id: 'gf_poly_01',
+    name: 'Mission Zone A',
+    type: 'polygon',
+    enabled: true,
+    coords: [
+      [31.2320, 121.4710], [31.2328, 121.4760],
+      [31.2290, 121.4775], [31.2275, 121.4720], [31.2295, 121.4700]
+    ],
+    bufferM: 30,
+    maxAlt: 500,
+    minAlt: 2
+  },
+  {
+    id: 'gf_circle_01',
+    name: 'No-Fly Zone',
+    type: 'circle',
+    enabled: true,
+    center: [31.2335, 121.4780],
+    radiusM: 200,
+    bufferM: 30,
+    maxAlt: 9999,
+    minAlt: 0
+  },
+  {
+    id: 'gf_alt_01',
+    name: 'Altitude Ceiling',
+    type: 'altitude',
+    enabled: true,
+    maxAlt: 400,
+    minAlt: 0
+  }
+];
+
+// --- Waypoints ---
+const waypoints = [
+  { lat: 31.2310, lng: 121.4720, label: 'WP1' },
+  { lat: 31.2322, lng: 121.4750, label: 'WP2' },
+  { lat: 31.2308, lng: 121.4765, label: 'WP3' },
+  { lat: 31.2292, lng: 121.4755, label: 'WP4' },
+  { lat: 31.2288, lng: 121.4725, label: 'WP5' }
+];
+
+// --- State Machine Definition ---
+const STATES = {
+  DISARMED:  { id: 0, name: 'DISARMED',  color: 'state-green',  transitions: ['ARMED'] },
+  ARMED:     { id: 1, name: 'ARMED',     color: 'state-green',  transitions: ['DISARMED', 'TAKEOFF'] },
+  TAKEOFF:   { id: 2, name: 'TAKEOFF',   color: 'state-yellow',transitions: ['MISSION', 'HOLD', 'LAND'] },
+  MISSION:   { id: 3, name: 'MISSION',   color: 'state-green',  transitions: ['HOLD', 'RTL', 'LAND'] },
+  HOLD:      { id: 4, name: 'HOLD',      color: 'state-yellow',transitions: ['MISSION', 'RTL', 'LAND'] },
+  RTL:       { id: 5, name: 'RTL',       color: 'state-yellow',transitions: ['LAND'] },
+  LAND:      { id: 6, name: 'LAND',      color: 'state-yellow',transitions: ['DISARMED'] },
+  ERROR:     { id: 7, name: 'ERROR',     color: 'state-red',    transitions: ['DISARMED'] }
+};
+
+// --- Simulator State ---
+const sim = {
+  currentState: 'DISARMED',
+  lat: HOME_LAT,
+  lng: HOME_LNG,
+  alt: 0,
+  speed: 0,
+  heading: 0,
+  battery: 100,
+  attitude: { roll: 0, pitch: 0, yaw: 0 },
+  buoyancy: 0.92,
+  thrust: 0,
+  turbineRPM: 0,
+  startTime: null,
+  flightTime: 0,
+  missionActive: false,
+  waypointIndex: 0,
+  waypointProgress: 0,
+  geofenceStatuses: {},
+  violationCount: 0,
+  log: [],
+  vlog: [],
+  paused: false
+};
+
+// ======================================================================
+// RENDERING
+// ======================================================================
+
+// --- State Grid ---
+function renderStateGrid() {
+  const grid = document.getElementById('stateGrid');
+  grid.innerHTML = '';
+  const keys = ['DISARMED','ARMED','TAKEOFF','MISSION','HOLD','RTL','LAND','ERROR'];
+  keys.forEach(k => {
+    const st = STATES[k];
+    const div = document.createElement('div');
+    div.className = 'state-node ' + st.color + (sim.currentState === k ? ' active' : '');
+    div.innerHTML = `<div class="state-name">${st.name}</div><div class="state-id">[${st.id}]</div>`;
+    div.title = `Transitions: ${st.transitions.join(', ')}`;
+    grid.appendChild(div);
+  });
+}
+
+// --- Controls ---
+function renderControls() {
+  const ct = document.getElementById('controls');
+  const s = sim.currentState;
+  const st = STATES[s];
+  const btns = [];
+
+  function btn(label, target, cls) {
+    const ok = st.transitions.includes(target) || target === 'EMERGENCY' || target === 'RESET';
+    return `<button class="${cls||''}" ${ok?'':'disabled'} onclick="transitionTo('${target}')">${label}</button>`;
+  }
+
+  ct.innerHTML = `
+    ${btn('ARM', 'ARMED')}
+    ${btn('TAKEOFF', 'TAKEOFF')}
+    ${btn('LOAD MS', 'MISSION')}
+    ${btn('HOLD', 'HOLD')}
+    ${btn('RTL', 'RTL')}
+    ${btn('LAND', 'LAND')}
+    ${btn('EMERG', 'EMERGENCY', 'danger')}
+    ${btn('RESET', 'RESET', 'danger')}
+  `;
+}
+
+// --- State Machine Transition ---
+function transitionTo(target) {
+  const from = sim.currentState;
+  const now = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+
+  // Special targets
+  if (target === 'EMERGENCY') {
+    sim.currentState = 'ERROR';
+    addLog(now, `Transition: ${from} → ERROR (Emergency triggered)`, 'err');
+    sim.missionActive = false;
+    sim.paused = true;
+  } else if (target === 'RESET') {
+    sim.currentState = 'DISARMED';
+    addLog(now, `Reset to DISARMED`, 'info');
+    sim.missionActive = false;
+    sim.waypointIndex = 0;
+    sim.waypointProgress = 0;
+    sim.alt = 0;
+    sim.speed = 0;
+    sim.lat = HOME_LAT;
+    sim.lng = HOME_LNG;
+    sim.thrust = 0;
+    sim.turbineRPM = 0;
+    sim.battery = 100;
+    sim.attitude = { roll: 0, pitch: 0, yaw: 0 };
+    sim.flightTime = 0;
+    sim.startTime = null;
+    sim.violationCount = 0;
+    sim.vlog = [];
+  } else {
+    const st = STATES[from];
+    if (st.transitions.includes(target)) {
+      sim.currentState = target;
+      addLog(now, `Transition: ${from} → ${target}`, 'info');
+
+      if (target === 'TAKEOFF') {
+        sim.startTime = sim.startTime || Date.now();
+        sim.alt = 50;
+        sim.speed = 5;
+        sim.thrust = 65;
+        sim.turbineRPM = 4200;
+      }
+      if (target === 'MISSION') {
+        sim.missionActive = true;
+        sim.waypointIndex = 0;
+        sim.waypointProgress = 0;
+        sim.speed = 12;
+        sim.alt = 120;
+        sim.thrust = 72;
+        sim.turbineRPM = 5800;
+        sim.paused = false;
+      }
+      if (target === 'HOLD') {
+        sim.missionActive = false;
+        sim.speed = 0;
+        sim.thrust = 55;
+        sim.turbineRPM = 3800;
+      }
+      if (target === 'RTL') {
+        sim.missionActive = false;
+        sim.speed = 10;
+        sim.thrust = 68;
+        sim.turbineRPM = 5000;
+      }
+      if (target === 'LAND') {
+        sim.missionActive = false;
+        sim.alt = 0;
+        sim.speed = 0;
+        sim.thrust = 0;
+        sim.turbineRPM = 0;
+        sim.flightTime = sim.startTime ? ((Date.now() - sim.startTime) / 1000) : 0;
+        sim.startTime = null;
+      }
+      if (target === 'DISARMED') {
+        sim.missionActive = false;
+        sim.alt = 0;
+        sim.speed = 0;
+        sim.lat = HOME_LAT;
+        sim.lng = HOME_LNG;
+        sim.thrust = 0;
+        sim.turbineRPM = 0;
+        sim.flightTime = 0;
+        sim.startTime = null;
+      }
+    }
+  }
+  refreshAll();
+}
+
+function addLog(ts, msg, cls) {
+  sim.log.unshift({ ts, msg, cls });
+  if (sim.log.length > 200) sim.log.length = 200;
+  renderLog();
+}
+
+function renderLog() {
+  const el = document.getElementById('stateLog');
+  el.innerHTML = sim.log.slice(0, 80).map(l =>
+    `<div class="log-item ${l.cls||''}"><span class="ts">${l.ts}</span><span class="msg">${l.msg}</span></div>`
+  ).join('');
+}
+
+// --- Telemetry ---
+function renderTelemetry() {
+  const p = document.getElementById('telemetryPanel');
+  p.innerHTML = `
+    <span class="tl">LAT</span><span class="tv">${sim.lat.toFixed(6)}</span>
+    <span class="tl">LNG</span><span class="tv">${sim.lng.toFixed(6)}</span>
+    <span class="tl">ALT</span><span class="tv">${sim.alt.toFixed(1)} m</span>
+    <span class="tl">SPD</span><span class="tv">${sim.speed.toFixed(1)} m/s</span>
+    <span class="tl">ROLL</span><span class="tv">${sim.attitude.roll.toFixed(1)}°</span>
+    <span class="tl">PITCH</span><span class="tv">${sim.attitude.pitch.toFixed(1)}°</span>
+    <span class="tl">YAW</span><span class="tv">${sim.attitude.yaw.toFixed(1)}°</span>
+    <span class="tl">BATT</span><span class="tv">${sim.battery.toFixed(0)}%</span>
+  `;
+}
+
+// --- Bottom Bar ---
+function renderBottomBar() {
+  const bb = document.getElementById('bottomBar');
+  const now = new Date();
+  const ft = sim.startTime ? ((Date.now() - sim.startTime) / 1000) : sim.flightTime;
+  const ftStr = `${Math.floor(ft/60)}:${String(Math.floor(ft%60)).padStart(2,'0')}`;
+  const batColor = sim.battery > 50 ? 'var(--green)' : sim.battery > 25 ? 'var(--yellow)' : 'var(--red)';
+  bb.innerHTML = `
+    <div class="metric"><span class="label">Battery</span>
+      <div class="bar-bg"><div class="bar-fg" style="width:${sim.battery}%;background:${batColor}"></div></div>
+      <span class="value">${sim.battery.toFixed(0)}%</span>
+    </div>
+    <div class="metric"><span class="label">Buoyancy</span>
+      <span class="value">${sim.buoyancy.toFixed(2)}</span>
+    </div>
+    <div class="metric"><span class="label">Thrust</span>
+      <div class="bar-bg"><div class="bar-fg" style="width:${sim.thrust}%;background:var(--cyan)"></div></div>
+      <span class="value">${sim.thrust.toFixed(0)}%</span>
+    </div>
+    <div class="metric"><span class="label">Turbine</span>
+      <span class="value">${sim.turbineRPM.toFixed(0)} RPM</span>
+    </div>
+    <div style="flex:1"></div>
+    <div class="metric"><span class="label">Time</span>
+      <span class="value">${now.toLocaleTimeString('zh-CN',{hour12:false})}</span>
+    </div>
+    <div class="metric"><span class="label">Flight</span>
+      <span class="value">${ftStr}</span>
+    </div>
+    <div class="metric"><span class="label">State</span>
+      <span class="value" style="color:${sim.currentState==='ERROR'?'var(--red)':'var(--cyan)'}">${sim.currentState}</span>
+    </div>
+  `;
+}
+
+// ======================================================================
+// GEOFENCE DETECTION (equivalent to geofence.py)
+// ======================================================================
+function checkGeofences() {
+  const results = {};
+  geofences.forEach(gf => {
+    if (!gf.enabled) { results[gf.id] = { status: 'disabled', detail: '' }; return; }
+
+    let violated = false;
+    let detail = '';
+
+    // Altitude check
+    if (gf.type === 'altitude') {
+      if (sim.alt > gf.maxAlt) { violated = true; detail = `ALT ${sim.alt.toFixed(0)}m > ${gf.maxAlt}m`; }
+      else if (sim.alt < gf.minAlt && sim.alt > 0.5) { violated = true; detail = `ALT ${sim.alt.toFixed(0)}m < ${gf.minAlt}m`; }
+      else { detail = `ALT ${sim.alt.toFixed(0)}m OK (≤${gf.maxAlt}m)`; }
+    }
+
+    // Polygon
+    if (gf.type === 'polygon') {
+      const inside = pointInPolygon(sim.lat, sim.lng, gf.coords);
+      const altOk = sim.alt <= gf.maxAlt && sim.alt >= gf.minAlt;
+      if (inside) {
+        violated = true;
+        detail = `Inside polygon${!altOk ? ` + ALT ${sim.alt.toFixed(0)}m violation` : ''}`;
+      } else {
+        const edgeDist = distToPolygonEdge(sim.lat, sim.lng, gf.coords);
+        if (edgeDist <= gf.bufferM) {
+          violated = true;
+          detail = `Buffer breach: ${edgeDist.toFixed(1)}m from edge (buffer=${gf.bufferM}m)`;
+        } else {
+          detail = `Outside (${edgeDist.toFixed(0)}m from edge)`;
+        }
+      }
+    }
+
+    // Circle
+    if (gf.type === 'circle') {
+      const dist = haversine(sim.lat, sim.lng, gf.center[0], gf.center[1]);
+      const altOk = sim.alt <= gf.maxAlt && sim.alt >= gf.minAlt;
+      if (dist <= gf.radiusM) {
+        violated = true;
+        detail = `Inside circle (${dist.toFixed(0)}m)${!altOk ? ` + ALT ${sim.alt.toFixed(0)}m violation` : ''}`;
+      } else if (dist <= gf.radiusM + gf.bufferM) {
+        violated = true;
+        detail = `Buffer breach: ${dist.toFixed(0)}m (radius=${gf.radiusM}m, buffer=${gf.bufferM}m)`;
+      } else {
+        detail = `Outside (${dist.toFixed(0)}m from center)`;
+      }
+    }
+
+    results[gf.id] = { status: violated ? 'violation' : 'safe', detail };
+  });
+
+  sim.geofenceStatuses = results;
+}
+
+function addViolationLog(gfId, detail) {
+  const gf = geofences.find(g => g.id === gfId);
+  const now = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+  sim.vlog.unshift({
+    ts: now,
+    msg: `[${gf ? gf.name : gfId}] ${detail}`,
+    lat: sim.lat.toFixed(5),
+    lng: sim.lng.toFixed(5)
+  });
+  if (sim.vlog.length > 100) sim.vlog.length = 100;
+  sim.violationCount++;
+  renderViolationLog();
+}
+
+function renderViolationLog() {
+  const el = document.getElementById('vlogList');
+  el.innerHTML = sim.vlog.slice(0, 50).map(v =>
+    `<div class="vlog-item"><span class="vt">${v.ts}</span><span class="vm">${v.msg}</span> <span style="color:var(--text-dim);font-size:9px">@${v.lat},${v.lng}</span></div>`
+  ).join('');
+}
+
+// --- Geofence list in right panel ---
+function renderGeoList() {
+  const el = document.getElementById('geoList');
+  el.innerHTML = geofences.map(gf => {
+    const st = sim.geofenceStatuses[gf.id];
+    const statusClass = !gf.enabled ? 'safe' : (st && st.status === 'violation' ? 'violation' : 'safe');
+    const statusText = !gf.enabled ? 'OFF' : (st && st.status === 'violation' ? 'VIOLATION' : 'SAFE');
+    const twClass = gf.enabled ? 'active' : '';
+    return `
+    <div class="geo-item">
+      <div>
+        <div class="gi-name">${gf.name}</div>
+        <div class="gi-type">${gf.type.toUpperCase()}</div>
+        ${st ? `<div style="font-size:9px;color:var(--text-dim);margin-top:2px">${st.detail}</div>` : ''}
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="gi-status ${statusClass}">${statusText}</span>
+        <div class="geo-toggle ${twClass}" onclick="toggleGeofence('${gf.id}')" title="Toggle ${gf.name}"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleGeofence(id) {
+  const gf = geofences.find(g => g.id === id);
+  if (!gf) return;
+  gf.enabled = !gf.enabled;
+  updateMapGeofences();
+  renderGeoList();
+}
+
+// ======================================================================
+// LEAFLET MAP
+// ======================================================================
+let map, vehicleMarker, waypointMarkers = [], waypointLine, geoLayers = [];
+
+function initMap() {
+  map = L.map('map', {
+    center: [HOME_LAT, HOME_LNG],
+    zoom: 16,
+    zoomControl: true,
+    attributionControl: false
+  });
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19
+  }).addTo(map);
+
+  // Vehicle marker
+  const vehIcon = L.divIcon({
+    className: '',
+    html: '<div style="width:16px;height:16px;background:var(--cyan);border:2px solid #fff;border-radius:50%;box-shadow:0 0 8px var(--cyan);"></div>',
+    iconSize: [16, 16],
+    iconAnchor: [8, 8]
+  });
+  vehicleMarker = L.marker([sim.lat, sim.lng], { icon: vehIcon, zIndexOffset: 1000 }).addTo(map);
+  vehicleMarker.bindTooltip('FlyteOS', { permanent: true, direction: 'top', offset: [0, -10] });
+
+  // Waypoints
+  drawWaypoints();
+  // Geofences
+  updateMapGeofences();
+
+  // Map click to add temp waypoint
+  map.on('click', function(e) {
+    const wp = { lat: e.latlng.lat, lng: e.latlng.lng, label: 'TMP' };
+    const m = L.marker([wp.lat, wp.lng], {
+      icon: L.divIcon({
+        className: '',
+        html: `<div style="width:12px;height:12px;background:var(--magenta);border:1px solid #fff;border-radius:50%;font-size:8px;color:#fff;text-align:center;line-height:12px">+</div>`,
+        iconSize: [12, 12], iconAnchor: [6, 6]
+      })
+    }).addTo(map);
+    m.bindPopup(`<b>Temp WP</b><br>${wp.lat.toFixed(5)}, ${wp.lng.toFixed(5)}`);
+    addLog(new Date().toLocaleTimeString('zh-CN',{hour12:false}), `Temp waypoint added @ ${wp.lat.toFixed(5)}, ${wp.lng.toFixed(5)}`, 'info');
+  });
+}
+
+function drawWaypoints() {
+  // Clear old
+  waypointMarkers.forEach(m => m.remove());
+  waypointMarkers = [];
+  if (waypointLine) waypointLine.remove();
+
+  waypoints.forEach((wp, i) => {
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="width:24px;height:24px;background:var(--accent);border:2px solid #fff;border-radius:50%;text-align:center;line-height:24px;font-size:10px;font-weight:bold;color:#fff;box-shadow:0 0 6px var(--accent)">${wp.label}</div>`,
+      iconSize: [24, 24], iconAnchor: [12, 12]
+    });
+    const m = L.marker([wp.lat, wp.lng], { icon }).addTo(map);
+    m.bindPopup(`<b>${wp.label}</b><br>${wp.lat.toFixed(5)}, ${wp.lng.toFixed(5)}`);
+    waypointMarkers.push(m);
+  });
+
+  waypointLine = L.polyline(waypoints.map(w => [w.lat, w.lng]), {
+    color: 'var(--accent)', weight: 2, dashArray: '6 4', opacity: 0.6
+  }).addTo(map);
+}
+
+function updateMapGeofences() {
+  geoLayers.forEach(l => l.remove());
+  geoLayers = [];
+
+  geofences.forEach(gf => {
+    if (!gf.enabled) return;
+
+    if (gf.type === 'polygon') {
+      // Main polygon
+      const poly = L.polygon(gf.coords, {
+        color: '#448aff', weight: 2, fillColor: '#448aff', fillOpacity: 0.08
+      }).addTo(map);
+      poly.bindPopup(`<b>${gf.name}</b><br>Polygon geofence<br>Alt: ${gf.minAlt}-${gf.maxAlt}m`);
+      geoLayers.push(poly);
+
+      // Buffer (dashed)
+      const bufPoly = L.polygon(gf.coords, {
+        color: '#ffd740', weight: 1.5, dashArray: '5 5', fill: false, opacity: 0.5
+      });
+      // Approximate buffer by offsetting (simplified: just show dashed outline)
+      geoLayers.push(bufPoly);
+      bufPoly.addTo(map);
+    }
+
+    if (gf.type === 'circle') {
+      // Main circle
+      const circle = L.circle(gf.center, {
+        radius: gf.radiusM, color: '#ff1744', weight: 2, fillColor: '#ff1744', fillOpacity: 0.08
+      }).addTo(map);
+      circle.bindPopup(`<b>${gf.name}</b><br>Circle geofence<br>Radius: ${gf.radiusM}m`);
+      geoLayers.push(circle);
+
+      // Buffer circle
+      const bufCircle = L.circle(gf.center, {
+        radius: gf.radiusM + gf.bufferM, color: '#ffd740', weight: 1.5, dashArray: '5 5', fill: false, opacity: 0.5
+      }).addTo(map);
+      geoLayers.push(bufCircle);
+    }
+  });
+}
+
+function updateVehicleOnMap() {
+  vehicleMarker.setLatLng([sim.lat, sim.lng]);
+}
+
+// ======================================================================
+// MISSION SIMULATION (auto-navigate waypoints)
+// ======================================================================
+function simulateMission(dt) {
+  if (!sim.missionActive || sim.paused) return;
+  if (sim.waypointIndex >= waypoints.length) {
+    sim.missionActive = false;
+    addLog(new Date().toLocaleTimeString('zh-CN',{hour12:false}), 'Mission complete: all waypoints visited', 'info');
+    refreshAll();
+    return;
+  }
+
+  const target = waypoints[sim.waypointIndex];
+  const dist = haversine(sim.lat, sim.lng, target.lat, target.lng);
+
+  if (dist < 3) {
+    // Arrived at waypoint
+    addLog(new Date().toLocaleTimeString('zh-CN',{hour12:false}), `Waypoint ${target.label} reached`, 'info');
+    sim.waypointIndex++;
+    if (sim.waypointIndex >= waypoints.length) {
+      sim.missionActive = false;
+      addLog(new Date().toLocaleTimeString('zh-CN',{hour12:false}), 'Mission complete: all waypoints visited', 'info');
+      refreshAll();
+      return;
+    }
+    // Continue to next waypoint in same tick
+    simulateMission(0);
+    return;
+  }
+
+  // Move toward waypoint
+  const bearing = Math.atan2(
+    (target.lng - sim.lng) * Math.cos(sim.lat * Math.PI / 180),
+    target.lat - sim.lat
+  );
+  sim.heading = (bearing * 180 / Math.PI + 360) % 360;
+
+  const step = sim.speed * dt;
+  const frac = Math.min(step / dist, 1);
+  sim.lat += (target.lat - sim.lat) * frac;
+  sim.lng += (target.lng - sim.lng) * frac;
+
+  // Simulate attitude changes
+  sim.attitude.roll = (Math.random() - 0.5) * 5;
+  sim.attitude.pitch = (Math.random() - 0.5) * 3;
+  sim.attitude.yaw = sim.heading;
+
+  // Battery drain
+  sim.battery = Math.max(0, sim.battery - dt * 0.02);
+  if (sim.battery < 10) {
+    addLog(new Date().toLocaleTimeString('zh-CN',{hour12:false}), 'WARNING: Battery critical!', 'warn');
+  }
+}
+
+// --- RTL simulation ---
+function simulateRTL(dt) {
+  if (sim.currentState !== 'RTL') return;
+  const dist = haversine(sim.lat, sim.lng, HOME_LAT, HOME_LNG);
+  if (dist < 2) {
+    sim.lat = HOME_LAT;
+    sim.lng = HOME_LNG;
+    sim.speed = 0;
+    sim.alt = 0;
+    sim.thrust = 0;
+    sim.turbineRPM = 0;
+    addLog(new Date().toLocaleTimeString('zh-CN',{hour12:false}), 'RTL: Arrived at home position', 'info');
+    return;
+  }
+
+  const bearing = Math.atan2(
+    (HOME_LNG - sim.lng) * Math.cos(sim.lat * Math.PI / 180),
+    HOME_LAT - sim.lat
+  );
+  sim.heading = (bearing * 180 / Math.PI + 360) % 360;
+
+  const step = sim.speed * dt;
+  const frac = Math.min(step / dist, 1);
+  sim.lat += (HOME_LAT - sim.lat) * frac;
+  sim.lng += (HOME_LNG - sim.lng) * frac;
+
+  sim.alt = Math.max(0, sim.alt - dt * 8);
+  sim.battery = Math.max(0, sim.battery - dt * 0.015);
+}
+
+// ======================================================================
+// MAIN LOOP
+// ======================================================================
+const VIOLATION_COOLDOWN = {}; // prevent duplicate violation logs
+
+function mainLoop() {
+  const dt = 0.5; // 500ms tick
+
+  // Simulate movement
+  simulateMission(dt);
+  simulateRTL(dt);
+
+  // Geofence check
+  const prevStatuses = { ...sim.geofenceStatuses };
+  checkGeofences();
+
+  // Log new violations
+  geofences.forEach(gf => {
+    const prev = prevStatuses[gf.id];
+    const curr = sim.geofenceStatuses[gf.id];
+    if (curr && curr.status === 'violation') {
+      const key = gf.id;
+      if (!VIOLATION_COOLDOWN[key] || Date.now() - VIOLATION_COOLDOWN[key] > 3000) {
+        addViolationLog(gf.id, curr.detail);
+        VIOLATION_COOLDOWN[key] = Date.now();
+      }
+    }
+  });
+
+  // Update displays
+  updateVehicleOnMap();
+  renderTelemetry();
+  renderBottomBar();
+  renderGeoList();
+}
+
+// --- Refresh all UI ---
+function refreshAll() {
+  renderStateGrid();
+  renderControls();
+  renderTelemetry();
+  renderBottomBar();
+  renderGeoList();
+}
+
+// ======================================================================
+// INIT
+// ======================================================================
+function init() {
+  initMap();
+  checkGeofences();
+  refreshAll();
+  renderLog();
+  renderViolationLog();
+
+  addLog(new Date().toLocaleTimeString('zh-CN',{hour12:false}), 'FlyteOS v2.0 Simulator initialized', 'info');
+  addLog(new Date().toLocaleTimeString('zh-CN',{hour12:false}), `Home: ${HOME_LAT}, ${HOME_LNG} | Geofences: ${geofences.length} | Waypoints: ${waypoints.length}`, 'info');
+
+  setInterval(mainLoop, 500);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
