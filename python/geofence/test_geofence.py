@@ -68,25 +68,25 @@ class TestGeoPoint(unittest.TestCase):
     """测试 GeoPoint 数据类"""
 
     def test_creation(self):
-        p = GeoPoint(lat=31.2, lon=121.4)
-        self.assertEqual(p.lat, 31.2)
-        self.assertEqual(p.lon, 121.4)
+        p = GeoPoint(lat=37.7, lon=-122.4)
+        self.assertEqual(p.lat, 37.7)
+        self.assertEqual(p.lon, -122.4)
 
     def test_to_tuple(self):
-        p = GeoPoint(lat=31.2, lon=121.4)
-        self.assertEqual(p.to_tuple(), (31.2, 121.4))
+        p = GeoPoint(lat=37.7, lon=-122.4)
+        self.assertEqual(p.to_tuple(), (37.7, -122.4))
 
     def test_repr(self):
-        p = GeoPoint(lat=31.2, lon=121.4)
-        self.assertIn("31.200000", repr(p))
-        self.assertIn("121.400000", repr(p))
+        p = GeoPoint(lat=37.7, lon=-122.4)
+        self.assertIn("37.700000", repr(p))
+        self.assertIn("-122.400000", repr(p))
 
 
 class TestHaversine(unittest.TestCase):
     """测试 Haversine 距离计算"""
 
     def test_same_point(self):
-        p = GeoPoint(31.2, 121.4)
+        p = GeoPoint(37.7, -122.4)
         self.assertAlmostEqual(_haversine_distance(p, p), 0.0, delta=0.01)
 
     def test_short_distance(self):
@@ -158,18 +158,18 @@ class TestCircleFence(unittest.TestCase):
     """测试圆形围栏"""
 
     def setUp(self):
-        self.center = GeoPoint(31.2, 121.4)
+        self.center = GeoPoint(37.7, -122.4)
         self.fence = CircleFence(center=self.center, radius_m=500, id="cf1", name="Home")
 
     def test_contains_inside(self):
         # 很近的点在内部
-        p = GeoPoint(31.2, 121.4001)  # 非常近
+        p = GeoPoint(37.7, -122.4001)  # 非常近
         self.assertTrue(self.fence.contains(p))
 
     def test_contains_nearby(self):
         # 非常近的点应该在围栏内（约 5m）
         lat_offset = 5 / 111320.0
-        p = GeoPoint(31.2 + lat_offset, 121.4)
+        p = GeoPoint(37.7 + lat_offset, -122.4)
         self.assertTrue(self.fence.contains(p))
 
     def test_far_outside(self):
@@ -177,14 +177,14 @@ class TestCircleFence(unittest.TestCase):
         self.assertFalse(self.fence.contains(p))
 
     def test_buffer_inside(self):
-        p = GeoPoint(31.2, 121.4001)
+        p = GeoPoint(37.7, -122.4001)
         self.assertFalse(self.fence.buffer_distance(p, 50))
 
     def test_buffer_true(self):
         # 距离刚好略大于 radius，小于 radius+buffer
         # radius=500, buffer=50: 在 520m 处
         lat_offset = 520 / 111320.0
-        p = GeoPoint(31.2 + lat_offset, 121.4)
+        p = GeoPoint(37.7 + lat_offset, -122.4)
         # 应该不在圆内
         self.assertFalse(self.fence.contains(p))
         # 应该在缓冲区
@@ -525,7 +525,7 @@ class TestGeoJsonLoading(unittest.TestCase):
                     "type": "Feature",
                     "geometry": {
                         "type": "Point",
-                        "coordinates": [121.4, 31.2]
+                        "coordinates": [-122.4, 37.7]
                     },
                     "properties": {"id": "test_circle", "radius": 500}
                 }
@@ -540,7 +540,7 @@ class TestGeoJsonLoading(unittest.TestCase):
             self.assertEqual(len(fences), 1)
             self.assertIsInstance(fences[0], CircleFence)
             self.assertEqual(fences[0].radius_m, 500)
-            self.assertAlmostEqual(fences[0].center.lat, 31.2)
+            self.assertAlmostEqual(fences[0].center.lat, 37.7)
         finally:
             os.unlink(fpath)
 
@@ -602,10 +602,10 @@ class TestConvenienceFunctions(unittest.TestCase):
     """测试便捷工厂函数"""
 
     def test_create_circle_fence(self):
-        fence = create_circle_fence("cf", 31.2, 121.4, 500, "Home")
+        fence = create_circle_fence("cf", 37.7, -122.4, 500, "Home")
         self.assertEqual(fence.id, "cf")
         self.assertEqual(fence.name, "Home")
-        self.assertAlmostEqual(fence.center.lat, 31.2)
+        self.assertAlmostEqual(fence.center.lat, 37.7)
         self.assertEqual(fence.radius_m, 500)
 
     def test_create_polygon_fence(self):
