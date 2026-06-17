@@ -155,8 +155,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 // ======================================================================
 
 // --- Constants ---
-const HOME_LAT = 31.2304;
-const HOME_LNG = 121.4737;
+const HOME_LAT = 37.7749;
+const HOME_LNG = -122.4194;
 const EARTH_RADIUS_M = 6371000;
 
 // --- Utility: Haversine distance (meters) ---
@@ -219,8 +219,8 @@ const geofences = [
     type: 'polygon',
     enabled: true,
     coords: [
-      [31.2320, 121.4710], [31.2328, 121.4760],
-      [31.2290, 121.4775], [31.2275, 121.4720], [31.2295, 121.4700]
+      [37.7780, -122.4157], [37.7792, -122.4123],
+      [37.7735, -122.4108], [37.7712, -122.4147], [37.7743, -122.4167]
     ],
     bufferM: 30,
     maxAlt: 500,
@@ -231,7 +231,7 @@ const geofences = [
     name: 'No-Fly Zone',
     type: 'circle',
     enabled: true,
-    center: [31.2335, 121.4780],
+    center: [37.7802, -122.4080],
     radiusM: 200,
     bufferM: 30,
     maxAlt: 9999,
@@ -249,11 +249,11 @@ const geofences = [
 
 // --- Waypoints ---
 const waypoints = [
-  { lat: 31.2310, lng: 121.4720, label: 'WP1' },
-  { lat: 31.2322, lng: 121.4750, label: 'WP2' },
-  { lat: 31.2308, lng: 121.4765, label: 'WP3' },
-  { lat: 31.2292, lng: 121.4755, label: 'WP4' },
-  { lat: 31.2288, lng: 121.4725, label: 'WP5' }
+  { lat: 37.7765, lng: -122.4147, label: 'WP1' },
+  { lat: 37.7783, lng: -122.4133, label: 'WP2' },
+  { lat: 37.7762, lng: -122.4117, label: 'WP3' },
+  { lat: 37.7738, lng: -122.4133, label: 'WP4' },
+  { lat: 37.7732, lng: -122.4143, label: 'WP5' }
 ];
 
 // --- State Machine Definition ---

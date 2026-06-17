@@ -152,16 +152,16 @@ class TestWaypoint(unittest.TestCase):
     """Waypoint 数据类测试"""
 
     def test_default_waypoint(self):
-        wp = Waypoint(lat=31.23, lon=121.47, alt=100.0)
-        self.assertEqual(wp.lat, 31.23)
-        self.assertEqual(wp.lon, 121.47)
+        wp = Waypoint(lat=37.77, lon=-122.41, alt=100.0)
+        self.assertEqual(wp.lat, 37.77)
+        self.assertEqual(wp.lon, -122.41)
         self.assertEqual(wp.alt, 100.0)
         self.assertEqual(wp.hold_time, 0.0)
         self.assertIsNone(wp.acceptance_radius)
         self.assertEqual(wp.label, "")
 
     def test_waypoint_with_hold(self):
-        wp = Waypoint(lat=31.23, lon=121.47, alt=50.0, hold_time=5.0, label="WP1")
+        wp = Waypoint(lat=37.77, lon=-122.41, alt=50.0, hold_time=5.0, label="WP1")
         self.assertEqual(wp.hold_time, 5.0)
         self.assertEqual(wp.label, "WP1")
 

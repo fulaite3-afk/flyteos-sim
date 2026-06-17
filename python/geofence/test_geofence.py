@@ -90,18 +90,18 @@ class TestHaversine(unittest.TestCase):
         self.assertAlmostEqual(_haversine_distance(p, p), 0.0, delta=0.01)
 
     def test_short_distance(self):
-        # 北京天安门 (39.9042, 116.4074) 到附近约 1.5km
-        p1 = GeoPoint(39.9042, 116.4074)
-        p2 = GeoPoint(39.9150, 116.4074)
+        # 西雅图市中心 (47.6062, -122.3321) 到附近约 1.5km
+        p1 = GeoPoint(47.6062, -122.3321)
+        p2 = GeoPoint(47.6195, -122.3321)
         dist = _haversine_distance(p1, p2)
         self.assertGreater(dist, 1000)
         self.assertLess(dist, 1500)
 
     def test_long_distance(self):
-        # 上海到北京大约 1068 km
-        p_beijing = GeoPoint(39.9042, 116.4074)
-        p_shanghai = GeoPoint(31.2304, 121.4737)
-        dist = _haversine_distance(p_beijing, p_shanghai)
+        # 旧金山(San Francisco)到西雅图(Seattle)大约 1091 km
+        p_seattle = GeoPoint(47.6062, -122.3321)
+        p_sf = GeoPoint(37.7749, -122.4194)
+        dist = _haversine_distance(p_seattle, p_sf)
         self.assertGreater(dist, 1000000)
         self.assertLess(dist, 1200000)
 
