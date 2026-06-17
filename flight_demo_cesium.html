@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlyteOS Cesium – 3D Flight + Geofence Demo</title>
+<script src="https://cesium.com/downloads/cesiumjs/releases/1.120/Build/Cesium/Cesium.js"></script>
+<link href="https://cesium.com/downloads/cesiumjs/releases/1.120/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body,#cesiumContainer{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI','Consolas',monospace;background:#000;}
+
+/* ── HUD Panel ── */
+#hud-panel {
+  position:absolute; left:16px; top:16px;
+  width:280px; background:rgba(5,10,25,0.92);
+  border:1px solid rgba(0,180,255,0.35); border-radius:10px;
+  padding:14px 16px; color:#00d4ff; font-size:12px;
+  backdrop-filter:blur(6px); z-index:10;
+  box-shadow:0 0 30px rgba(0,100,200,0.15);
+}
+#hud-panel h3 { font-size:13px; letter-spacing:1px; margin-bottom:10px; color:#00ffaa; border-bottom:1px solid rgba(0,180,255,0.2); padding-bottom:6px; text-transform:uppercase; }
+.hud-row { display:flex; justify-content:space-between; padding:3px 0; }
+.hud-label { color:rgba(0,200,255,0.6); }
+.hud-val { color:#00ffaa; font-weight:bold; font-size:13px; }
+.hud-val.warn { color:#ffaa00; }
+.hud-val.danger { color:#ff3344; animation:blink 0.6s infinite; }
+
+/* ── Geofence Panel ── */
+#gf-panel {
+  position:absolute; right:16px; top:16px;
+  width:270px; background:rgba(5,10,25,0.92);
+  border:1px solid rgba(0,180,255,0.35); border-radius:10px;
+  padding:14px 16px; color:#00d4ff; font-size:12px;
+  backdrop-filter:blur(6px); z-index:10;
+  box-shadow:0 0 30px rgba(0,100,200,0.15);
+  max-height:calc(100vh - 100px); overflow-y:auto;
+}
+#gf-panel h3 { font-size:13px; letter-spacing:1px; margin-bottom:10px; color:#00ffaa; border-bottom:1px solid rgba(0,180,255,0.2); padding-bottom:6px; text-transform:uppercase; }
+.gf-item { padding:6px 8px; margin:4px 0; border-radius:5px; border:1px solid rgba(0,180,255,0.2); background:rgba(0,30,60,0.5); display:flex; justify-content:space-between; align-items:center; }
+.gf-item.safe { border-color:rgba(0,160,255,0.4); }
+.gf-item.warn { border-color:#ffaa00; background:rgba(255,170,0,0.08); }
+.gf-item.violation { border-color:#ff3344; background:rgba(255,50,60,0.1); }
+.gf-status { font-size:10px; padding:2px 8px; border-radius:10px; font-weight:bold; }
+.gf-status.safe { color:#00aaff; background:rgba(0,160,255,0.15); }
+.gf-status.warn { color:#ffaa00; background:rgba(255,170,0,0.2); }
+.gf-status.violation { color:#ff3344; background:rgba(255,50,60,0.2); animation:blink 0.5s infinite; }
+
+/* ── Violation Log ── */
+#vlog-section { margin-top:12px; }
+#vlog-section h4 { font-size:11px; color:rgba(0,200,255,0.6); margin-bottom:6px; }
+#vlog { max-height:180px; overflow-y:auto; font-size:10px; color:rgba(200,220,240,0.8); }
+.vlog-entry { padding:2px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+.vlog-entry.warn { color:#ffaa00; }
+.vlog-entry.violation { color:#ff3344; }
+.vlog-entry.info { color:#00d4ff; }
+
+/* ── Bottom Controls ── */
+#ctrl-bar {
+  position:absolute; bottom:24px; left:50%; transform:translateX(-50%);
+  display:flex; gap:10px; z-index:10;
+}
+.ctrl-btn {
+  padding:10px 22px; border-radius:8px; border:1px solid rgba(0,180,255,0.4);
+  background:rgba(5,10,25,0.88); color:#00d4ff; font-size:13px;
+  cursor:pointer; letter-spacing:1px; backdrop-filter:blur(4px);
+  transition:all 0.2s; font-family:inherit; min-width:100px;
+}
+.ctrl-btn:hover { background:rgba(0,150,255,0.15); border-color:#00ffaa; color:#00ffaa; }
+.ctrl-btn:active { transform:scale(0.96); }
+.ctrl-btn.primary { border-color:#00ffaa; color:#00ffaa; font-weight:bold; }
+.ctrl-btn.danger { border-color:rgba(255,50,60,0.5); color:#ff5566; }
+.ctrl-btn:disabled { opacity:0.35; cursor:not-allowed; }
+
+/* ── Status Bar Bottom ── */
+#status-bar {
+  position:absolute; bottom:82px; left:50%; transform:translateX(-50%);
+  color:rgba(0,200,255,0.5); font-size:10px; z-index:10;
+  letter-spacing:1px;
+}
+
+/* ── Animations ── */
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:rgba(0,0,0,0.2);}
+::-webkit-scrollbar-thumb{background:rgba(0,180,255,0.2);border-radius:2px;}
+
+/* Remove Cesium branding that requires token */
+.cesium-widget-credits { display:none !important; }
+</style>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+
+<!-- HUD Panel -->
+<div id="hud-panel">
+  <h3>FlyteOS Telemetry</h3>
+  <div class="hud-row"><span class="hud-label">Latitude</span><span class="hud-val" id="tv-lat">37.7700</span></div>
+  <div class="hud-row"><span class="hud-label">Longitude</span><span class="hud-val" id="tv-lng">-122.4100</span></div>
+  <div class="hud-row"><span class="hud-label">Altitude (MSL)</span><span class="hud-val" id="tv-alt">0 m</span></div>
+  <div class="hud-row"><span class="hud-label">Speed</span><span class="hud-val" id="tv-spd">0.0 m/s</span></div>
+  <div class="hud-row"><span class="hud-label">Heading</span><span class="hud-val" id="tv-hdg">0</span></div>
+  <div class="hud-row"><span class="hud-label">Phase</span><span class="hud-val" id="tv-phase">IDLE</span></div>
+  <div class="hud-row"><span class="hud-label">Waypoint</span><span class="hud-val" id="tv-wp">-</span></div>
+  <div class="hud-row"><span class="hud-label">Geofence Status</span><span class="hud-val safe" id="tv-gf">SAFE</span></div>
+</div>
+
+<!-- Geofence Panel -->
+<div id="gf-panel">
+  <h3>Geofence Status</h3>
+  <div class="gf-item safe" id="gf-item-01">
+    <span>GF01 (Circle)</span>
+    <span class="gf-status safe" id="gf-st-01">SAFE</span>
+  </div>
+  <div class="gf-item safe" id="gf-item-02">
+    <span>GF02 (Circle)</span>
+    <span class="gf-status safe" id="gf-st-02">SAFE</span>
+  </div>
+  <div class="gf-item safe" id="gf-item-03">
+    <span>GF03 (Polygon)</span>
+    <span class="gf-status safe" id="gf-st-03">SAFE</span>
+  </div>
+  <div id="vlog-section">
+    <h4>Violation Events</h4>
+    <div id="vlog">
+      <div class="vlog-entry info">[System] Ready. FlyteOS Cesium v1.0</div>
+    </div>
+  </div>
+</div>
+
+<!-- Control Bar -->
+<div id="ctrl-bar">
+  <button class="ctrl-btn primary" id="btn-start" onclick="startDemo()">START DEMO</button>
+  <button class="ctrl-btn" id="btn-pause" onclick="pauseDemo()" style="display:none;">PAUSE</button>
+  <button class="ctrl-btn" id="btn-resume" onclick="resumeDemo()" style="display:none;">RESUME</button>
+  <button class="ctrl-btn danger" id="btn-stop" onclick="stopDemo()" style="display:none;">STOP</button>
+</div>
+<div id="status-bar">DEMO STATUS: IDLE &nbsp;|&nbsp; FPS: <span id="fps-counter">--</span></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  Cesium Setup
+// ═══════════════════════════════════════════════════════════════
+Cesium.Ion.defaultAccessToken = ''; // No token – use OSM
+
+const viewer = new Cesium.Viewer('cesiumContainer', {
+  imageryProvider: new Cesium.OpenStreetMapImageryProvider({
+    url: 'https://tile.openstreetmap.org/'
+  }),
+  terrainProvider: new Cesium.EllipsoidTerrainProvider(), // free, no token
+  animation: false,
+  timeline: false,
+  baseLayerPicker: false,
+  geocoder: false,
+  homeButton: false,
+  sceneModePicker: false,
+  navigationHelpButton: false,
+  fullscreenButton: false,
+  infoBox: false,
+  selectionIndicator: false
+});
+
+viewer.scene.globe.enableLighting = false;
+viewer.scene.skyAtmosphere.show = true;
+viewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#0a0a1a');
+
+// Initial view: SF Bay Area
+viewer.camera.flyTo({
+  destination: Cesium.Cartesian3.fromDegrees(-122.41, 37.77, 3000),
+  orientation: {
+    heading: Cesium.Math.toRadians(0),
+    pitch: Cesium.Math.toRadians(-50),
+    roll: 0
+  },
+  duration: 2
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  Waypoints
+// ═══════════════════════════════════════════════════════════════
+const WAYPOINTS = [
+  { lat: 37.7700, lng: -122.4100, alt: 50,  label: 'WP1 (Takeoff)' },
+  { lat: 37.7800, lng: -122.3800, alt: 200, label: 'WP2' },
+  { lat: 37.8000, lng: -122.4200, alt: 300, label: 'WP3' },
+  { lat: 37.7600, lng: -122.4500, alt: 250, label: 'WP4' },
+  { lat: 37.7900, lng: -122.3900, alt: 100, label: 'WP5 (Landing)' },
+];
+
+// ═══════════════════════════════════════════════════════════════
+//  Geofences
+// ═══════════════════════════════════════════════════════════════
+const GEOFENCES = [
+  {
+    id: 'GF01', type: 'circle',
+    center: { lat: 37.785, lng: -122.430 },
+    radius: 800,    // meters
+    buffer: 150,    // meters
+    altBottom: 0, altTop: 400,
+    color: Cesium.Color.BLUE.withAlpha(0.2),
+    status: 'safe'
+  },
+  {
+    id: 'GF02', type: 'circle',
+    center: { lat: 37.775, lng: -122.395 },
+    radius: 600,
+    buffer: 100,
+    altBottom: 0, altTop: 350,
+    color: Cesium.Color.BLUE.withAlpha(0.2),
+    status: 'safe'
+  },
+  {
+    id: 'GF03', type: 'polygon',
+    vertices: [
+      { lat: 37.780, lng: -122.400 },
+      { lat: 37.790, lng: -122.380 },
+      { lat: 37.800, lng: -122.400 },
+      { lat: 37.790, lng: -122.420 },
+    ],
+    altBottom: 0, altTop: 300,
+    color: Cesium.Color.BLUE.withAlpha(0.2),
+    status: 'safe'
+  }
+];
+
+// ═══════════════════════════════════════════════════════════════
+//  Entity references
+// ═══════════════════════════════════════════════════════════════
+let aircraftEntity = null;
+let trailEntity = null;
+let wpPointEntities = [];
+let gfWallEntities = {}; // id -> { wall, ring }
+let trailPositions = [];
+
+// ═══════════════════════════════════════════════════════════════
+//  Flight State
+// ═══════════════════════════════════════════════════════════════
+const flight = {
+  lat: WAYPOINTS[0].lat,
+  lng: WAYPOINTS[0].lng,
+  alt: 0,
+  spd: 0,
+  hdg: 0,
+  phase: 'IDLE',
+  wpIdx: 0,
+  gfStatus: 'SAFE'
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  Demo State
+// ═══════════════════════════════════════════════════════════════
+let demo = {
+  running: false,
+  paused: false,
+  progress: 0,     // 0..1 across all path segments
+  speed: 0.15,     // progress per second (1.0 = full path in ~6.7s)
+  pathSegments: [], // [{startIdx, endIdx, lengthMeters}]
+  totalLength: 0,
+  lastGfStatus: {},
+  animFrame: null,
+  _gfblickToggles: {} // for blinking
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  Utility: haversine distance (meters)
+// ═══════════════════════════════════════════════════════════════
+function haversineM(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = Cesium.Math.toRadians(lat2 - lat1);
+  const dLng = Cesium.Math.toRadians(lng2 - lng1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(Cesium.Math.toRadians(lat1)) * Math.cos(Cesium.Math.toRadians(lat2)) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function bearing(lat1, lng1, lat2, lng2) {
+  const dLng = Cesium.Math.toRadians(lng2 - lng1);
+  const y = Math.sin(dLng) * Math.cos(Cesium.Math.toRadians(lat2));
+  const x = Math.cos(Cesium.Math.toRadians(lat1)) * Math.sin(Cesium.Math.toRadians(lat2))
+          - Math.sin(Cesium.Math.toRadians(lat1)) * Math.cos(Cesium.Math.toRadians(lat2)) * Math.cos(dLng);
+  return (Cesium.Math.toDegrees(Math.atan2(y, x)) + 360) % 360;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Build scene
+// ═══════════════════════════════════════════════════════════════
+function buildScene() {
+  // ── Waypoints: red dots ──
+  WAYPOINTS.forEach((wp, i) => {
+    const e = viewer.entities.add({
+      position: Cesium.Cartesian3.fromDegrees(wp.lng, wp.lat, wp.alt),
+      point: { pixelSize: 10, color: Cesium.Color.RED, outlineColor: Cesium.Color.WHITE, outlineWidth: 2 },
+      label: { text: wp.label, font: '11px monospace', fillColor: Cesium.Color.WHITE,
+               style: Cesium.LabelStyle.FILL, verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+               pixelOffset: new Cesium.Cartesian2(0, -14),
+               showBackground: true, backgroundColor: Cesium.Color.BLACK.withAlpha(0.6) }
+    });
+    wpPointEntities.push(e);
+  });
+
+  // ── Waypoint path: ground polyline + elevated ──
+  const wpPositions = WAYPOINTS.map(w => Cesium.Cartesian3.fromDegrees(w.lng, w.lat, 0));
+  viewer.entities.add({
+    polyline: {
+      positions: wpPositions,
+      width: 2,
+      material: Cesium.Color.YELLOW.withAlpha(0.5),
+      clampToGround: true
+    }
+  });
+  // Elevated ghost path
+  const wpPositionsAlt = WAYPOINTS.map(w => Cesium.Cartesian3.fromDegrees(w.lng, w.lat, w.alt));
+  viewer.entities.add({
+    polyline: {
+      positions: wpPositionsAlt,
+      width: 1.5,
+      material: new Cesium.PolylineDashMaterialProperty({ color: Cesium.Color.CYAN.withAlpha(0.3), dashLength: 16 }),
+    }
+  });
+
+  // ── Flight trail entity (initially empty) ──
+  trailEntity = viewer.entities.add({
+    polyline: {
+      positions: [],
+      width: 3,
+      material: Cesium.Color.CYAN.withAlpha(0.8),
+    }
+  });
+
+  // ── Aircraft entity ──
+  aircraftEntity = viewer.entities.add({
+    position: Cesium.Cartesian3.fromDegrees(flight.lng, flight.lat, 0),
+    model: {
+      uri: 'Cesium_Air.glb',
+      minimumPixelSize: 128,
+      maximumScale: 200,
+    },
+    orientation: new Cesium.VelocityOrientationProperty(new Cesium.SampledPositionProperty()),
+  });
+
+  // ── Geofence Walls ──
+  GEOFENCES.forEach(gf => {
+    if (gf.type === 'circle') {
+      gfWallEntities[gf.id] = { wall: addCircleGeofence(gf) };
+    } else if (gf.type === 'polygon') {
+      gfWallEntities[gf.id] = { wall: addPolygonGeofence(gf) };
+    }
+  });
+}
+
+function addCircleGeofence(gf) {
+  const pos = Cesium.Cartesian3.fromDegrees(gf.center.lng, gf.center.lat, gf.altBottom);
+  const wall = viewer.entities.add({
+    position: pos,
+    ellipsoid: {
+      radii: new Cesium.Cartesian3(gf.radius, gf.radius, (gf.altTop - gf.altBottom) / 2),
+      material: gf.color,
+      outline: true,
+      outlineColor: Cesium.Color.BLUE.withAlpha(0.6),
+      outlineWidth: 2,
+    }
+  });
+  // Buffer ring (ground)
+  viewer.entities.add({
+    position: pos,
+    ellipse: {
+      semiMajorAxis: gf.radius + gf.buffer,
+      semiMinorAxis: gf.radius + gf.buffer,
+      material: Cesium.Color.YELLOW.withAlpha(0.10),
+      outline: true,
+      outlineColor: Cesium.Color.YELLOW.withAlpha(0.3),
+      outlineWidth: 1,
+      height: gf.altBottom,
+    }
+  });
+  return wall;
+}
+
+function addPolygonGeofence(gf) {
+  const hierarchy = new Cesium.PolygonHierarchy(
+    gf.vertices.map(v => Cesium.Cartesian3.fromDegrees(v.lng, v.lat))
+  );
+  return viewer.entities.add({
+    polygon: {
+      hierarchy: hierarchy,
+      extrudedHeight: gf.altTop,
+      height: gf.altBottom,
+      material: gf.color,
+      outline: true,
+      outlineColor: Cesium.Color.BLUE.withAlpha(0.6),
+      outlineWidth: 2,
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Geofence Check
+// ═══════════════════════════════════════════════════════════════
+function pointInPolygon(lat, lng, vertices) {
+  let inside = false;
+  const n = vertices.length;
+  for (let i = 0, j = n - 1; i < n; j = i++) {
+    const xi = vertices[i].lng, yi = vertices[i].lat;
+    const xj = vertices[j].lng, yj = vertices[j].lat;
+    if ((yi > lat) !== (yj > lat) && lng < (xj - xi) * (lat - yi) / (yj - yi) + xi)
+      inside = !inside;
+  }
+  return inside;
+}
+
+function checkGeofence(gf, lat, lng, alt) {
+  if (alt < gf.altBottom || alt > gf.altTop) return 'safe';
+  let dist = Infinity;
+  if (gf.type === 'circle') {
+    dist = haversineM(lat, lng, gf.center.lat, gf.center.lng);
+    if (dist <= gf.radius) return 'violation';
+    if (dist <= gf.radius + gf.buffer) return 'warn';
+  } else if (gf.type === 'polygon') {
+    if (pointInPolygon(lat, lng, gf.vertices)) return 'violation';
+    // crude buffer: check min distance to any edge
+    const verts = gf.vertices;
+    for (let i = 0; i < verts.length; i++) {
+      const a = verts[i], b = verts[(i+1) % verts.length];
+      const d = pointToSegmentDistM(lat, lng, a.lat, a.lng, b.lat, b.lng);
+      if (d < dist) dist = d;
+    }
+    if (dist < 60) return 'warn'; // ~60m buffer for polygon
+  }
+  return 'safe';
+}
+
+function pointToSegmentDistM(px, py, ax, ay, bx, by) {
+  const x = Cesium.Math.toRadians(py - ay) * 6371000 * Math.cos(Cesium.Math.toRadians((ay+by)/2));
+  const y = Cesium.Math.toRadians(px - ax) * 6371000;
+  const dx = Cesium.Math.toRadians(by - ay) * 6371000 * Math.cos(Cesium.Math.toRadians((ay+by)/2));
+  const dy = Cesium.Math.toRadians(bx - ax) * 6371000;
+  const lenSq = dx*dx + dy*dy;
+  if (lenSq === 0) return Math.sqrt(x*x + y*y);
+  let t = Math.max(0, Math.min(1, (x*dx + y*dy) / lenSq));
+  return Math.sqrt((x - t*dx)**2 + (y - t*dy)**2);
+}
+
+function checkAllGeofences(lat, lng, alt) {
+  const statuses = {};
+  let worst = 'safe';
+  GEOFENCES.forEach(gf => {
+    const s = checkGeofence(gf, lat, lng, alt);
+    statuses[gf.id] = s;
+    if (s === 'violation') worst = 'violation';
+    else if (s === 'warn' && worst !== 'violation') worst = 'warn';
+  });
+  return { statuses, worst };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  UI Update
+// ═══════════════════════════════════════════════════════════════
+function updateHUD() {
+  document.getElementById('tv-lat').textContent = flight.lat.toFixed(4);
+  document.getElementById('tv-lng').textContent = flight.lng.toFixed(4);
+  document.getElementById('tv-alt').textContent = flight.alt.toFixed(0) + ' m';
+  document.getElementById('tv-spd').textContent = flight.spd.toFixed(1) + ' m/s';
+  document.getElementById('tv-hdg').textContent = String(Math.round(flight.hdg)).padStart(3,'0') + '°';
+  document.getElementById('tv-phase').textContent = flight.phase;
+  document.getElementById('tv-wp').textContent = flight.wpIdx < WAYPOINTS.length ? WAYPOINTS[flight.wpIdx].label : 'DONE';
+
+  const gfEl = document.getElementById('tv-gf');
+  gfEl.textContent = flight.gfStatus.toUpperCase();
+  gfEl.className = 'hud-val ' + (flight.gfStatus === 'violation' ? 'danger' : flight.gfStatus === 'warn' ? 'warn' : 'safe');
+}
+
+function updateGeofencePanel(statuses) {
+  GEOFENCES.forEach(gf => {
+    const s = statuses[gf.id];
+    const item = document.getElementById('gf-item-' + gf.id.slice(-2));
+    const st = document.getElementById('gf-st-' + gf.id.slice(-2));
+    if (item) { item.className = 'gf-item ' + s; }
+    if (st) { st.textContent = s.toUpperCase(); st.className = 'gf-status ' + s; }
+    // Only change wall material on status transition
+    if (s !== gf.status) {
+      gf.status = s;
+      const w = gfWallEntities[gf.id];
+      if (w && w.wall) {
+        let color;
+        if (s === 'violation') color = Cesium.Color.RED.withAlpha(0.35);
+        else if (s === 'warn') color = Cesium.Color.YELLOW.withAlpha(0.25);
+        else color = Cesium.Color.BLUE.withAlpha(0.2);
+        if (gf.type === 'circle') w.wall.ellipsoid.material = color;
+        else w.wall.polygon.material = color;
+      }
+    }
+  });
+  // Blinking for violations
+  GEOFENCES.forEach(gf => {
+    if (gf.status === 'violation') {
+      demo._gfblickToggles[gf.id] = (demo._gfblickToggles[gf.id] || 0) + 1;
+      const w = gfWallEntities[gf.id];
+      if (w && w.wall && demo._gfblickToggles[gf.id] % 30 < 15) {
+        if (gf.type === 'circle') w.wall.ellipsoid.material = Cesium.Color.RED.withAlpha(0.7);
+        else w.wall.polygon.material = Cesium.Color.RED.withAlpha(0.7);
+      }
+    }
+  });
+}
+
+function addVLog(msg, type) {
+  const el = document.getElementById('vlog');
+  const d = document.createElement('div');
+  d.className = 'vlog-entry ' + (type || 'info');
+  const now = new Date();
+  d.textContent = `[${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}] ${msg}`;
+  el.prepend(d);
+  if (el.children.length > 40) el.removeChild(el.lastChild);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Demo engine
+// ═══════════════════════════════════════════════════════════════
+function computePathSegments() {
+  demo.pathSegments = [];
+  demo.totalLength = 0;
+  for (let i = 0; i < WAYPOINTS.length - 1; i++) {
+    const a = WAYPOINTS[i], b = WAYPOINTS[i+1];
+    const len = haversineM(a.lat, a.lng, b.lat, b.lng);
+    demo.pathSegments.push({ startIdx: i, endIdx: i+1, lengthMeters: len, cumLength: demo.totalLength });
+    demo.totalLength += len;
+  }
+}
+
+function getPositionOnPath(progress) {
+  // progress: 0..1 across whole path
+  if (progress <= 0) return { ...WAYPOINTS[0] };
+  if (progress >= 1) return { ...WAYPOINTS[WAYPOINTS.length-1] };
+  const targetDist = progress * demo.totalLength;
+  for (const seg of demo.pathSegments) {
+    const nextCum = seg.cumLength + seg.lengthMeters;
+    if (targetDist <= nextCum) {
+      const t = (targetDist - seg.cumLength) / seg.lengthMeters;
+      const a = WAYPOINTS[seg.startIdx], b = WAYPOINTS[seg.endIdx];
+      return {
+        lat: a.lat + (b.lat - a.lat) * t,
+        lng: a.lng + (b.lng - a.lng) * t,
+        alt: a.alt + (b.alt - a.alt) * t
+      };
+    }
+  }
+  return { ...WAYPOINTS[WAYPOINTS.length-1] };
+}
+
+function demoLoop() {
+  if (!demo.running || demo.paused) { demo.animFrame = null; return; }
+
+  const now = performance.now();
+  const dt = Math.min((now - (demo._lastTick || now)) / 1000, 0.1);
+  demo._lastTick = now;
+
+  demo.progress += demo.speed * dt;
+  if (demo.progress >= 1.0) {
+    demo.progress = 1.0;
+    const wp = WAYPOINTS[WAYPOINTS.length-1];
+    flight.lat = wp.lat; flight.lng = wp.lng; flight.alt = wp.alt; flight.spd = 0;
+    flight.phase = 'LANDED'; flight.wpIdx = WAYPOINTS.length;
+    updateFlightEntity();
+    const { statuses, worst } = checkAllGeofences(flight.lat, flight.lng, flight.alt);
+    flight.gfStatus = worst;
+    updateGeofencePanel(statuses);
+    updateHUD();
+    stopDemo(true);
+    return;
+  }
+
+  const pos = getPositionOnPath(demo.progress);
+  flight.lat = pos.lat;
+  flight.lng = pos.lng;
+  flight.alt = pos.alt;
+
+  // Speed
+  const totalDist = demo.totalLength;
+  flight.spd = demo.speed * totalDist; // approximate m/s
+
+  // Heading
+  if (demo.progress < 1.0) {
+    const nextPos = getPositionOnPath(Math.min(1, demo.progress + 0.001));
+    flight.hdg = bearing(pos.lat, pos.lng, nextPos.lat, nextPos.lng);
+  }
+
+  // Phase / waypoint
+  let cum = 0;
+  for (let i = 0; i < demo.pathSegments.length; i++) {
+    cum += demo.pathSegments[i].lengthMeters;
+    if (demo.progress * demo.totalLength <= cum) {
+      flight.wpIdx = i + 1; break;
+    }
+  }
+  flight.phase = 'CRUISE';
+
+  updateFlightEntity();
+
+  // Trail
+  trailPositions.push(Cesium.Cartesian3.fromDegrees(flight.lng, flight.lat, flight.alt));
+  if (trailPositions.length > 500) trailPositions.shift();
+  trailEntity.polyline.positions = trailPositions;
+
+  // Geofence check
+  const { statuses, worst } = checkAllGeofences(flight.lat, flight.lng, flight.alt);
+  flight.gfStatus = worst;
+
+  // Log transitions
+  Object.keys(statuses).forEach(id => {
+    const prev = demo.lastGfStatus[id] || 'safe';
+    if (statuses[id] !== prev) {
+      let msg = `[${id}] ${prev.toUpperCase()} → ${statuses[id].toUpperCase()}`;
+      let type = statuses[id] === 'violation' ? 'violation' : statuses[id] === 'warn' ? 'warn' : 'info';
+      addVLog(msg, type);
+    }
+  });
+  demo.lastGfStatus = { ...statuses };
+
+  updateGeofencePanel(statuses);
+  updateHUD();
+
+  demo.animFrame = requestAnimationFrame(demoLoop);
+}
+
+function updateFlightEntity() {
+  const pos = Cesium.Cartesian3.fromDegrees(flight.lng, flight.lat, flight.alt);
+  aircraftEntity.position = pos;
+  // Orientation
+  const hpr = new Cesium.HeadingPitchRoll(
+    Cesium.Math.toRadians(flight.hdg),
+    Cesium.Math.toRadians(-5), // slight pitch down in cruise
+    0
+  );
+  aircraftEntity.orientation = Cesium.Transforms.headingPitchRollQuaternion(pos, hpr);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Demo Controls
+// ═══════════════════════════════════════════════════════════════
+function startDemo() {
+  computePathSegments();
+  demo.progress = 0;
+  demo.running = true;
+  demo.paused = false;
+  demo.speed = 0.08; // ~1 full path per ~12.5s
+  demo._lastTick = performance.now();
+  demo.lastGfStatus = {};
+  demo._gfblickToggles = {};
+  trailPositions = [];
+  trailEntity.polyline.positions = [];
+
+  // Reset flight
+  flight.lat = WAYPOINTS[0].lat;
+  flight.lng = WAYPOINTS[0].lng;
+  flight.alt = 0;
+  flight.spd = 0;
+  flight.hdg = bearing(WAYPOINTS[0].lat, WAYPOINTS[0].lng, WAYPOINTS[1].lat, WAYPOINTS[1].lng);
+  flight.phase = 'TAKEOFF';
+  flight.wpIdx = 0;
+  flight.gfStatus = 'SAFE';
+
+  // Reset geofence visuals
+  GEOFENCES.forEach(gf => { gf.status = 'safe'; });
+  Object.keys(gfWallEntities).forEach(id => {
+    const w = gfWallEntities[id];
+    if (w && w.wall) {
+      const gf = GEOFENCES.find(g => g.id === id);
+      if (gf) {
+        if (gf.type === 'circle') w.wall.ellipsoid.material = gf.color;
+        else w.wall.polygon.material = gf.color;
+      }
+    }
+  });
+
+  // Reset UI
+  document.querySelectorAll('.gf-item').forEach(el => el.className = 'gf-item safe');
+  document.querySelectorAll('.gf-status').forEach(el => { el.textContent = 'SAFE'; el.className = 'gf-status safe'; });
+  document.getElementById('vlog').innerHTML = '<div class="vlog-entry info">[System] Demo started</div>';
+
+  // Camera follow
+  viewer.camera.flyTo({
+    destination: Cesium.Cartesian3.fromDegrees(flight.lng, flight.lat, 1200),
+    orientation: { heading: Cesium.Math.toRadians(0), pitch: Cesium.Math.toRadians(-35), roll: 0 },
+    duration: 1.5
+  });
+
+  updateFlightEntity();
+  updateHUD();
+  addVLog('Takeoff initiated', 'info');
+
+  // Buttons
+  document.getElementById('btn-start').style.display = 'none';
+  document.getElementById('btn-pause').style.display = 'inline-block';
+  document.getElementById('btn-resume').style.display = 'none';
+  document.getElementById('btn-stop').style.display = 'inline-block';
+  document.getElementById('status-bar').innerHTML = 'DEMO STATUS: RUNNING &nbsp;|&nbsp; FPS: <span id="fps-counter">--</span>';
+
+  demo.animFrame = requestAnimationFrame(demoLoop);
+}
+
+function pauseDemo() {
+  demo.paused = true;
+  flight.phase = 'PAUSED';
+  updateHUD();
+  document.getElementById('btn-pause').style.display = 'none';
+  document.getElementById('btn-resume').style.display = 'inline-block';
+  document.getElementById('btn-stop').style.display = 'inline-block';
+  document.getElementById('status-bar').innerHTML = 'DEMO STATUS: PAUSED &nbsp;|&nbsp; FPS: <span id="fps-counter">--</span>';
+  addVLog('Demo paused', 'info');
+}
+
+function resumeDemo() {
+  demo.paused = false;
+  demo._lastTick = performance.now();
+  flight.phase = 'CRUISE';
+  updateHUD();
+  document.getElementById('btn-pause').style.display = 'inline-block';
+  document.getElementById('btn-resume').style.display = 'none';
+  document.getElementById('btn-stop').style.display = 'inline-block';
+  document.getElementById('status-bar').innerHTML = 'DEMO STATUS: RUNNING &nbsp;|&nbsp; FPS: <span id="fps-counter">--</span>';
+  addVLog('Demo resumed', 'info');
+  demo.animFrame = requestAnimationFrame(demoLoop);
+}
+
+function stopDemo(completed) {
+  demo.running = false;
+  demo.paused = false;
+  if (demo.animFrame) { cancelAnimationFrame(demo.animFrame); demo.animFrame = null; }
+  flight.phase = completed ? 'LANDED' : 'STOPPED';
+  updateHUD();
+
+  document.getElementById('btn-start').style.display = 'inline-block';
+  document.getElementById('btn-pause').style.display = 'none';
+  document.getElementById('btn-resume').style.display = 'none';
+  document.getElementById('btn-stop').style.display = 'none';
+  document.getElementById('status-bar').innerHTML = `DEMO STATUS: ${completed ? 'COMPLETED' : 'IDLE'} &nbsp;|&nbsp; FPS: <span id="fps-counter">--</span>`;
+
+  if (completed) addVLog('Demo completed. All waypoints reached.', 'info');
+  else addVLog('Demo stopped by user', 'info');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  FPS counter
+// ═══════════════════════════════════════════════════════════════
+let fpsFrames = 0, fpsTime = performance.now();
+viewer.scene.postRender.addEventListener(() => {
+  fpsFrames++;
+  const now = performance.now();
+  if (now - fpsTime >= 1000) {
+    const el = document.getElementById('fps-counter');
+    if (el) el.textContent = fpsFrames;
+    fpsFrames = 0; fpsTime = now;
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  Keyboard shortcuts
+// ═══════════════════════════════════════════════════════════════
+window.addEventListener('keydown', e => {
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (!demo.running) startDemo();
+    else if (demo.paused) resumeDemo();
+    else pauseDemo();
+  }
+  if (e.code === 'Escape') { e.preventDefault(); stopDemo(false); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  Boot
+// ═══════════════════════════════════════════════════════════════
+buildScene();
+updateHUD();
+addVLog('FlyteOS Cesium v1.0 ready', 'info');
+addVLog('Press SPACE or click START DEMO to begin', 'info');
+
+// Camera follows aircraft initially
+viewer.clock.onTick.addEventListener(() => {
+  if (demo.running && !demo.paused) {
+    // Smooth camera follow
+    const pos = Cesium.Cartesian3.fromDegrees(flight.lng, flight.lat, flight.alt + 400);
+    const target = Cesium.Cartesian3.fromDegrees(flight.lng, flight.lat, flight.alt);
+    viewer.camera.lookAt(target, new Cesium.Cartesian3(0, 0, 600));
+  }
+});
+
+console.log('FlyteOS Cesium Demo ready');
+</script>
+</body>
+</html>
