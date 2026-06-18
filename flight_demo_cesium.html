@@ -8,184 +8,235 @@
 <link href="https://cesium.com/downloads/cesiumjs/releases/1.120/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-html,body,#cesiumContainer{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI','Microsoft YaHei','Consolas',monospace;background:#000;}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI','Microsoft YaHei','Consolas',monospace;background:#000;}
+
+#cesiumContainer{position:absolute;left:35%;top:0;width:30%;height:calc(100vh - 240px);z-index:1;}
 
 /* ── Column Wrappers ── */
-#left-col {
-  position:absolute; left:16px; top:16px;
-  display:flex; flex-direction:column; gap:10px;
-  z-index:10; width:290px; max-height:calc(100vh - 140px); overflow-y:auto;
-}
-#right-col {
-  position:absolute; right:16px; top:16px;
-  display:flex; flex-direction:column; gap:10px;
-  z-index:10; width:280px; max-height:calc(100vh - 140px); overflow-y:auto;
-}
+#left-col{position:absolute;left:16px;top:56px;display:flex;flex-direction:column;gap:8px;z-index:10;width:calc(35% - 24px);max-height:calc(100vh - 260px);overflow-y:auto;padding-right:4px;}
+#right-col{position:absolute;right:16px;top:56px;display:flex;flex-direction:column;gap:8px;z-index:10;width:calc(35% - 24px);max-height:calc(100vh - 260px);overflow-y:auto;padding-right:4px;}
 
 /* ── Panel Base ── */
-.panel-base {
-  background:rgba(5,10,25,0.92);
-  border:1px solid rgba(0,180,255,0.35); border-radius:10px;
-  padding:12px 14px; color:#00d4ff; font-size:11px;
-  backdrop-filter:blur(6px);
-  box-shadow:0 0 30px rgba(0,100,200,0.15);
-}
-.panel-base h3 { font-size:13px; letter-spacing:1px; margin-bottom:8px; color:#00ffaa; border-bottom:1px solid rgba(0,180,255,0.2); padding-bottom:5px; }
+.panel-base{background:rgba(5,10,25,0.92);border:1px solid rgba(0,180,255,0.35);border-radius:10px;padding:10px 12px;color:#00d4ff;font-size:11px;backdrop-filter:blur(6px);box-shadow:0 0 30px rgba(0,100,200,0.15);}
+.panel-base h3{font-size:12px;letter-spacing:1px;margin-bottom:6px;color:#00ffaa;border-bottom:1px solid rgba(0,180,255,0.2);padding-bottom:4px;display:flex;justify-content:space-between;align-items:center;}
+.panel-base h3 .collapse-btn{cursor:pointer;font-size:14px;color:rgba(0,200,255,0.5);transition:color 0.2s;}
+.panel-base h3 .collapse-btn:hover{color:#00ffaa;}
 
 /* ── HUD Panel ── */
-.hud-row { display:flex; justify-content:space-between; padding:2px 0; }
-.hud-label { color:rgba(0,200,255,0.6); }
-.hud-val { color:#00ffaa; font-weight:bold; font-size:12px; }
-.hud-val.warn { color:#ffaa00; }
-.hud-val.danger { color:#ff3344; animation:blink 0.6s infinite; }
+.hud-row{display:flex;justify-content:space-between;padding:2px 0;}
+.hud-label{color:rgba(0,200,255,0.6);}
+.hud-val{color:#00ffaa;font-weight:bold;font-size:11px;}
+.hud-val.warn{color:#ffaa00;}
+.hud-val.danger{color:#ff3344;animation:blink 0.6s infinite;}
+
+/* ── 决策等级指示器 ── */
+.autonomy-indicator{display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:6px 8px;background:rgba(0,30,60,0.4);border-radius:6px;border:1px solid rgba(0,180,255,0.15);}
+.autonomy-label{font-size:10px;color:rgba(0,200,255,0.5);white-space:nowrap;}
+.autonomy-blocks{display:flex;gap:3px;flex:1;justify-content:center;}
+.autonomy-block{width:22px;height:8px;border-radius:2px;background:rgba(255,255,255,0.08);transition:all 0.4s;}
+.autonomy-block.active-l0{background:#888;}
+.autonomy-block.active-l1{background:#4488ff;}
+.autonomy-block.active-l2{background:#00aaff;box-shadow:0 0 6px rgba(0,170,255,0.4);}
+.autonomy-block.active-l3{background:#ffaa00;box-shadow:0 0 8px rgba(255,170,0,0.5);}
+.autonomy-block.active-l4{background:#ff3344;box-shadow:0 0 10px rgba(255,50,60,0.6);animation:blink 1s infinite;}
+.autonomy-level-text{font-size:10px;color:#00ffaa;font-weight:bold;min-width:60px;text-align:right;}
 
 /* ── 系统健康 Panel ── */
-#health-panel { }
-.health-score { text-align:center; margin-bottom:8px; }
-.health-score .score-num { font-size:28px; font-weight:bold; color:#00ff66; }
-.health-score .score-label { font-size:10px; color:rgba(0,200,255,0.5); display:block; }
-.health-bar-row { display:flex; align-items:center; padding:2px 0; gap:6px; }
-.health-bar-label { width:55px; color:rgba(0,200,255,0.6); font-size:10px; flex-shrink:0; }
-.health-bar-track { flex:1; height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden; }
-.health-bar-fill { height:100%; border-radius:3px; transition:width 0.5s, background 0.5s; }
-.health-bar-fill.green { background:#00ff66; }
-.health-bar-fill.yellow { background:#ffaa00; }
-.health-bar-fill.red { background:#ff3344; }
-.health-bar-pct { width:32px; font-size:10px; text-align:right; color:#00d4ff; flex-shrink:0; }
-.health-predict { margin-top:8px; padding:6px 8px; background:rgba(0,30,60,0.5); border-radius:5px; border:1px solid rgba(0,180,255,0.2); font-size:10px; }
-.health-predict .predict-text { color:#ffcc33; }
-.health-predict .predict-text.urgent { color:#ff3344; animation:blink 1s infinite; }
+#health-panel{}
+.health-score{text-align:center;margin-bottom:6px;}
+.health-score .score-num{font-size:26px;font-weight:bold;color:#00ff66;}
+.health-score .score-label{font-size:10px;color:rgba(0,200,255,0.5);display:block;}
+.health-bar-row{display:flex;align-items:center;padding:2px 0;gap:5px;}
+.health-bar-label{width:52px;color:rgba(0,200,255,0.6);font-size:10px;flex-shrink:0;}
+.health-bar-track{flex:1;height:5px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;}
+.health-bar-fill{height:100%;border-radius:3px;transition:width 0.5s,background 0.5s;}
+.health-bar-fill.green{background:#00ff66;}
+.health-bar-fill.yellow{background:#ffaa00;}
+.health-bar-fill.red{background:#ff3344;}
+.health-bar-pct{width:30px;font-size:10px;text-align:right;color:#00d4ff;flex-shrink:0;}
+.health-predict{margin-top:6px;padding:5px 7px;background:rgba(0,30,60,0.5);border-radius:5px;border:1px solid rgba(0,180,255,0.2);font-size:10px;}
+.health-predict .predict-text{color:#ffcc33;}
+.health-predict .predict-text.urgent{color:#ff3344;animation:blink 1s infinite;}
+.health-trend{margin-top:6px;text-align:center;}
+.health-trend canvas{border-radius:4px;border:1px solid rgba(0,180,255,0.15);}
 
 /* ── 舵面输出 Panel ── */
-#surface-panel { }
-.surface-row { display:flex; justify-content:space-between; padding:2px 0; }
-.surface-label { color:rgba(0,200,255,0.6); }
-.surface-val { color:#ffcc33; font-weight:bold; font-size:12px; }
+#surface-panel{}
+.surface-row{display:flex;justify-content:space-between;padding:2px 0;}
+.surface-label{color:rgba(0,200,255,0.6);}
+.surface-val{color:#ffcc33;font-weight:bold;font-size:11px;}
 
 /* ── 飞控决策日志 Panel ── */
-#fc-log-panel { }
-#fc-log { max-height:160px; overflow-y:auto; font-size:10px; color:rgba(200,220,240,0.85); }
-.fc-log-entry { padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.04); line-height:1.4; }
-.fc-log-entry.emergency { color:#ff5566; font-weight:bold; }
-.fc-log-entry.warning { color:#ffaa00; }
-.fc-log-entry.info { color:#00d4ff; }
-.fc-log-entry.success { color:#00ff66; }
+#fc-log-panel{}
+#fc-log{max-height:120px;overflow-y:auto;font-size:9px;color:rgba(200,220,240,0.85);}
+.fc-log-entry{padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.04);line-height:1.3;}
+.fc-log-entry.emergency{color:#ff5566;font-weight:bold;}
+.fc-log-entry.warning{color:#ffaa00;}
+.fc-log-entry.info{color:#00d4ff;}
+.fc-log-entry.success{color:#00ff66;}
 
 /* ── Geofence Panel ── */
-#gf-panel { overflow-y:auto; }
-.gf-item { padding:5px 7px; margin:3px 0; border-radius:5px; border:1px solid rgba(0,180,255,0.2); background:rgba(0,30,60,0.5); display:flex; justify-content:space-between; align-items:center; }
-.gf-item.safe { border-color:rgba(0,160,255,0.4); }
-.gf-item.warn { border-color:#ffaa00; background:rgba(255,170,0,0.08); }
-.gf-item.violation { border-color:#ff3344; background:rgba(255,50,60,0.1); }
-.gf-status { font-size:9px; padding:2px 7px; border-radius:10px; font-weight:bold; }
-.gf-status.safe { color:#00aaff; background:rgba(0,160,255,0.15); }
-.gf-status.warn { color:#ffaa00; background:rgba(255,170,0,0.2); }
-.gf-status.violation { color:#ff3344; background:rgba(255,50,60,0.2); animation:blink 0.5s infinite; }
-
-/* ── Violation Log ── */
-#vlog-section { margin-top:8px; }
-#vlog-section h4 { font-size:10px; color:rgba(0,200,255,0.6); margin-bottom:4px; }
-#vlog { max-height:100px; overflow-y:auto; font-size:9px; color:rgba(200,220,240,0.8); }
-.vlog-entry { padding:2px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
-.vlog-entry.warn { color:#ffaa00; }
-.vlog-entry.violation { color:#ff3344; }
-.vlog-entry.info { color:#00d4ff; }
+#gf-panel{overflow-y:auto;}
+.gf-item{padding:4px 6px;margin:2px 0;border-radius:5px;border:1px solid rgba(0,180,255,0.2);background:rgba(0,30,60,0.5);display:flex;justify-content:space-between;align-items:center;font-size:10px;}
+.gf-item.safe{border-color:rgba(0,160,255,0.4);}
+.gf-item.warn{border-color:#ffaa00;background:rgba(255,170,0,0.08);}
+.gf-item.violation{border-color:#ff3344;background:rgba(255,50,60,0.1);}
+.gf-status{font-size:9px;padding:1px 6px;border-radius:10px;font-weight:bold;}
+.gf-status.safe{color:#00aaff;background:rgba(0,160,255,0.15);}
+.gf-status.warn{color:#ffaa00;background:rgba(255,170,0,0.2);}
+.gf-status.violation{color:#ff3344;background:rgba(255,50,60,0.2);animation:blink 0.5s infinite;}
+#vlog-section{margin-top:6px;}
+#vlog-section h4{font-size:10px;color:rgba(0,200,255,0.6);margin-bottom:3px;}
+#vlog{max-height:80px;overflow-y:auto;font-size:9px;color:rgba(200,220,240,0.8);}
+.vlog-entry{padding:1px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+.vlog-entry.warn{color:#ffaa00;}
+.vlog-entry.violation{color:#ff3344;}
+.vlog-entry.info{color:#00d4ff;}
 
 /* ── 闭环控制 Panel ── */
-#cl-panel { }
-.cl-table { width:100%; border-collapse:collapse; font-size:10px; }
-.cl-table th { color:rgba(0,200,255,0.5); font-weight:normal; text-align:left; padding:3px 4px; border-bottom:1px solid rgba(0,180,255,0.15); }
-.cl-table td { padding:3px 4px; color:#00ffaa; border-bottom:1px solid rgba(0,180,255,0.08); font-weight:bold; }
-.cl-table td.dev-good { color:#00ff66; }
-.cl-table td.dev-warn { color:#ffaa00; }
-.cl-table td.dev-bad { color:#ff3344; }
-.cl-xte-chart { margin-top:6px; font-size:10px; }
-.cl-xte-chart .xte-bar-row { font-family:'Consolas',monospace; color:#00d4ff; letter-spacing:1px; }
+#cl-panel{}
+.cl-table{width:100%;border-collapse:collapse;font-size:10px;}
+.cl-table th{color:rgba(0,200,255,0.5);font-weight:normal;text-align:left;padding:2px 3px;border-bottom:1px solid rgba(0,180,255,0.15);font-size:9px;}
+.cl-table td{padding:2px 3px;color:#00ffaa;border-bottom:1px solid rgba(0,180,255,0.08);font-weight:bold;font-size:10px;}
+.cl-table td.dev-good{color:#00ff66;}
+.cl-table td.dev-warn{color:#ffaa00;}
+.cl-table td.dev-bad{color:#ff3344;}
+.cl-xte-chart{margin-top:4px;font-size:9px;}
+.cl-xte-chart .xte-bar-row{font-family:'Consolas',monospace;color:#00d4ff;letter-spacing:1px;}
+.cl-quality{margin-top:6px;padding:5px 7px;background:rgba(0,30,60,0.4);border-radius:5px;border:1px solid rgba(0,180,255,0.15);}
+.cl-quality h4{font-size:9px;color:rgba(0,200,255,0.5);margin-bottom:3px;}
+.cl-quality-row{display:flex;justify-content:space-between;padding:1px 0;font-size:9px;}
+.cl-quality-label{color:rgba(0,200,255,0.5);}
+.cl-quality-val{color:#ffcc33;font-weight:bold;}
 
 /* ── 飞行性能 Panel ── */
-#perf-panel { }
-.perf-row { display:flex; justify-content:space-between; padding:2px 0; }
-.perf-label { color:rgba(0,200,255,0.6); }
-.perf-val { color:#ffcc33; font-weight:bold; font-size:12px; }
+#perf-panel{}
+.perf-row{display:flex;justify-content:space-between;padding:1px 0;font-size:10px;}
+.perf-label{color:rgba(0,200,255,0.6);}
+.perf-val{color:#ffcc33;font-weight:bold;font-size:11px;}
+
+/* ── 编队状态 Panel ── */
+#formation-panel{}
+.formation-table{width:100%;border-collapse:collapse;font-size:9px;}
+.formation-table th{color:rgba(0,200,255,0.5);font-weight:normal;text-align:left;padding:2px 3px;border-bottom:1px solid rgba(0,180,255,0.15);}
+.formation-table td{padding:2px 3px;color:#00d4ff;border-bottom:1px solid rgba(0,180,255,0.08);}
+.formation-table .fm-leader{color:#00ffaa;font-weight:bold;}
+.formation-table .fm-wing-a{color:#4488ff;}
+.formation-table .fm-wing-b{color:#ff9944;}
+.formation-conflict{margin-top:4px;padding:4px 6px;background:rgba(255,0,0,0.1);border:1px solid rgba(255,50,60,0.3);border-radius:4px;font-size:9px;color:#ff5566;animation:blink 0.8s infinite;display:none;}
+
+/* ── 故障树 Panel ── */
+#fault-tree-panel{}
+.ft-tree{font-family:'Consolas',monospace;font-size:9px;color:rgba(200,220,240,0.6);line-height:1.6;text-align:center;transition:color 0.3s;}
+.ft-tree .ft-node{display:block;padding:1px 0;}
+.ft-tree .ft-node.active{color:#ff5566;font-weight:bold;}
+.ft-tree .ft-arrow{color:rgba(255,255,255,0.2);}
+.ft-tree.dimmed{opacity:0.4;}
 
 /* ── Bottom Controls ── */
-#ctrl-bar {
-  position:absolute; bottom:62px; left:50%; transform:translateX(-50%);
-  display:flex; gap:8px; z-index:10; flex-wrap:wrap; justify-content:center;
-  max-width:900px;
-}
-.ctrl-btn {
-  padding:7px 16px; border-radius:7px; border:1px solid rgba(0,180,255,0.4);
-  background:rgba(5,10,25,0.88); color:#00d4ff; font-size:11px;
-  cursor:pointer; letter-spacing:1px; backdrop-filter:blur(4px);
-  transition:all 0.2s; font-family:inherit; min-width:60px;
-}
-.ctrl-btn:hover { background:rgba(0,150,255,0.15); border-color:#00ffaa; color:#00ffaa; }
-.ctrl-btn:active { transform:scale(0.96); }
-.ctrl-btn.primary { border-color:#00ffaa; color:#00ffaa; font-weight:bold; }
-.ctrl-btn.danger { border-color:rgba(255,50,60,0.5); color:#ff5566; }
-.ctrl-btn.success { border-color:#00ff66; color:#00ff66; }
-.ctrl-btn.reset-btn { border-color:rgba(180,180,180,0.5); color:#aaaaaa; }
-.ctrl-btn:disabled { opacity:0.35; cursor:not-allowed; }
+#ctrl-bar{position:absolute;bottom:195px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:10;flex-wrap:wrap;justify-content:center;max-width:900px;}
+.ctrl-btn{padding:6px 14px;border-radius:6px;border:1px solid rgba(0,180,255,0.4);background:rgba(5,10,25,0.88);color:#00d4ff;font-size:10px;cursor:pointer;letter-spacing:1px;backdrop-filter:blur(4px);transition:all 0.2s;font-family:inherit;min-width:55px;}
+.ctrl-btn:hover{background:rgba(0,150,255,0.15);border-color:#00ffaa;color:#00ffaa;}
+.ctrl-btn:active{transform:scale(0.96);}
+.ctrl-btn.primary{border-color:#00ffaa;color:#00ffaa;font-weight:bold;}
+.ctrl-btn.danger{border-color:rgba(255,50,60,0.5);color:#ff5566;}
+.ctrl-btn.success{border-color:#00ff66;color:#00ff66;}
+.ctrl-btn.reset-btn{border-color:rgba(180,180,180,0.5);color:#aaaaaa;}
+.ctrl-btn:disabled{opacity:0.35;cursor:not-allowed;}
+.ctrl-btn.formation-btn{border-color:rgba(100,180,255,0.5);color:#66bbff;}
 
 /* ── 异常场景按钮组 ── */
-#anomaly-bar {
-  position:absolute; bottom:24px; left:50%; transform:translateX(-50%);
-  display:flex; gap:8px; z-index:10; flex-wrap:wrap; justify-content:center;
-  max-width:900px;
-}
-.anomaly-btn {
-  padding:6px 12px; border-radius:6px; border:1px solid rgba(255,150,50,0.4);
-  background:rgba(10,5,5,0.85); color:#ff9944; font-size:10px;
-  cursor:pointer; letter-spacing:1px; backdrop-filter:blur(4px);
-  transition:all 0.2s; font-family:inherit;
-}
-.anomaly-btn:hover { background:rgba(255,100,0,0.2); border-color:#ff6644; color:#ff6644; }
-.anomaly-btn:active { transform:scale(0.96); }
-.anomaly-btn.active { border-color:#ff3344; color:#ff3344; background:rgba(255,50,50,0.2); box-shadow:0 0 10px rgba(255,0,0,0.3); }
+#anomaly-bar{position:absolute;bottom:155px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:10;flex-wrap:wrap;justify-content:center;max-width:900px;}
+.anomaly-btn{padding:5px 10px;border-radius:5px;border:1px solid rgba(255,150,50,0.4);background:rgba(10,5,5,0.85);color:#ff9944;font-size:9px;cursor:pointer;letter-spacing:1px;backdrop-filter:blur(4px);transition:all 0.2s;font-family:inherit;}
+.anomaly-btn:hover{background:rgba(255,100,0,0.2);border-color:#ff6644;color:#ff6644;}
+.anomaly-btn:active{transform:scale(0.96);}
+.anomaly-btn.active{border-color:#ff3344;color:#ff3344;background:rgba(255,50,50,0.2);box-shadow:0 0 10px rgba(255,0,0,0.3);}
 
-/* ── Status Bar Bottom ── */
-#status-bar {
-  position:absolute; bottom:108px; left:50%; transform:translateX(-50%);
-  color:rgba(0,200,255,0.5); font-size:9px; z-index:10;
-  letter-spacing:1px; white-space:nowrap;
-}
+/* ── 回放控制条 ── */
+#replay-bar{position:absolute;bottom:115px;left:50%;transform:translateX(-50%);display:flex;gap:6px;align-items:center;z-index:10;background:rgba(5,10,25,0.88);border:1px solid rgba(0,180,255,0.25);border-radius:8px;padding:6px 12px;backdrop-filter:blur(4px);}
+#replay-bar.hidden{display:none;}
+.replay-btn{padding:4px 10px;border-radius:4px;border:1px solid rgba(0,180,255,0.3);background:rgba(5,10,25,0.8);color:#00d4ff;font-size:9px;cursor:pointer;font-family:inherit;transition:all 0.2s;}
+.replay-btn:hover{background:rgba(0,150,255,0.15);border-color:#00ffaa;color:#00ffaa;}
+.replay-btn.active{border-color:#00ffaa;color:#00ffaa;background:rgba(0,255,170,0.1);}
+.replay-slider{width:180px;margin:0 8px;accent-color:#00d4ff;}
+.replay-label{font-size:9px;color:rgba(0,200,255,0.5);white-space:nowrap;}
+
+/* ── 任务规划面板 (可折叠) ── */
+#mission-panel{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:96%;max-width:1200px;z-index:10;margin-bottom:0;}
+#mission-content{display:none;padding:8px 12px;}
+#mission-content.open{display:block;}
+.mission-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;}
+.mission-wp-table{width:100%;border-collapse:collapse;font-size:9px;margin-bottom:6px;}
+.mission-wp-table th{color:rgba(0,200,255,0.5);font-weight:normal;text-align:left;padding:2px 4px;border-bottom:1px solid rgba(0,180,255,0.15);}
+.mission-wp-table td{padding:2px 4px;color:#00d4ff;border-bottom:1px solid rgba(0,180,255,0.08);}
+.mission-wp-table input[type=range]{width:60px;accent-color:#00d4ff;}
+.mission-wp-table input[type=number]{width:50px;background:rgba(0,20,40,0.8);border:1px solid rgba(0,180,255,0.3);color:#00d4ff;font-size:9px;padding:1px 3px;border-radius:3px;}
+.mission-wp-table button{padding:2px 6px;border-radius:3px;border:1px solid rgba(0,180,255,0.3);background:rgba(5,10,25,0.8);color:#00d4ff;font-size:8px;cursor:pointer;font-family:inherit;}
+.mission-wp-table button:hover{background:rgba(0,150,255,0.15);}
+.mission-wp-table button.del-btn{border-color:rgba(255,50,60,0.4);color:#ff5566;}
+.mission-btn{padding:4px 10px;border-radius:4px;border:1px solid rgba(0,180,255,0.4);background:rgba(5,10,25,0.85);color:#00d4ff;font-size:9px;cursor:pointer;font-family:inherit;transition:all 0.2s;}
+.mission-btn:hover{background:rgba(0,150,255,0.15);border-color:#00ffaa;color:#00ffaa;}
+
+/* ── 系统接口栏 ── */
+#iface-panel{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:96%;max-width:1200px;z-index:9;}
+#iface-content{padding:6px 12px;font-size:9px;font-family:'Consolas',monospace;}
+#iface-content .iface-row{display:flex;justify-content:space-between;align-items:center;padding:2px 0;border-bottom:1px solid rgba(0,180,255,0.08);}
+#iface-content .iface-name{color:#00ffaa;font-weight:bold;}
+#iface-content .iface-status{color:#00ff66;}
+#iface-content .iface-link{color:#4488ff;cursor:pointer;text-decoration:underline;}
+#iface-content .iface-link:hover{color:#66bbff;}
+#iface-content .iface-detail{display:none;background:rgba(0,20,40,0.6);padding:4px 8px;margin-top:2px;border-radius:3px;color:rgba(200,220,240,0.7);font-size:8px;white-space:pre-wrap;}
+
+/* ── AI报告模态窗口 ── */
+#ai-modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.65);z-index:100;justify-content:center;align-items:center;backdrop-filter:blur(2px);}
+#ai-modal-overlay.open{display:flex;}
+#ai-modal{background:rgba(5,10,25,0.96);border:2px solid rgba(0,180,255,0.5);border-radius:14px;padding:20px;width:480px;max-height:80vh;overflow-y:auto;color:#00d4ff;font-size:11px;box-shadow:0 0 60px rgba(0,100,200,0.3);}
+#ai-modal h2{color:#00ffaa;text-align:center;margin-bottom:12px;font-size:16px;letter-spacing:2px;}
+#ai-modal .ai-section{margin-bottom:10px;padding:8px 10px;background:rgba(0,30,60,0.4);border-radius:8px;border:1px solid rgba(0,180,255,0.15);}
+#ai-modal .ai-row{display:flex;justify-content:space-between;padding:3px 0;}
+#ai-modal .ai-label{color:rgba(0,200,255,0.6);}
+#ai-modal .ai-val{color:#ffcc33;font-weight:bold;}
+#ai-modal .ai-grade{font-size:28px;font-weight:bold;text-align:center;padding:6px;}
+#ai-modal .ai-grade.s{color:#ffd700}
+#ai-modal .ai-grade.a{color:#00ff66}
+#ai-modal .ai-grade.b{color:#ffaa00}
+#ai-modal .ai-grade.c{color:#ff3344}
+#ai-modal .ai-btns{display:flex;gap:10px;justify-content:center;margin-top:12px;}
+#ai-modal .ai-btn{padding:7px 20px;border-radius:6px;border:1px solid rgba(0,180,255,0.4);background:rgba(5,10,25,0.85);color:#00d4ff;font-size:11px;cursor:pointer;font-family:inherit;transition:all 0.2s;}
+#ai-modal .ai-btn:hover{background:rgba(0,150,255,0.15);border-color:#00ffaa;color:#00ffaa;}
+#ai-modal .ai-btn.primary{border-color:#00ffaa;color:#00ffaa;}
+
+/* ── Status Bar ── */
+#status-bar{position:absolute;bottom:235px;left:50%;transform:translateX(-50%);color:rgba(0,200,255,0.5);font-size:9px;z-index:10;letter-spacing:1px;white-space:nowrap;}
 
 /* ── Title Bar ── */
-#title-bar {
-  position:absolute; top:8px; left:50%; transform:translateX(-50%);
-  z-index:10; color:#00ffaa; font-size:17px; font-weight:bold;
-  letter-spacing:3px; text-shadow:0 0 20px rgba(0,255,170,0.4);
-  pointer-events:none;
-}
+#title-bar{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:10;color:#00ffaa;font-size:17px;font-weight:bold;letter-spacing:3px;text-shadow:0 0 20px rgba(0,255,170,0.4);pointer-events:none;}
 
 /* ── Animations ── */
-@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
-@keyframes pulse-red { 0%,100%{box-shadow:0 0 5px rgba(255,0,0,0.2);} 50%{box-shadow:0 0 20px rgba(255,0,0,0.6);} }
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+@keyframes pulse-red{0%,100%{box-shadow:0 0 5px rgba(255,0,0,0.2);}50%{box-shadow:0 0 20px rgba(255,0,0,0.6);}}
 
 /* ── Scrollbar ── */
-::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar{width:3px;}
 ::-webkit-scrollbar-track{background:rgba(0,0,0,0.2);}
 ::-webkit-scrollbar-thumb{background:rgba(0,180,255,0.2);border-radius:2px;}
 
-.cesium-widget-credits { display:none !important; }
+.cesium-widget-credits{display:none!important;}
 </style>
 </head>
 <body>
 <div id="cesiumContainer"></div>
-
 <div id="title-bar">FLYTEOS 智能飞行管理系统</div>
 
 <!-- Left Column -->
 <div id="left-col">
-  <!-- HUD Panel -->
   <div id="hud-panel" class="panel-base">
     <h3>遥测数据</h3>
     <div class="hud-row"><span class="hud-label">纬度</span><span class="hud-val" id="tv-lat">37.7700</span></div>
     <div class="hud-row"><span class="hud-label">经度</span><span class="hud-val" id="tv-lng">-122.4100</span></div>
     <div class="hud-row"><span class="hud-label">高度 (海平面)</span><span class="hud-val" id="tv-alt">0 m</span></div>
     <div class="hud-row"><span class="hud-label">速度</span><span class="hud-val" id="tv-spd">0.0 m/s</span></div>
-    <div class="hud-row"><span class="hud-label">航向</span><span class="hud-val" id="tv-hdg">0</span></div>
+    <div class="hud-row"><span class="hud-label">航向</span><span class="hud-val" id="tv-hdg">000°</span></div>
     <div class="hud-row"><span class="hud-label">滚转 (Roll)</span><span class="hud-val" id="tv-roll">0.0°</span></div>
     <div class="hud-row"><span class="hud-label">俯仰 (Pitch)</span><span class="hud-val" id="tv-pitch">0.0°</span></div>
     <div class="hud-row"><span class="hud-label">偏航 (Yaw)</span><span class="hud-val" id="tv-yaw">0.0°</span></div>
@@ -195,7 +246,6 @@ html,body,#cesiumContainer{width:100%;height:100%;overflow:hidden;font-family:'S
     <div class="hud-row"><span class="hud-label">偏航误差 (XTE)</span><span class="hud-val" id="tv-xte">0.0 m</span></div>
   </div>
 
-  <!-- 系统健康 Panel -->
   <div id="health-panel" class="panel-base">
     <h3>系统健康</h3>
     <div class="health-score">
@@ -209,9 +259,11 @@ html,body,#cesiumContainer{width:100%;height:100%;overflow:hidden;font-family:'S
     <div class="health-predict">
       <span class="predict-text" id="health-predict-text">系统正常，无告警</span>
     </div>
+    <div class="health-trend">
+      <canvas id="health-trend-canvas" width="260" height="60"></canvas>
+    </div>
   </div>
 
-  <!-- 舵面输出 Panel -->
   <div id="surface-panel" class="panel-base">
     <h3>舵面输出</h3>
     <div class="surface-row"><span class="surface-label">副翼 (Aileron)</span><span class="surface-val" id="surf-ail">0.0°</span></div>
@@ -219,9 +271,19 @@ html,body,#cesiumContainer{width:100%;height:100%;overflow:hidden;font-family:'S
     <div class="surface-row"><span class="surface-label">方向舵 (Rudder)</span><span class="surface-val" id="surf-rud">0.0°</span></div>
   </div>
 
-  <!-- 飞控决策日志 Panel -->
   <div id="fc-log-panel" class="panel-base">
     <h3>飞控决策日志</h3>
+    <div class="autonomy-indicator">
+      <span class="autonomy-label">自主等级</span>
+      <div class="autonomy-blocks">
+        <div class="autonomy-block" id="auto-l0"></div>
+        <div class="autonomy-block" id="auto-l1"></div>
+        <div class="autonomy-block" id="auto-l2"></div>
+        <div class="autonomy-block" id="auto-l3"></div>
+        <div class="autonomy-block" id="auto-l4"></div>
+      </div>
+      <span class="autonomy-level-text" id="auto-level-text">L2 自主修正</span>
+    </div>
     <div id="fc-log">
       <div class="fc-log-entry info">[系统] 飞控决策系统就绪</div>
     </div>
@@ -230,30 +292,6 @@ html,body,#cesiumContainer{width:100%;height:100%;overflow:hidden;font-family:'S
 
 <!-- Right Column -->
 <div id="right-col">
-  <!-- Geofence Panel -->
-  <div id="gf-panel" class="panel-base">
-    <h3>围栏状态</h3>
-    <div class="gf-item safe" id="gf-item-01">
-      <span>GF01 (圆形)</span>
-      <span class="gf-status safe" id="gf-st-01">安全</span>
-    </div>
-    <div class="gf-item safe" id="gf-item-02">
-      <span>GF02 (圆形)</span>
-      <span class="gf-status safe" id="gf-st-02">安全</span>
-    </div>
-    <div class="gf-item safe" id="gf-item-03">
-      <span>GF03 (多边形)</span>
-      <span class="gf-status safe" id="gf-st-03">安全</span>
-    </div>
-    <div id="vlog-section">
-      <h4>违规事件</h4>
-      <div id="vlog">
-        <div class="vlog-entry info">[系统] 就绪。FlyteOS 智能飞行管理系统 v2.0</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 闭环控制 Panel -->
   <div id="cl-panel" class="panel-base">
     <h3>闭环控制证明</h3>
     <table class="cl-table">
@@ -265,17 +303,60 @@ html,body,#cesiumContainer{width:100%;height:100%;overflow:hidden;font-family:'S
     <div class="cl-xte-chart">
       <span style="color:rgba(0,200,255,0.5);">偏航误差收敛趋势:</span>
       <div class="xte-bar-row" id="xte-chart">▁▁▁▁▁▁</div>
-      <span style="color:rgba(0,200,255,0.5);font-size:9px;">(左旧→右新，条越长误差越大)</span>
+    </div>
+    <div class="cl-quality">
+      <h4>控制品质指标</h4>
+      <div class="cl-quality-row"><span class="cl-quality-label">高度超调量</span><span class="cl-quality-val" id="cq-overshoot">--</span></div>
+      <div class="cl-quality-row"><span class="cl-quality-label">稳定时间</span><span class="cl-quality-val" id="cq-settling">--</span></div>
+      <div class="cl-quality-row"><span class="cl-quality-label">稳态误差</span><span class="cl-quality-val" id="cq-steadyerr">--</span></div>
     </div>
   </div>
 
-  <!-- 飞行性能 Panel -->
+  <div id="gf-panel" class="panel-base">
+    <h3>围栏状态</h3>
+    <div class="gf-item safe" id="gf-item-01"><span>GF01 (圆形)</span><span class="gf-status safe" id="gf-st-01">安全</span></div>
+    <div class="gf-item safe" id="gf-item-02"><span>GF02 (圆形)</span><span class="gf-status safe" id="gf-st-02">安全</span></div>
+    <div class="gf-item safe" id="gf-item-03"><span>GF03 (多边形)</span><span class="gf-status safe" id="gf-st-03">安全</span></div>
+    <div id="vlog-section">
+      <h4>违规事件</h4>
+      <div id="vlog"><div class="vlog-entry info">[系统] 就绪。FlyteOS 智能飞行管理系统 v3.0</div></div>
+    </div>
+  </div>
+
   <div id="perf-panel" class="panel-base">
     <h3>飞行性能</h3>
     <div class="perf-row"><span class="perf-label">最大高度</span><span class="perf-val" id="perf-maxalt">0 m</span></div>
     <div class="perf-row"><span class="perf-label">最大速度</span><span class="perf-val" id="perf-maxspd">0.0 m/s</span></div>
     <div class="perf-row"><span class="perf-label">总航程</span><span class="perf-val" id="perf-dist">0.00 km</span></div>
     <div class="perf-row"><span class="perf-label">飞行时长</span><span class="perf-val" id="perf-time">00:00</span></div>
+  </div>
+
+  <div id="formation-panel" class="panel-base">
+    <h3>编队状态</h3>
+    <table class="formation-table">
+      <tr><th>编号</th><th>呼号</th><th>状态</th><th>高度</th><th>间距</th></tr>
+      <tr><td class="fm-leader">01</td><td class="fm-leader">长机</td><td id="fm-st-01">待命</td><td id="fm-alt-01">0m</td><td id="fm-dist-01">—</td></tr>
+      <tr><td class="fm-wing-a">02</td><td class="fm-wing-a">僚机A</td><td id="fm-st-02">待命</td><td id="fm-alt-02">0m</td><td id="fm-dist-02">—</td></tr>
+      <tr><td class="fm-wing-b">03</td><td class="fm-wing-b">僚机B</td><td id="fm-st-03">待命</td><td id="fm-alt-03">0m</td><td id="fm-dist-03">—</td></tr>
+    </table>
+    <div class="formation-conflict" id="fm-conflict"></div>
+  </div>
+
+  <div id="fault-tree-panel" class="panel-base">
+    <h3>故障传播路径</h3>
+    <div class="ft-tree dimmed" id="fault-tree">
+      <span class="ft-node" id="ft-node-0">系统正常</span>
+      <span class="ft-arrow">↓</span>
+      <span class="ft-node" id="ft-node-1">—</span>
+      <span class="ft-arrow">↓</span>
+      <span class="ft-node" id="ft-node-2">—</span>
+      <span class="ft-arrow">↓</span>
+      <span class="ft-node" id="ft-node-3">—</span>
+      <span class="ft-arrow">↓</span>
+      <span class="ft-node" id="ft-node-4">—</span>
+      <span class="ft-arrow">↓</span>
+      <span class="ft-node" id="ft-node-5">—</span>
+    </div>
   </div>
 </div>
 
@@ -284,9 +365,12 @@ html,body,#cesiumContainer{width:100%;height:100%;overflow:hidden;font-family:'S
   <button class="ctrl-btn primary" id="btn-start" onclick="startDemo()">开始飞行演示</button>
   <button class="ctrl-btn" id="btn-pause" onclick="pauseDemo()" style="display:none;">暂停</button>
   <button class="ctrl-btn" id="btn-resume" onclick="resumeDemo()" style="display:none;">继续</button>
-  <button class="ctrl-btn danger" id="btn-stop" onclick="stopDemo()" style="display:none;">停止</button>
+  <button class="ctrl-btn danger" id="btn-stop" onclick="stopDemo(false)" style="display:none;">停止</button>
   <button class="ctrl-btn danger" id="btn-fault" onclick="triggerFault()" style="display:none;">模拟故障</button>
   <button class="ctrl-btn success" id="btn-recover" onclick="recoverNormal()" style="display:none;">正常恢复</button>
+  <button class="ctrl-btn formation-btn" id="btn-form-follow" onclick="formationCmd('follow')" style="display:none;">编队跟随</button>
+  <button class="ctrl-btn formation-btn" id="btn-form-spread" onclick="formationCmd('spread')" style="display:none;">散开侦查</button>
+  <button class="ctrl-btn formation-btn" id="btn-form-rally" onclick="formationCmd('rally')" style="display:none;">集结编队</button>
 </div>
 
 <!-- Anomaly Scene Bar -->
@@ -298,6 +382,83 @@ html,body,#cesiumContainer{width:100%;height:100%;overflow:hidden;font-family:'S
   <button class="anomaly-btn reset-btn" id="btn-reset-sys" onclick="resetSystem()">重置系统</button>
 </div>
 
+<!-- Replay Bar -->
+<div id="replay-bar" class="hidden">
+  <button class="replay-btn" id="btn-replay-play" onclick="replayPlay()">▶ 回放</button>
+  <button class="replay-btn" id="btn-replay-pause" onclick="replayPause()" style="display:none;">⏸ 暂停</button>
+  <input type="range" class="replay-slider" id="replay-slider" min="0" max="100" value="0" oninput="replaySeek(this.value)">
+  <span class="replay-label" id="replay-time-label">00:00 / 00:00</span>
+  <button class="replay-btn" id="btn-replay-speed1x" onclick="replaySpeed(1)" style="display:none;">1x</button>
+  <button class="replay-btn" id="btn-replay-speed2x" onclick="replaySpeed(2)" style="display:none;">2x</button>
+  <button class="replay-btn" id="btn-replay-speed4x" onclick="replaySpeed(4)" style="display:none;">4x</button>
+  <button class="replay-btn" id="btn-replay-exit" onclick="replayExit()" style="display:none;">退出回放</button>
+</div>
+
+<!-- Mission Planning Panel -->
+<div id="mission-panel" class="panel-base">
+  <h3>任务规划 <span class="collapse-btn" onclick="toggleMissionPanel()">▼</span></h3>
+  <div id="mission-content">
+    <table class="mission-wp-table" id="mission-wp-table">
+      <tr><th>编号</th><th>纬度</th><th>经度</th><th>高度</th><th>动作</th><th>操作</th></tr>
+    </table>
+    <div class="mission-row">
+      <button class="mission-btn" onclick="applyMissionPlan()">应用航线</button>
+      <button class="mission-btn" onclick="autoGenPatrol()">自动生成巡逻航线</button>
+      <button class="mission-btn" id="btn-detour" onclick="detourNoFlyZone()">绕行规划</button>
+    </div>
+  </div>
+</div>
+
+<!-- System Interface Panel -->
+<div id="iface-panel" class="panel-base" style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:96%;max-width:1200px;z-index:9;">
+  <h3>系统接口 <span class="collapse-btn" onclick="toggleIfacePanel()">▼</span></h3>
+  <div id="iface-content" style="display:none;">
+    <div class="iface-row"><span class="iface-name">MAVLink v2.0</span><span class="iface-status">✓ 已接入</span><span class="iface-link" onclick="toggleIfaceDetail(this)">[查看协议]</span></div>
+    <div class="iface-detail">协议帧结构: STX(0xFD) | LEN | INCOMPAT | COMPAT | SEQ | SYSID | COMPID | MSGID(3bytes) | PAYLOAD(0-255) | CHECKSUM(2bytes) | SIGNATURE(13bytes)
+支持消息: HEARTBEAT, SYS_STATUS, GLOBAL_POSITION_INT, ATTITUDE, COMMAND_LONG, MISSION_ITEM</div>
+    <div class="iface-row"><span class="iface-name">REST API</span><span class="iface-status">✓ 已接入</span><span class="iface-link" onclick="toggleIfaceDetail(this)">[查看文档]</span></div>
+    <div class="iface-detail">Base URL: https://api.flyteos.local/v2
+端点: GET /telemetry, POST /mission, GET /health, POST /command, GET /geofence
+认证: Bearer Token (JWT)</div>
+    <div class="iface-row"><span class="iface-name">ROS2 Humble</span><span class="iface-status">✓ 已接入</span><span class="iface-link" onclick="toggleIfaceDetail(this)">[查看节点]</span></div>
+    <div class="iface-detail">节点: /flyteos_telemetry (Publisher), /flyteos_mission (Service), /flyteos_health (Publisher)
+消息类型: sensor_msgs/NavSatFix, geometry_msgs/TwistStamped, custom_msgs/FlyteOSHealth</div>
+    <div class="iface-row"><span class="iface-name">SDK (Python)</span><span class="iface-status">✓ 已接入</span><span class="iface-link" onclick="toggleIfaceDetail(this)">[查看示例]</span></div>
+    <div class="iface-detail">pip install flyteos-sdk
+from flyteos import Drone
+d = Drone.connect("tcp://192.168.1.100:5760")
+print(d.telemetry())
+d.mission.upload(waypoints)
+d.command.takeoff(altitude=100)</div>
+    <div class="iface-row"><span class="iface-name">WebSocket</span><span class="iface-status">✓ 已接入</span><span class="iface-link" onclick="toggleIfaceDetail(this)">[查看端点]</span></div>
+    <div class="iface-detail">ws://flyteos.local:9090/telemetry
+协议: JSON 帧 {"type":"telemetry","ts":1234567890,"lat":37.77,"lng":-122.41,"alt":120.5}
+频率: 10Hz</div>
+  </div>
+</div>
+
+<!-- AI Report Modal -->
+<div id="ai-modal-overlay">
+  <div id="ai-modal">
+    <h2>任务分析报告</h2>
+    <div class="ai-section">
+      <div class="ai-row"><span class="ai-label">任务完成率</span><span class="ai-val" id="ai-completion">--</span></div>
+      <div class="ai-row"><span class="ai-label">最大偏航误差</span><span class="ai-val" id="ai-max-xte">--</span></div>
+      <div class="ai-row"><span class="ai-label">异常次数</span><span class="ai-val" id="ai-anomalies">--</span></div>
+      <div class="ai-row"><span class="ai-label">控制品质评价</span><span class="ai-val" id="ai-ctrl-quality">--</span></div>
+      <div class="ai-row"><span class="ai-label">系统健康最低值</span><span class="ai-val" id="ai-min-health">--</span></div>
+      <div class="ai-row"><span class="ai-label">飞行总时长</span><span class="ai-val" id="ai-total-time">--</span></div>
+      <div class="ai-row"><span class="ai-label">总航程</span><span class="ai-val" id="ai-total-dist">--</span></div>
+      <div class="ai-row"><span class="ai-label">围栏违规次数</span><span class="ai-val" id="ai-violations">--</span></div>
+    </div>
+    <div class="ai-grade" id="ai-overall-grade" style="text-align:center;">--</div>
+    <div class="ai-btns">
+      <button class="ai-btn primary" onclick="exportReport()">导出报告</button>
+      <button class="ai-btn" onclick="closeReport()">关闭</button>
+    </div>
+  </div>
+</div>
+
 <div id="status-bar">演示状态: 待命 &nbsp;|&nbsp; FPS: <span id="fps-counter">--</span></div>
 
 <script>
@@ -307,1284 +468,1509 @@ html,body,#cesiumContainer{width:100%;height:100%;overflow:hidden;font-family:'S
 Cesium.Ion.defaultAccessToken = '';
 
 const viewer = new Cesium.Viewer('cesiumContainer', {
-  imageryProvider: new Cesium.OpenStreetMapImageryProvider({
-    url: 'https://tile.openstreetmap.org/'
-  }),
+  imageryProvider: new Cesium.OpenStreetMapImageryProvider({url:'https://tile.openstreetmap.org/'}),
   terrainProvider: new Cesium.EllipsoidTerrainProvider(),
-  animation: false, timeline: false, baseLayerPicker: false,
-  geocoder: false, homeButton: false, sceneModePicker: false,
-  navigationHelpButton: false, fullscreenButton: false,
-  infoBox: false, selectionIndicator: false
+  animation:false,timeline:false,baseLayerPicker:false,
+  geocoder:false,homeButton:false,sceneModePicker:false,
+  navigationHelpButton:false,fullscreenButton:false,
+  infoBox:false,selectionIndicator:false
 });
-
 viewer.scene.globe.enableLighting = false;
 viewer.scene.skyAtmosphere.show = true;
 viewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#0a0a1a');
-
 viewer.camera.flyTo({
-  destination: Cesium.Cartesian3.fromDegrees(-122.41, 37.77, 3000),
-  orientation: { heading: Cesium.Math.toRadians(0), pitch: Cesium.Math.toRadians(-50), roll: 0 },
-  duration: 2
+  destination:Cesium.Cartesian3.fromDegrees(-122.41,37.77,3000),
+  orientation:{heading:Cesium.Math.toRadians(0),pitch:Cesium.Math.toRadians(-50),roll:0},duration:2
 });
 
 // ═══════════════════════════════════════════════════════════════
 //  Waypoints
 // ═══════════════════════════════════════════════════════════════
 const WAYPOINTS = [
-  { lat: 37.7700, lng: -122.4100, alt: 50,  label: 'WP1 (起飞)' },
-  { lat: 37.7800, lng: -122.3800, alt: 200, label: 'WP2' },
-  { lat: 37.8000, lng: -122.4200, alt: 300, label: 'WP3' },
-  { lat: 37.7600, lng: -122.4500, alt: 250, label: 'WP4' },
-  { lat: 37.7900, lng: -122.3900, alt: 100, label: 'WP5 (降落)' },
+  {lat:37.7700,lng:-122.4100,alt:50,label:'WP1 (起飞)',action:'起飞'},
+  {lat:37.7800,lng:-122.3800,alt:200,label:'WP2',action:'巡航'},
+  {lat:37.8000,lng:-122.4200,alt:300,label:'WP3',action:'侦察'},
+  {lat:37.7600,lng:-122.4500,alt:250,label:'WP4',action:'巡航'},
+  {lat:37.7900,lng:-122.3900,alt:100,label:'WP5 (降落)',action:'降落'},
 ];
 
 // ═══════════════════════════════════════════════════════════════
 //  Geofences
 // ═══════════════════════════════════════════════════════════════
 const GEOFENCES = [
-  { id: 'GF01', type: 'circle', center: { lat: 37.785, lng: -122.430 }, radius: 800, buffer: 150, altBottom: 0, altTop: 400, color: Cesium.Color.BLUE.withAlpha(0.2), status: 'safe' },
-  { id: 'GF02', type: 'circle', center: { lat: 37.775, lng: -122.395 }, radius: 600, buffer: 100, altBottom: 0, altTop: 350, color: Cesium.Color.BLUE.withAlpha(0.2), status: 'safe' },
-  { id: 'GF03', type: 'polygon', vertices: [
-    { lat: 37.780, lng: -122.400 }, { lat: 37.790, lng: -122.380 },
-    { lat: 37.800, lng: -122.400 }, { lat: 37.790, lng: -122.420 }
-  ], altBottom: 0, altTop: 300, color: Cesium.Color.BLUE.withAlpha(0.2), status: 'safe' }
+  {id:'GF01',type:'circle',center:{lat:37.785,lng:-122.430},radius:800,buffer:150,altBottom:0,altTop:400,color:Cesium.Color.BLUE.withAlpha(0.2),status:'safe'},
+  {id:'GF02',type:'circle',center:{lat:37.775,lng:-122.395},radius:600,buffer:100,altBottom:0,altTop:350,color:Cesium.Color.BLUE.withAlpha(0.2),status:'safe'},
+  {id:'GF03',type:'polygon',vertices:[{lat:37.780,lng:-122.400},{lat:37.790,lng:-122.380},{lat:37.800,lng:-122.400},{lat:37.790,lng:-122.420}],altBottom:0,altTop:300,color:Cesium.Color.BLUE.withAlpha(0.2),status:'safe'}
 ];
 
 // ═══════════════════════════════════════════════════════════════
 //  Entity references
 // ═══════════════════════════════════════════════════════════════
-let aircraftBody = null;
-let aircraftNose = null;
-let trailEntity = null;
-let wpPointEntities = [];
-let gfWallEntities = {};
-let trailPositions = [];
+let aircraftBody=null,aircraftNose=null,trailEntity=null;
+let wpPointEntities=[],gfWallEntities={},trailPositions=[];
+// Wingmen
+let wingman2Body=null,wingman2Nose=null,wingman2Trail=null,wingman2TrailP=[];
+let wingman3Body=null,wingman3Nose=null,wingman3Trail=null,wingman3TrailP=[];
+// Planned route entity
+let plannedRouteEntity=null;
 
 // ═══════════════════════════════════════════════════════════════
-//  Flight State (core)
+//  Flight State
 // ═══════════════════════════════════════════════════════════════
 const flight = {
-  lat: WAYPOINTS[0].lat, lng: WAYPOINTS[0].lng, alt: 0,
-  spd: 0, hdg: 0, roll: 0, pitch: 0, yaw: 0, xte: 0,
-  phase: '待命', wpIdx: 0, gfStatus: '安全',
-  // Wind disturbance
-  windOffsetLat: 0, windOffsetLng: 0, windCompensationActive: false,
-  // Control surface outputs
-  surfaceAileron: 0, surfaceElevator: 0, surfaceRudder: 0
+  lat:WAYPOINTS[0].lat,lng:WAYPOINTS[0].lng,alt:0,
+  spd:0,hdg:0,roll:0,pitch:0,yaw:0,xte:0,
+  phase:'待命',wpIdx:0,gfStatus:'安全',
+  windOffsetLat:0,windOffsetLng:0,windCompensationActive:false,
+  surfaceAileron:0,surfaceElevator:0,surfaceRudder:0
 };
+
+// Wingman states
+const wingman2 = {lat:WAYPOINTS[0].lat,lng:WAYPOINTS[0].lng-0.0012,alt:0,spd:0,hdg:0,phase:'待命'};
+const wingman3 = {lat:WAYPOINTS[0].lat,lng:WAYPOINTS[0].lng+0.0012,alt:0,spd:0,hdg:0,phase:'待命'};
+const formation = {mode:'follow',spreadAngle:0};
 
 // ═══════════════════════════════════════════════════════════════
 //  Anomaly State
 // ═══════════════════════════════════════════════════════════════
 const anomaly = {
-  gpsLost: false,        // GPS信号丢失
-  rtkDegraded: false,    // RTK降级
-  commLost: false,       // 通信中断
-  batteryCritical: false,// 电池异常（低电量）
-  // Autonomous responses
-  insNavActive: false,   // 惯性导航激活
-  autonomousFlight: false, // 自主飞行模式
-  rthActive: false,      // 返航中
-  rthProgress: 0,        // 返航进度
-  rthStartPos: null,     // 返航起始位置
-  gpsLostTimer: 0,       // GPS丢失计时器（秒）
-  lastResponse: {}       // 上次响应记录，防重复
+  gpsLost:false,rtkDegraded:false,commLost:false,batteryCritical:false,
+  insNavActive:false,autonomousFlight:false,
+  rthActive:false,rthProgress:0,rthStartPos:null,gpsLostTimer:0,lastResponse:{}
 };
 
 // ═══════════════════════════════════════════════════════════════
 //  Demo State
 // ═══════════════════════════════════════════════════════════════
 let demo = {
-  running: false, paused: false,
-  progress: 0, speed: 0.08,
-  pathSegments: [], totalLength: 0,
-  lastGfStatus: {}, animFrame: null, _gfblickToggles: {},
-  // Flight performance tracking
-  maxAlt: 0, maxSpd: 0, totalDist: 0, flyTime: 0,
-  flyStartTime: 0, lastPos: null,
-  // Link status
-  batteryLevel: 100, linkQuality: 98,
-  // 闭环控制 - XTE历史（最近6帧）
-  xteHistory: [0,0,0,0,0,0],
-  // 风扰
-  windTimer: 0,
-  // 预测
-  estRemainingTime: 480  // 预估剩余飞行时间（秒）
+  running:false,paused:false,progress:0,speed:0.08,
+  pathSegments:[],totalLength:0,
+  lastGfStatus:{},animFrame:null,_gfblickToggles:{},
+  maxAlt:0,maxSpd:0,totalDist:0,flyTime:0,flyStartTime:0,lastPos:null,
+  batteryLevel:100,linkQuality:98,
+  xteHistory:[0,0,0,0,0,0],windTimer:0,estRemainingTime:480,
+  // A3: control quality tracking
+  cqPeakAltError:0,cqSettlingStart:0,cqSettlingEnd:0,cqSteadyError:0,
+  cqPrevAboveThreshold:false,cqSettlingDone:false,cqSteadySamples:0,cqSteadySum:0,
+  // Health trend
+  healthTrend:[],healthTrendTimer:0,
+  // Anomaly counter for AI report
+  anomalyCount:0,minHealth:98,violationCount:0,
+  // Replay
+  replayActive:false,replayData:[],replayIndex:0,replaySpeed:1,
+  replayPaused:false,replaySavedState:null
 };
 
 // ═══════════════════════════════════════════════════════════════
 //  FC Decision Log
 // ═══════════════════════════════════════════════════════════════
-const fcLogEntries = [];
-
-function addFCLog(msg, type) {
-  const now = new Date();
-  const ts = String(now.getHours()).padStart(2,'0') + ':' +
-             String(now.getMinutes()).padStart(2,'0') + ':' +
-             String(now.getSeconds()).padStart(2,'0');
-  fcLogEntries.unshift({ ts, msg, type });
-  if (fcLogEntries.length > 20) fcLogEntries.pop();
+const fcLogEntries=[];
+function addFCLog(msg,type){
+  const now=new Date();
+  const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+  fcLogEntries.unshift({ts,msg,type});
+  if(fcLogEntries.length>20)fcLogEntries.pop();
   renderFCLog();
 }
-function renderFCLog() {
-  const el = document.getElementById('fc-log');
-  el.innerHTML = fcLogEntries.map(e =>
-    `<div class="fc-log-entry ${e.type}">[${e.ts}] ${e.msg}</div>`
-  ).join('');
+function renderFCLog(){
+  const el=document.getElementById('fc-log');
+  el.innerHTML=fcLogEntries.map(e=>'<div class="fc-log-entry '+e.type+'">['+e.ts+'] '+e.msg+'</div>').join('');
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  Utility: haversine distance (meters)
+//  A1: Autonomy Level
 // ═══════════════════════════════════════════════════════════════
-function haversineM(lat1, lng1, lat2, lng2) {
-  const R = 6371000;
-  const dLat = Cesium.Math.toRadians(lat2 - lat1);
-  const dLng = Cesium.Math.toRadians(lng2 - lng1);
-  const a = Math.sin(dLat/2)**2 + Math.cos(Cesium.Math.toRadians(lat1)) * Math.cos(Cesium.Math.toRadians(lat2)) * Math.sin(dLng/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+let currentAutonomyLevel=2;
+function setAutonomyLevel(lvl){
+  currentAutonomyLevel=lvl;
+  const labels={0:'L0 人工控制',1:'L1 辅助稳定',2:'L2 自主修正',3:'L3 自主任务规划',4:'L4 完全自主飞行'};
+  for(let i=0;i<5;i++){
+    const blk=document.getElementById('auto-l'+i);
+    blk.className='autonomy-block';
+    if(i===lvl)blk.classList.add('active-l'+lvl);
+  }
+  document.getElementById('auto-level-text').textContent=labels[lvl];
 }
 
-function bearing(lat1, lng1, lat2, lng2) {
-  const dLng = Cesium.Math.toRadians(lng2 - lng1);
-  const y = Math.sin(dLng) * Math.cos(Cesium.Math.toRadians(lat2));
-  const x = Math.cos(Cesium.Math.toRadians(lat1)) * Math.sin(Cesium.Math.toRadians(lat2))
-          - Math.sin(Cesium.Math.toRadians(lat1)) * Math.cos(Cesium.Math.toRadians(lat2)) * Math.cos(dLng);
-  return (Cesium.Math.toDegrees(Math.atan2(y, x)) + 360) % 360;
+// ═══════════════════════════════════════════════════════════════
+//  Utility: haversine & bearing
+// ═══════════════════════════════════════════════════════════════
+function haversineM(lat1,lng1,lat2,lng2){
+  const R=6371000;
+  const dLat=Cesium.Math.toRadians(lat2-lat1);
+  const dLng=Cesium.Math.toRadians(lng2-lng1);
+  const a=Math.sin(dLat/2)**2+Math.cos(Cesium.Math.toRadians(lat1))*Math.cos(Cesium.Math.toRadians(lat2))*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function bearing(lat1,lng1,lat2,lng2){
+  const dLng=Cesium.Math.toRadians(lng2-lng1);
+  const y=Math.sin(dLng)*Math.cos(Cesium.Math.toRadians(lat2));
+  const x=Math.cos(Cesium.Math.toRadians(lat1))*Math.sin(Cesium.Math.toRadians(lat2))-Math.sin(Cesium.Math.toRadians(lat1))*Math.cos(Cesium.Math.toRadians(lat2))*Math.cos(dLng);
+  return (Cesium.Math.toDegrees(Math.atan2(y,x))+360)%360;
+}
+function offsetPos(lat,lng,rightM,fwdM){
+  const hdgRad=Cesium.Math.toRadians(flight.hdg);
+  const latDegPerM=1.0/111320;
+  const lngDegPerM=1.0/(111320*Math.cos(Cesium.Math.toRadians(lat)));
+  const fwdLat=Math.cos(hdgRad)*fwdM*latDegPerM;
+  const fwdLng=Math.sin(hdgRad)*fwdM*lngDegPerM;
+  const rightLat=Math.cos(hdgRad+Math.PI/2)*rightM*latDegPerM;
+  const rightLng=Math.sin(hdgRad+Math.PI/2)*rightM*lngDegPerM;
+  return {lat:lat+fwdLat+rightLat,lng:lng+fwdLng+rightLng};
 }
 
 // ═══════════════════════════════════════════════════════════════
 //  Build scene
 // ═══════════════════════════════════════════════════════════════
-function buildScene() {
-  WAYPOINTS.forEach((wp, i) => {
-    const e = viewer.entities.add({
-      position: Cesium.Cartesian3.fromDegrees(wp.lng, wp.lat, wp.alt),
-      point: { pixelSize: 10, color: Cesium.Color.RED, outlineColor: Cesium.Color.WHITE, outlineWidth: 2 },
-      label: { text: wp.label, font: '11px "Microsoft YaHei",monospace', fillColor: Cesium.Color.WHITE,
-               style: Cesium.LabelStyle.FILL, verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-               pixelOffset: new Cesium.Cartesian2(0, -14),
-               showBackground: true, backgroundColor: Cesium.Color.BLACK.withAlpha(0.6) }
+function buildScene(){
+  WAYPOINTS.forEach((wp,i)=>{
+    const e=viewer.entities.add({
+      position:Cesium.Cartesian3.fromDegrees(wp.lng,wp.lat,wp.alt),
+      point:{pixelSize:10,color:Cesium.Color.RED,outlineColor:Cesium.Color.WHITE,outlineWidth:2},
+      label:{text:wp.label,font:'11px "Microsoft YaHei",monospace',fillColor:Cesium.Color.WHITE,
+        style:Cesium.LabelStyle.FILL,verticalOrigin:Cesium.VerticalOrigin.BOTTOM,
+        pixelOffset:new Cesium.Cartesian2(0,-14),showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6)}
     });
     wpPointEntities.push(e);
   });
-
-  // Planned route: white dashed polyline
-  const wpPositionsAlt = WAYPOINTS.map(w => Cesium.Cartesian3.fromDegrees(w.lng, w.lat, w.alt));
-  viewer.entities.add({
-    polyline: {
-      positions: wpPositionsAlt, width: 2.5,
-      material: new Cesium.PolylineDashMaterialProperty({ color: Cesium.Color.WHITE.withAlpha(0.7), dashLength: 20 }),
-    }
+  // Planned route
+  updatePlannedRoute();
+  // Actual trail
+  trailEntity=viewer.entities.add({
+    polyline:{positions:[],width:4,material:Cesium.Color.CYAN.withAlpha(0.95),clampToGround:false}
   });
-
-  // 实际航迹 (bright cyan solid)
-  trailEntity = viewer.entities.add({
-    polyline: { positions: [], width: 4, material: Cesium.Color.CYAN.withAlpha(0.95), clampToGround: false }
-  });
-
   // Aircraft body
-  aircraftBody = viewer.entities.add({
-    position: Cesium.Cartesian3.fromDegrees(flight.lng, flight.lat, 0),
-    ellipsoid: {
-      radii: new Cesium.Cartesian3(25, 25, 10),
-      material: Cesium.Color.WHITE.withAlpha(0.85),
-      outline: true, outlineColor: Cesium.Color.SLATEGRAY.withAlpha(0.6), outlineWidth: 1,
-    }
+  aircraftBody=viewer.entities.add({
+    position:Cesium.Cartesian3.fromDegrees(flight.lng,flight.lat,0),
+    ellipsoid:{radii:new Cesium.Cartesian3(25,25,10),material:Cesium.Color.WHITE.withAlpha(0.85),
+      outline:true,outlineColor:Cesium.Color.SLATEGRAY.withAlpha(0.6),outlineWidth:1}
   });
-
-  // Nose cone
-  aircraftNose = viewer.entities.add({
-    position: Cesium.Cartesian3.fromDegrees(flight.lng, flight.lat, 0),
-    cylinder: {
-      length: 20, topRadius: 0, bottomRadius: 6,
-      material: Cesium.Color.DODGERBLUE.withAlpha(0.9),
-      outline: true, outlineColor: Cesium.Color.BLUE.withAlpha(0.7),
-    },
-    orientation: Cesium.Transforms.headingPitchRollQuaternion(
-      Cesium.Cartesian3.fromDegrees(flight.lng, flight.lat, 0),
-      new Cesium.HeadingPitchRoll(Cesium.Math.toRadians(flight.hdg), Cesium.Math.toRadians(-90), 0)
-    )
+  aircraftNose=viewer.entities.add({
+    position:Cesium.Cartesian3.fromDegrees(flight.lng,flight.lat,0),
+    cylinder:{length:20,topRadius:0,bottomRadius:6,material:Cesium.Color.DODGERBLUE.withAlpha(0.9),
+      outline:true,outlineColor:Cesium.Color.BLUE.withAlpha(0.7)},
+    orientation:Cesium.Transforms.headingPitchRollQuaternion(
+      Cesium.Cartesian3.fromDegrees(flight.lng,flight.lat,0),
+      new Cesium.HeadingPitchRoll(Cesium.Math.toRadians(flight.hdg),Cesium.Math.toRadians(-90),0))
   });
-
-  // Geofence Walls
-  GEOFENCES.forEach(gf => {
-    if (gf.type === 'circle') gfWallEntities[gf.id] = { wall: addCircleGeofence(gf) };
-    else if (gf.type === 'polygon') gfWallEntities[gf.id] = { wall: addPolygonGeofence(gf) };
+  // Wingman 2 (blue)
+  wingman2Body=viewer.entities.add({
+    position:Cesium.Cartesian3.fromDegrees(wingman2.lng,wingman2.lat,0),
+    ellipsoid:{radii:new Cesium.Cartesian3(15,15,6),material:Cesium.Color.DODGERBLUE.withAlpha(0.7),
+      outline:true,outlineColor:Cesium.Color.BLUE.withAlpha(0.5),outlineWidth:1}
+  });
+  wingman2Nose=viewer.entities.add({
+    position:Cesium.Cartesian3.fromDegrees(wingman2.lng,wingman2.lat,0),
+    cylinder:{length:12,topRadius:0,bottomRadius:4,material:Cesium.Color.ROYALBLUE.withAlpha(0.85),
+      outline:true,outlineColor:Cesium.Color.BLUE.withAlpha(0.6)},
+    orientation:Cesium.Transforms.headingPitchRollQuaternion(
+      Cesium.Cartesian3.fromDegrees(wingman2.lng,wingman2.lat,0),
+      new Cesium.HeadingPitchRoll(0,Cesium.Math.toRadians(-90),0))
+  });
+  wingman2Trail=viewer.entities.add({
+    polyline:{positions:[],width:2,material:Cesium.Color.DODGERBLUE.withAlpha(0.7),clampToGround:false}
+  });
+  // Wingman 3 (orange)
+  wingman3Body=viewer.entities.add({
+    position:Cesium.Cartesian3.fromDegrees(wingman3.lng,wingman3.lat,0),
+    ellipsoid:{radii:new Cesium.Cartesian3(15,15,6),material:Cesium.Color.ORANGE.withAlpha(0.7),
+      outline:true,outlineColor:Cesium.Color.ORANGERED.withAlpha(0.5),outlineWidth:1}
+  });
+  wingman3Nose=viewer.entities.add({
+    position:Cesium.Cartesian3.fromDegrees(wingman3.lng,wingman3.lat,0),
+    cylinder:{length:12,topRadius:0,bottomRadius:4,material:Cesium.Color.DARKORANGE.withAlpha(0.85),
+      outline:true,outlineColor:Cesium.Color.ORANGERED.withAlpha(0.6)},
+    orientation:Cesium.Transforms.headingPitchRollQuaternion(
+      Cesium.Cartesian3.fromDegrees(wingman3.lng,wingman3.lat,0),
+      new Cesium.HeadingPitchRoll(0,Cesium.Math.toRadians(-90),0))
+  });
+  wingman3Trail=viewer.entities.add({
+    polyline:{positions:[],width:2,material:Cesium.Color.ORANGE.withAlpha(0.7),clampToGround:false}
+  });
+  // Geofences
+  GEOFENCES.forEach(gf=>{
+    if(gf.type==='circle')gfWallEntities[gf.id]={wall:addCircleGeofence(gf)};
+    else if(gf.type==='polygon')gfWallEntities[gf.id]={wall:addPolygonGeofence(gf)};
   });
 }
-
-function addCircleGeofence(gf) {
-  const pos = Cesium.Cartesian3.fromDegrees(gf.center.lng, gf.center.lat, gf.altBottom);
-  const wall = viewer.entities.add({
-    position: pos,
-    ellipsoid: {
-      radii: new Cesium.Cartesian3(gf.radius, gf.radius, (gf.altTop - gf.altBottom) / 2),
-      material: gf.color, outline: true,
-      outlineColor: Cesium.Color.BLUE.withAlpha(0.6), outlineWidth: 2,
-    }
+function updatePlannedRoute(){
+  if(plannedRouteEntity)viewer.entities.remove(plannedRouteEntity);
+  const wpPositionsAlt=WAYPOINTS.map(w=>Cesium.Cartesian3.fromDegrees(w.lng,w.lat,w.alt));
+  plannedRouteEntity=viewer.entities.add({
+    polyline:{positions:wpPositionsAlt,width:2.5,
+      material:new Cesium.PolylineDashMaterialProperty({color:Cesium.Color.WHITE.withAlpha(0.7),dashLength:20})}
+  });
+}
+function addCircleGeofence(gf){
+  const pos=Cesium.Cartesian3.fromDegrees(gf.center.lng,gf.center.lat,gf.altBottom);
+  const wall=viewer.entities.add({
+    position:pos,
+    ellipsoid:{radii:new Cesium.Cartesian3(gf.radius,gf.radius,(gf.altTop-gf.altBottom)/2),
+      material:gf.color,outline:true,outlineColor:Cesium.Color.BLUE.withAlpha(0.6),outlineWidth:2}
   });
   viewer.entities.add({
-    position: pos,
-    ellipse: {
-      semiMajorAxis: gf.radius + gf.buffer, semiMinorAxis: gf.radius + gf.buffer,
-      material: Cesium.Color.YELLOW.withAlpha(0.10),
-      outline: true, outlineColor: Cesium.Color.YELLOW.withAlpha(0.3), outlineWidth: 1,
-      height: gf.altBottom,
-    }
+    position:pos,
+    ellipse:{semiMajorAxis:gf.radius+gf.buffer,semiMinorAxis:gf.radius+gf.buffer,
+      material:Cesium.Color.YELLOW.withAlpha(0.10),outline:true,outlineColor:Cesium.Color.YELLOW.withAlpha(0.3),outlineWidth:1,height:gf.altBottom}
   });
   return wall;
 }
-
-function addPolygonGeofence(gf) {
-  const hierarchy = new Cesium.PolygonHierarchy(gf.vertices.map(v => Cesium.Cartesian3.fromDegrees(v.lng, v.lat)));
+function addPolygonGeofence(gf){
+  const hierarchy=new Cesium.PolygonHierarchy(gf.vertices.map(v=>Cesium.Cartesian3.fromDegrees(v.lng,v.lat)));
   return viewer.entities.add({
-    polygon: {
-      hierarchy, extrudedHeight: gf.altTop, height: gf.altBottom,
-      material: gf.color, outline: true,
-      outlineColor: Cesium.Color.BLUE.withAlpha(0.6), outlineWidth: 2,
-    }
+    polygon:{hierarchy,extrudedHeight:gf.altTop,height:gf.altBottom,material:gf.color,
+      outline:true,outlineColor:Cesium.Color.BLUE.withAlpha(0.6),outlineWidth:2}
   });
 }
 
 // ═══════════════════════════════════════════════════════════════
 //  Geofence Check
 // ═══════════════════════════════════════════════════════════════
-function pointInPolygon(lat, lng, vertices) {
-  let inside = false;
-  const n = vertices.length;
-  for (let i = 0, j = n - 1; i < n; j = i++) {
-    const xi = vertices[i].lng, yi = vertices[i].lat;
-    const xj = vertices[j].lng, yj = vertices[j].lat;
-    if ((yi > lat) !== (yj > lat) && lng < (xj - xi) * (lat - yi) / (yj - yi) + xi)
-      inside = !inside;
+function pointInPolygon(lat,lng,vertices){
+  let inside=false;const n=vertices.length;
+  for(let i=0,j=n-1;i<n;j=i++){
+    const xi=vertices[i].lng,yi=vertices[i].lat,xj=vertices[j].lng,yj=vertices[j].lat;
+    if((yi>lat)!==(yj>lat)&&lng<(xj-xi)*(lat-yi)/(yj-yi)+xi)inside=!inside;
   }
   return inside;
 }
-
-function checkGeofence(gf, lat, lng, alt) {
-  if (alt < gf.altBottom || alt > gf.altTop) return 'safe';
-  let dist = Infinity;
-  if (gf.type === 'circle') {
-    dist = haversineM(lat, lng, gf.center.lat, gf.center.lng);
-    if (dist <= gf.radius) return 'violation';
-    if (dist <= gf.radius + gf.buffer) return 'warn';
-  } else if (gf.type === 'polygon') {
-    if (pointInPolygon(lat, lng, gf.vertices)) return 'violation';
-    const verts = gf.vertices;
-    for (let i = 0; i < verts.length; i++) {
-      const a = verts[i], b = verts[(i+1) % verts.length];
-      const d = pointToSegmentDistM(lat, lng, a.lat, a.lng, b.lat, b.lng);
-      if (d < dist) dist = d;
+function checkGeofence(gf,lat,lng,alt){
+  if(alt<gf.altBottom||alt>gf.altTop)return'safe';
+  let dist=Infinity;
+  if(gf.type==='circle'){
+    dist=haversineM(lat,lng,gf.center.lat,gf.center.lng);
+    if(dist<=gf.radius)return'violation';
+    if(dist<=gf.radius+gf.buffer)return'warn';
+  }else if(gf.type==='polygon'){
+    if(pointInPolygon(lat,lng,gf.vertices))return'violation';
+    const verts=gf.vertices;
+    for(let i=0;i<verts.length;i++){
+      const a=verts[i],b=verts[(i+1)%verts.length];
+      const d=pointToSegmentDistM(lat,lng,a.lat,a.lng,b.lat,b.lng);
+      if(d<dist)dist=d;
     }
-    if (dist < 60) return 'warn';
+    if(dist<60)return'warn';
   }
-  return 'safe';
+  return'safe';
 }
-
-function pointToSegmentDistM(px, py, ax, ay, bx, by) {
-  const x = Cesium.Math.toRadians(py - ay) * 6371000 * Math.cos(Cesium.Math.toRadians((ay+by)/2));
-  const y = Cesium.Math.toRadians(px - ax) * 6371000;
-  const dx = Cesium.Math.toRadians(by - ay) * 6371000 * Math.cos(Cesium.Math.toRadians((ay+by)/2));
-  const dy = Cesium.Math.toRadians(bx - ax) * 6371000;
-  const lenSq = dx*dx + dy*dy;
-  if (lenSq === 0) return Math.sqrt(x*x + y*y);
-  let t = Math.max(0, Math.min(1, (x*dx + y*dy) / lenSq));
-  return Math.sqrt((x - t*dx)**2 + (y - t*dy)**2);
+function pointToSegmentDistM(px,py,ax,ay,bx,by){
+  const x=Cesium.Math.toRadians(py-ay)*6371000*Math.cos(Cesium.Math.toRadians((ay+by)/2));
+  const y=Cesium.Math.toRadians(px-ax)*6371000;
+  const dx=Cesium.Math.toRadians(by-ay)*6371000*Math.cos(Cesium.Math.toRadians((ay+by)/2));
+  const dy=Cesium.Math.toRadians(bx-ax)*6371000;
+  const lenSq=dx*dx+dy*dy;
+  if(lenSq===0)return Math.sqrt(x*x+y*y);
+  let t=Math.max(0,Math.min(1,(x*dx+y*dy)/lenSq));
+  return Math.sqrt((x-t*dx)**2+(y-t*dy)**2);
 }
-
-function checkAllGeofences(lat, lng, alt) {
-  const statuses = {};
-  let worst = 'safe';
-  GEOFENCES.forEach(gf => {
-    const s = checkGeofence(gf, lat, lng, alt);
-    statuses[gf.id] = s;
-    if (s === 'violation') worst = 'violation';
-    else if (s === 'warn' && worst !== 'violation') worst = 'warn';
+function checkAllGeofences(lat,lng,alt){
+  const statuses={};let worst='safe';
+  GEOFENCES.forEach(gf=>{
+    const s=checkGeofence(gf,lat,lng,alt);
+    statuses[gf.id]=s;
+    if(s==='violation')worst='violation';
+    else if(s==='warn'&&worst!=='violation')worst='warn';
   });
-  return { statuses, worst };
+  return{statuses,worst};
 }
-
-const STATUS_CN = { safe: '安全', warn: '预警', violation: '违规' };
+const STATUS_CN={safe:'安全',warn:'预警',violation:'违规'};
 
 // ═══════════════════════════════════════════════════════════════
 //  UI Update functions
 // ═══════════════════════════════════════════════════════════════
-function updateHUD() {
-  document.getElementById('tv-lat').textContent = flight.lat.toFixed(4);
-  document.getElementById('tv-lng').textContent = flight.lng.toFixed(4);
-  document.getElementById('tv-alt').textContent = flight.alt.toFixed(0) + ' m';
-  document.getElementById('tv-spd').textContent = flight.spd.toFixed(1) + ' m/s';
-  document.getElementById('tv-hdg').textContent = String(Math.round(flight.hdg)).padStart(3,'0') + '°';
-  document.getElementById('tv-roll').textContent = flight.roll.toFixed(1) + '°';
-  document.getElementById('tv-pitch').textContent = flight.pitch.toFixed(1) + '°';
-  document.getElementById('tv-yaw').textContent = flight.yaw.toFixed(1) + '°';
-  document.getElementById('tv-phase').textContent = flight.phase;
-  document.getElementById('tv-wp').textContent = flight.wpIdx < WAYPOINTS.length ? WAYPOINTS[flight.wpIdx].label : '完成';
-  document.getElementById('tv-xte').textContent = flight.xte.toFixed(1) + ' m';
-
-  const gfEl = document.getElementById('tv-gf');
-  const gfStatusKey = flight.gfStatus === '安全' ? 'safe' : flight.gfStatus === '预警' ? 'warn' : 'violation';
-  gfEl.textContent = flight.gfStatus;
-  gfEl.className = 'hud-val ' + (gfStatusKey === 'violation' ? 'danger' : gfStatusKey === 'warn' ? 'warn' : 'safe');
+function updateHUD(){
+  document.getElementById('tv-lat').textContent=flight.lat.toFixed(4);
+  document.getElementById('tv-lng').textContent=flight.lng.toFixed(4);
+  document.getElementById('tv-alt').textContent=flight.alt.toFixed(0)+' m';
+  document.getElementById('tv-spd').textContent=flight.spd.toFixed(1)+' m/s';
+  document.getElementById('tv-hdg').textContent=String(Math.round(flight.hdg)).padStart(3,'0')+'°';
+  document.getElementById('tv-roll').textContent=flight.roll.toFixed(1)+'°';
+  document.getElementById('tv-pitch').textContent=flight.pitch.toFixed(1)+'°';
+  document.getElementById('tv-yaw').textContent=flight.yaw.toFixed(1)+'°';
+  document.getElementById('tv-phase').textContent=flight.phase;
+  document.getElementById('tv-wp').textContent=flight.wpIdx<WAYPOINTS.length?WAYPOINTS[flight.wpIdx].label:'完成';
+  document.getElementById('tv-xte').textContent=flight.xte.toFixed(1)+' m';
+  const gfEl=document.getElementById('tv-gf');
+  const gfStatusKey=flight.gfStatus==='安全'?'safe':flight.gfStatus==='预警'?'warn':'violation';
+  gfEl.textContent=flight.gfStatus;
+  gfEl.className='hud-val '+(gfStatusKey==='violation'?'danger':gfStatusKey==='warn'?'warn':'safe');
 }
-
-function updateSurfacePanel() {
-  document.getElementById('surf-ail').textContent = flight.surfaceAileron.toFixed(1) + '°';
-  document.getElementById('surf-ele').textContent = flight.surfaceElevator.toFixed(1) + '°';
-  document.getElementById('surf-rud').textContent = flight.surfaceRudder.toFixed(1) + '°';
+function updateSurfacePanel(){
+  document.getElementById('surf-ail').textContent=flight.surfaceAileron.toFixed(1)+'°';
+  document.getElementById('surf-ele').textContent=flight.surfaceElevator.toFixed(1)+'°';
+  document.getElementById('surf-rud').textContent=flight.surfaceRudder.toFixed(1)+'°';
 }
-
-function updateHealthPanel() {
-  // --- Subsystem health values ---
-  let navHealth = 99;
-  let pwrHealth = 97;
-  let commHealth = 98;
-  let ctrlHealth = 99;
-
-  if (anomaly.gpsLost) { navHealth = Math.max(55, navHealth - 30); }
-  if (anomaly.rtkDegraded) { navHealth = Math.max(60, navHealth - 15); }
-  if (anomaly.commLost) { commHealth = Math.max(25, commHealth - 50); }
-  if (anomaly.batteryCritical) { pwrHealth = Math.max(20, pwrHealth - 50); }
-  if (anomaly.insNavActive && anomaly.gpsLost) { navHealth = Math.max(navHealth, 62); } // INS compensates
-
-  // Overall health: weighted average
-  const overall = Math.round((navHealth * 0.30 + pwrHealth * 0.25 + commHealth * 0.20 + ctrlHealth * 0.25));
-  const scoreNum = document.getElementById('health-score-num');
-  scoreNum.textContent = overall + '%';
-  scoreNum.style.color = overall >= 90 ? '#00ff66' : overall >= 75 ? '#ffaa00' : '#ff3344';
-
-  function setBar(id, pctId, val) {
-    const bar = document.getElementById(id);
-    const pctEl = document.getElementById(pctId);
-    bar.style.width = val + '%';
-    pctEl.textContent = val + '%';
-    bar.className = 'health-bar-fill ' + (val >= 95 ? 'green' : val >= 85 ? 'yellow' : 'red');
+function updateHealthPanel(){
+  let navHealth=99,pwrHealth=97,commHealth=98,ctrlHealth=99;
+  if(anomaly.gpsLost){navHealth=Math.max(55,navHealth-30);}
+  if(anomaly.rtkDegraded){navHealth=Math.max(60,navHealth-15);}
+  if(anomaly.commLost){commHealth=Math.max(25,commHealth-50);}
+  if(anomaly.batteryCritical){pwrHealth=Math.max(20,pwrHealth-50);}
+  if(anomaly.insNavActive&&anomaly.gpsLost){navHealth=Math.max(navHealth,62);}
+  const overall=Math.round(navHealth*0.30+pwrHealth*0.25+commHealth*0.20+ctrlHealth*0.25);
+  const scoreNum=document.getElementById('health-score-num');
+  scoreNum.textContent=overall+'%';
+  scoreNum.style.color=overall>=90?'#00ff66':overall>=75?'#ffaa00':'#ff3344';
+  if(overall<demo.minHealth)demo.minHealth=overall;
+  function setBar(id,pctId,val){
+    const bar=document.getElementById(id),pctEl=document.getElementById(pctId);
+    bar.style.width=val+'%';pctEl.textContent=val+'%';
+    bar.className='health-bar-fill '+(val>=95?'green':val>=85?'yellow':'red');
   }
-  setBar('hb-nav', 'hp-nav', navHealth);
-  setBar('hb-pwr', 'hp-pwr', pwrHealth);
-  setBar('hb-comm', 'hp-comm', commHealth);
-  setBar('hb-ctrl', 'hp-ctrl', ctrlHealth);
-
-  // Predict text
+  setBar('hb-nav','hp-nav',navHealth);
+  setBar('hb-pwr','hp-pwr',pwrHealth);
+  setBar('hb-comm','hp-comm',commHealth);
+  setBar('hb-ctrl','hp-ctrl',ctrlHealth);
   updatePredictText();
 }
-
-function updatePredictText() {
-  const el = document.getElementById('health-predict-text');
-  if (anomaly.batteryCritical) {
-    el.textContent = '电池电量严重不足，已触发自动返航';
-    el.className = 'predict-text urgent';
-  } else if (demo.batteryLevel < 82) {
-    const remainMin = Math.max(1, Math.round(demo.estRemainingTime / 60));
-    el.textContent = '预计 ' + remainMin + ' 分钟后电量不足，需要返航';
-    el.className = 'predict-text' + (remainMin < 10 ? ' urgent' : '');
-  } else {
-    const remainMin = Math.round(demo.estRemainingTime / 60);
-    if (!demo.running) {
-      el.textContent = '系统正常，无告警';
-      el.className = 'predict-text';
-    } else {
-      el.textContent = '预计 ' + remainMin + ' 分钟后电量不足，需要返航';
-      el.className = remainMin < 10 ? 'predict-text urgent' : 'predict-text';
-    }
+function updatePredictText(){
+  const el=document.getElementById('health-predict-text');
+  if(anomaly.batteryCritical){el.textContent='电池电量严重不足，已触发自动返航';el.className='predict-text urgent';}
+  else if(demo.batteryLevel<82){
+    const remainMin=Math.max(1,Math.round(demo.estRemainingTime/60));
+    el.textContent='预计 '+remainMin+' 分钟后电量不足，需要返航';
+    el.className='predict-text'+(remainMin<10?' urgent':'');
+  }else{
+    const remainMin=Math.round(demo.estRemainingTime/60);
+    if(!demo.running){el.textContent='系统正常，无告警';el.className='predict-text';}
+    else{el.textContent='预计 '+remainMin+' 分钟后电量不足，需要返航';el.className=remainMin<10?'predict-text urgent':'predict-text';}
   }
 }
-
-function updateControlLoopPanel() {
-  // Determine target values from current segment
-  let tgtAlt = 0, tgtHdg = 0, tgtSpd = 15.0;
-  if (demo.running && demo.progress < 1.0 && demo.pathSegments.length > 0) {
-    const targetDist = demo.progress * demo.totalLength;
-    let seg = demo.pathSegments[0];
-    for (const s of demo.pathSegments) {
-      if (targetDist <= s.cumLength + s.lengthMeters) { seg = s; break; }
-    }
-    const a = WAYPOINTS[seg.startIdx], b = WAYPOINTS[seg.endIdx];
-    const t = Math.min(1, Math.max(0, (targetDist - seg.cumLength) / seg.lengthMeters));
-    tgtAlt = a.alt + (b.alt - a.alt) * t;
-    tgtHdg = bearing(a.lat, a.lng, b.lat, b.lng);
-    tgtSpd = 15.0;
+function updateControlLoopPanel(){
+  let tgtAlt=0,tgtHdg=0,tgtSpd=15.0;
+  if(demo.running&&demo.progress<1.0&&demo.pathSegments.length>0){
+    const targetDist=demo.progress*demo.totalLength;
+    let seg=demo.pathSegments[0];
+    for(const s of demo.pathSegments){if(targetDist<=s.cumLength+s.lengthMeters){seg=s;break;}}
+    const a=WAYPOINTS[seg.startIdx],b=WAYPOINTS[seg.endIdx];
+    const t=Math.min(1,Math.max(0,(targetDist-seg.cumLength)/seg.lengthMeters));
+    tgtAlt=a.alt+(b.alt-a.alt)*t;
+    tgtHdg=bearing(a.lat,a.lng,b.lat,b.lng);
+    tgtSpd=15.0;
   }
-
-  document.getElementById('cl-tgt-alt').textContent = tgtAlt.toFixed(0) + 'm';
-  document.getElementById('cl-tgt-hdg').textContent = String(Math.round(tgtHdg)).padStart(3,'0') + '°';
-  document.getElementById('cl-tgt-spd').textContent = tgtSpd.toFixed(1) + 'm/s';
-
-  document.getElementById('cl-act-alt').textContent = flight.alt.toFixed(1) + 'm';
-  document.getElementById('cl-act-hdg').textContent = String(Math.round(flight.hdg)).padStart(3,'0') + '°';
-  document.getElementById('cl-act-spd').textContent = flight.spd.toFixed(1) + 'm/s';
-
-  function fmtDev(cellId, tgt, act, unit, _scale) {
-    const cell = document.getElementById(cellId);
-    if (tgt === 0) { cell.textContent = '-'; cell.className = 'dev-good'; return; }
-    const dev = act - tgt;
-    const pct = Math.abs(dev / tgt) * 100;
-    const sign = dev >= 0 ? '+' : '';
-    cell.textContent = sign + dev.toFixed(1) + unit;
-    cell.className = pct < 1 ? 'dev-good' : pct < 5 ? 'dev-warn' : 'dev-bad';
+  document.getElementById('cl-tgt-alt').textContent=tgtAlt.toFixed(0)+'m';
+  document.getElementById('cl-tgt-hdg').textContent=String(Math.round(tgtHdg)).padStart(3,'0')+'°';
+  document.getElementById('cl-tgt-spd').textContent=tgtSpd.toFixed(1)+'m/s';
+  document.getElementById('cl-act-alt').textContent=flight.alt.toFixed(1)+'m';
+  document.getElementById('cl-act-hdg').textContent=String(Math.round(flight.hdg)).padStart(3,'0')+'°';
+  document.getElementById('cl-act-spd').textContent=flight.spd.toFixed(1)+'m/s';
+  function fmtDev(cellId,tgt,act,unit){
+    const cell=document.getElementById(cellId);
+    if(tgt===0){cell.textContent='-';cell.className='dev-good';return;}
+    const dev=act-tgt,pct=Math.abs(dev/tgt)*100;
+    cell.textContent=(dev>=0?'+':'')+dev.toFixed(1)+unit;
+    cell.className=pct<1?'dev-good':pct<5?'dev-warn':'dev-bad';
   }
-  fmtDev('cl-dev-alt', tgtAlt, flight.alt, 'm');
-  fmtDev('cl-dev-hdg', tgtHdg, flight.hdg, '°');
-  fmtDev('cl-dev-spd', tgtSpd, flight.spd, 'm/s');
-
-  // XTE bar chart
+  fmtDev('cl-dev-alt',tgtAlt,flight.alt,'m');
+  fmtDev('cl-dev-hdg',tgtHdg,flight.hdg,'°');
+  fmtDev('cl-dev-spd',tgtSpd,flight.spd,'m/s');
   updateXTEChart();
+  updateControlQuality(tgtAlt);
+}
+function updateXTEChart(){
+  const maxXte=Math.max(...demo.xteHistory,0.1);
+  const bars=['▁','▂','▃','▄','▅','▆','▇','█'];
+  const chartStr=demo.xteHistory.map(v=>{const idx=Math.min(7,Math.floor((v/maxXte)*7));return bars[idx];}).join('');
+  document.getElementById('xte-chart').textContent=chartStr||'▁▁▁▁▁▁';
+}
+// A3: Control quality metrics
+function updateControlQuality(tgtAlt){
+  if(!demo.running||demo.paused){return;}
+  const altErr=Math.abs(flight.alt-tgtAlt);
+  if(altErr>demo.cqPeakAltError)demo.cqPeakAltError=altErr;
+  if(altErr>3&&!demo.cqSettlingDone){
+    if(!demo.cqPrevAboveThreshold){demo.cqSettlingStart=demo.flyTime;}
+    demo.cqPrevAboveThreshold=true;
+  }else if(altErr<1&&demo.cqPrevAboveThreshold&&!demo.cqSettlingDone){
+    demo.cqSettlingEnd=demo.flyTime;
+    demo.cqSettlingDone=true;
+    demo.cqPrevAboveThreshold=false;
+  }
+  if(demo.cqSettlingDone&&altErr<1){
+    demo.cqSteadySamples++;
+    demo.cqSteadySum+=altErr;
+    demo.cqSteadyError=demo.cqSteadySum/demo.cqSteadySamples;
+  }
+  const overshoot=tgtAlt>10?(demo.cqPeakAltError/tgtAlt*100):0;
+  document.getElementById('cq-overshoot').textContent=overshoot>0?overshoot.toFixed(1)+'%':'0.0%';
+  const settling=demo.cqSettlingDone?(demo.cqSettlingEnd-demo.cqSettlingStart):0;
+  document.getElementById('cq-settling').textContent=demo.cqSettlingDone?settling.toFixed(1)+'s':'--';
+  document.getElementById('cq-steadyerr').textContent=demo.cqSettlingDone?demo.cqSteadyError.toFixed(2)+'m':'--';
 }
 
-function updateXTEChart() {
-  const maxXte = Math.max(...demo.xteHistory, 0.1);
-  const bars = ['▁','▂','▃','▄','▅','▆','▇','█'];
-  const chartStr = demo.xteHistory.map(v => {
-    const idx = Math.min(7, Math.floor((v / maxXte) * 7));
-    return bars[idx];
-  }).join('');
-  document.getElementById('xte-chart').textContent = chartStr || '▁▁▁▁▁▁';
+// A2: Health trend curve
+function updateHealthTrend(){
+  let navHealth=99;
+  if(anomaly.gpsLost)navHealth=Math.max(55,navHealth-30);
+  if(anomaly.rtkDegraded)navHealth=Math.max(60,navHealth-15);
+  if(anomaly.insNavActive&&anomaly.gpsLost)navHealth=Math.max(navHealth,62);
+  const overall=Math.round(navHealth*0.30+97*0.25+98*0.20+99*0.25);
+  if(overall<demo.minHealth)demo.minHealth=overall;
+  demo.healthTrend.push(overall);
+  if(demo.healthTrend.length>10)demo.healthTrend.shift();
+  const canvas=document.getElementById('health-trend-canvas');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const w=canvas.width,h=canvas.height;
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle='rgba(0,30,60,0.4)';
+  ctx.fillRect(0,0,w,h);
+  if(demo.healthTrend.length<2)return;
+  const padX=8,padY=8,plotW=w-padX*2,plotH=h-padY*2;
+  const xStep=plotW/Math.max(1,demo.healthTrend.length-1);
+  // Grid
+  ctx.strokeStyle='rgba(0,180,255,0.08)';
+  ctx.lineWidth=0.5;
+  for(let i=0;i<=3;i++){const y=padY+plotH*i/3;ctx.beginPath();ctx.moveTo(padX,y);ctx.lineTo(w-padX,y);ctx.stroke();}
+  // Line
+  ctx.beginPath();
+  ctx.strokeStyle='#00ff66';ctx.lineWidth=1.5;
+  for(let i=0;i<demo.healthTrend.length;i++){
+    const x=padX+i*xStep;
+    const norm=(demo.healthTrend[i]-50)/50;
+    const y=padY+plotH*(1-Math.max(0,Math.min(1,norm)));
+    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+    // Color segments
+    if(i>0){
+      const prevV=demo.healthTrend[i-1],curV=demo.healthTrend[i];
+      ctx.strokeStyle=curV>=85?'#00ff66':curV>=60?'#ffaa00':'#ff3344';
+      ctx.stroke();ctx.beginPath();ctx.moveTo(x,y);
+    }
+  }
+  ctx.strokeStyle=demo.healthTrend[demo.healthTrend.length-1]>=85?'#00ff66':demo.healthTrend[demo.healthTrend.length-1]>=60?'#ffaa00':'#ff3344';
+  ctx.stroke();
+  // Dot at end
+  const lastIdx=demo.healthTrend.length-1;
+  const lastX=padX+lastIdx*xStep;
+  const lastNorm=(demo.healthTrend[lastIdx]-50)/50;
+  const lastY=padY+plotH*(1-Math.max(0,Math.min(1,lastNorm)));
+  ctx.fillStyle=demo.healthTrend[lastIdx]>=85?'#00ff66':demo.healthTrend[lastIdx]>=60?'#ffaa00':'#ff3344';
+  ctx.beginPath();ctx.arc(lastX,lastY,3,0,Math.PI*2);ctx.fill();
 }
 
-function updateGeofencePanel(statuses) {
-  GEOFENCES.forEach(gf => {
-    const s = statuses[gf.id];
-    const cnText = STATUS_CN[s] || s;
-    const item = document.getElementById('gf-item-' + gf.id.slice(-2));
-    const st = document.getElementById('gf-st-' + gf.id.slice(-2));
-    if (item) item.className = 'gf-item ' + s;
-    if (st) { st.textContent = cnText; st.className = 'gf-status ' + s; }
-    if (s !== gf.status) {
-      gf.status = s;
-      const w = gfWallEntities[gf.id];
-      if (w && w.wall) {
+function updateGeofencePanel(statuses){
+  GEOFENCES.forEach(gf=>{
+    const s=statuses[gf.id];
+    const cnText=STATUS_CN[s]||s;
+    const item=document.getElementById('gf-item-'+gf.id.slice(-2));
+    const st=document.getElementById('gf-st-'+gf.id.slice(-2));
+    if(item)item.className='gf-item '+s;
+    if(st){st.textContent=cnText;st.className='gf-status '+s;}
+    if(s!==gf.status){
+      gf.status=s;
+      const w=gfWallEntities[gf.id];
+      if(w&&w.wall){
         let color;
-        if (s === 'violation') color = Cesium.Color.RED.withAlpha(0.35);
-        else if (s === 'warn') color = Cesium.Color.YELLOW.withAlpha(0.25);
-        else color = Cesium.Color.BLUE.withAlpha(0.2);
-        if (gf.type === 'circle') w.wall.ellipsoid.material = color;
-        else w.wall.polygon.material = color;
+        if(s==='violation')color=Cesium.Color.RED.withAlpha(0.35);
+        else if(s==='warn')color=Cesium.Color.YELLOW.withAlpha(0.25);
+        else color=Cesium.Color.BLUE.withAlpha(0.2);
+        if(gf.type==='circle')w.wall.ellipsoid.material=color;
+        else w.wall.polygon.material=color;
       }
     }
   });
-  GEOFENCES.forEach(gf => {
-    if (gf.status === 'violation') {
-      demo._gfblickToggles[gf.id] = (demo._gfblickToggles[gf.id] || 0) + 1;
-      const w = gfWallEntities[gf.id];
-      if (w && w.wall && demo._gfblickToggles[gf.id] % 30 < 15) {
-        if (gf.type === 'circle') w.wall.ellipsoid.material = Cesium.Color.RED.withAlpha(0.7);
-        else w.wall.polygon.material = Cesium.Color.RED.withAlpha(0.7);
+  GEOFENCES.forEach(gf=>{
+    if(gf.status==='violation'){
+      demo._gfblickToggles[gf.id]=(demo._gfblickToggles[gf.id]||0)+1;
+      const w=gfWallEntities[gf.id];
+      if(w&&w.wall&&demo._gfblickToggles[gf.id]%30<15){
+        if(gf.type==='circle')w.wall.ellipsoid.material=Cesium.Color.RED.withAlpha(0.7);
+        else w.wall.polygon.material=Cesium.Color.RED.withAlpha(0.7);
       }
     }
   });
 }
-
-function addVLog(msg, type) {
-  const el = document.getElementById('vlog');
-  const d = document.createElement('div');
-  d.className = 'vlog-entry ' + (type || 'info');
-  const now = new Date();
-  d.textContent = '[' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0') + '] ' + msg;
+function addVLog(msg,type){
+  const el=document.getElementById('vlog');
+  const d=document.createElement('div');
+  d.className='vlog-entry '+(type||'info');
+  const now=new Date();
+  d.textContent='['+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0')+'] '+msg;
   el.prepend(d);
-  if (el.children.length > 40) el.removeChild(el.lastChild);
+  if(el.children.length>40)el.removeChild(el.lastChild);
+}
+
+// A4: Fault tree visualization
+function updateFaultTree(){
+  const el=document.getElementById('fault-tree');
+  const nodes=[];
+  for(let i=0;i<=5;i++)nodes.push(document.getElementById('ft-node-'+i));
+  let tree='';
+  if(anomaly.gpsLost||anomaly.rtkDegraded){
+    el.classList.remove('dimmed');
+    if(anomaly.gpsLost){
+      tree='GPS信号丢失\n<span class="ft-arrow">↓</span>\n导航可信度下降\n<span class="ft-arrow">↓</span>\n切换INS惯性导航\n<span class="ft-arrow">↓</span>\n限制速度至8m/s\n<span class="ft-arrow">↓</span>\n悬停等待恢复(30s)\n<span class="ft-arrow">↓</span>\n未恢复→自动返航';
+    }else if(anomaly.rtkDegraded){
+      tree='RTK差分降级\n<span class="ft-arrow">↓</span>\n定位精度下降至亚米级\n<span class="ft-arrow">↓</span>\n系统继续飞行监控\n<span class="ft-arrow">↓</span>\n无进一步降级';
+    }
+    if(anomaly.commLost){
+      tree='通信中断\n<span class="ft-arrow">↓</span>\n链路质量骤降至30%\n<span class="ft-arrow">↓</span>\n切换自主飞行模式\n<span class="ft-arrow">↓</span>\n按预定航点完成飞行';
+    }
+    if(anomaly.batteryCritical){
+      tree='电池电量骤降至25%\n<span class="ft-arrow">↓</span>\n低电量告警\n<span class="ft-arrow">↓</span>\n自动规划返航\n<span class="ft-arrow">↓</span>\n开始返航';
+    }
+    // Highlight active node based on state
+    let activeIdx=-1;
+    if(anomaly.rthActive)activeIdx=3;
+    else if(anomaly.insNavActive)activeIdx=2;
+    else if(anomaly.commLost)activeIdx=2;
+    else activeIdx=1;
+    // Build with highlights
+    const lines=tree.split('\n');
+    let formatted='';
+    for(let i=0;i<lines.length;i++){
+      const line=lines[i];
+      if(line.includes('↓')){formatted+=line+'\n';continue;}
+      const nodeIdx=Math.floor(i/2);
+      const isActive=nodeIdx===activeIdx;
+      formatted+='<span class="ft-node'+(isActive?' active':'')+'">'+line+'</span>\n';
+    }
+    el.innerHTML=formatted;
+  }else{
+    el.classList.add('dimmed');
+    el.innerHTML='<span class="ft-node">系统正常</span>\n<span class="ft-arrow">↓</span>\n<span class="ft-node">—</span>\n<span class="ft-arrow">↓</span>\n<span class="ft-node">—</span>\n<span class="ft-arrow">↓</span>\n<span class="ft-node">—</span>\n<span class="ft-arrow">↓</span>\n<span class="ft-node">—</span>\n<span class="ft-arrow">↓</span>\n<span class="ft-node">—</span>';
+  }
+}
+
+// B2: Formation update
+function updateFormationPanel(){
+  document.getElementById('fm-st-01').textContent=flight.phase==='待命'?'待命':'巡航中';
+  document.getElementById('fm-alt-01').textContent=flight.alt.toFixed(0)+'m';
+  document.getElementById('fm-dist-01').textContent='—';
+
+  const dist2=haversineM(flight.lat,flight.lng,wingman2.lat,wingman2.lng);
+  document.getElementById('fm-st-02').textContent=formation.mode==='follow'?'跟随':formation.mode==='spread'?'侦查':'集结中';
+  document.getElementById('fm-alt-02').textContent=wingman2.alt.toFixed(0)+'m';
+  document.getElementById('fm-dist-02').textContent=dist2.toFixed(0)+'m';
+
+  const dist3=haversineM(flight.lat,flight.lng,wingman3.lat,wingman3.lng);
+  document.getElementById('fm-st-03').textContent=formation.mode==='follow'?'跟随':formation.mode==='spread'?'侦查':'集结中';
+  document.getElementById('fm-alt-03').textContent=wingman3.alt.toFixed(0)+'m';
+  document.getElementById('fm-dist-03').textContent=dist3.toFixed(0)+'m';
+
+  // Conflict detection
+  const d12=haversineM(flight.lat,flight.lng,wingman2.lat,wingman2.lng);
+  const d13=haversineM(flight.lat,flight.lng,wingman3.lat,wingman3.lng);
+  const d23=haversineM(wingman2.lat,wingman2.lng,wingman3.lat,wingman3.lng);
+  const conflictEl=document.getElementById('fm-conflict');
+  const minDist=Math.min(d12,d13,d23);
+  if(minDist<30){
+    let pair='';
+    if(d12===minDist)pair='UAV-01 ↔ UAV-02 间距 '+minDist.toFixed(0)+'m';
+    else if(d13===minDist)pair='UAV-01 ↔ UAV-03 间距 '+minDist.toFixed(0)+'m';
+    else pair='UAV-02 ↔ UAV-03 间距 '+minDist.toFixed(0)+'m';
+    conflictEl.textContent='⚠ 空域冲突: '+pair;
+    conflictEl.style.display='block';
+  }else{
+    conflictEl.style.display='none';
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
 //  Path helpers
 // ═══════════════════════════════════════════════════════════════
-function computePathSegments() {
-  demo.pathSegments = [];
-  demo.totalLength = 0;
-  for (let i = 0; i < WAYPOINTS.length - 1; i++) {
-    const a = WAYPOINTS[i], b = WAYPOINTS[i+1];
-    const len = haversineM(a.lat, a.lng, b.lat, b.lng);
-    demo.pathSegments.push({ startIdx: i, endIdx: i+1, lengthMeters: len, cumLength: demo.totalLength });
-    demo.totalLength += len;
+function computePathSegments(){
+  demo.pathSegments=[];demo.totalLength=0;
+  for(let i=0;i<WAYPOINTS.length-1;i++){
+    const a=WAYPOINTS[i],b=WAYPOINTS[i+1];
+    const len=haversineM(a.lat,a.lng,b.lat,b.lng);
+    demo.pathSegments.push({startIdx:i,endIdx:i+1,lengthMeters:len,cumLength:demo.totalLength});
+    demo.totalLength+=len;
   }
 }
-
-function getPositionOnPath(progress) {
-  if (progress <= 0) return { ...WAYPOINTS[0] };
-  if (progress >= 1) return { ...WAYPOINTS[WAYPOINTS.length-1] };
-  const targetDist = progress * demo.totalLength;
-  for (const seg of demo.pathSegments) {
-    const nextCum = seg.cumLength + seg.lengthMeters;
-    if (targetDist <= nextCum) {
-      const t = (targetDist - seg.cumLength) / seg.lengthMeters;
-      const a = WAYPOINTS[seg.startIdx], b = WAYPOINTS[seg.endIdx];
-      return {
-        lat: a.lat + (b.lat - a.lat) * t,
-        lng: a.lng + (b.lng - a.lng) * t,
-        alt: a.alt + (b.alt - a.alt) * t
-      };
+function getPositionOnPath(progress){
+  if(progress<=0)return{...WAYPOINTS[0]};
+  if(progress>=1)return{...WAYPOINTS[WAYPOINTS.length-1]};
+  const targetDist=progress*demo.totalLength;
+  for(const seg of demo.pathSegments){
+    const nextCum=seg.cumLength+seg.lengthMeters;
+    if(targetDist<=nextCum){
+      const t=(targetDist-seg.cumLength)/seg.lengthMeters;
+      const a=WAYPOINTS[seg.startIdx],b=WAYPOINTS[seg.endIdx];
+      return{lat:a.lat+(b.lat-a.lat)*t,lng:a.lng+(b.lng-a.lng)*t,alt:a.alt+(b.alt-a.alt)*t};
     }
   }
-  return { ...WAYPOINTS[WAYPOINTS.length-1] };
+  return{...WAYPOINTS[WAYPOINTS.length-1]};
 }
 
 // ═══════════════════════════════════════════════════════════════
 //  Attitude calculation
 // ═══════════════════════════════════════════════════════════════
-let _prevHdg = null;
-function computeAttitude() {
-  flight.yaw = flight.hdg;
-  if (_prevHdg === null) { flight.pitch = 0; flight.roll = 0; _prevHdg = flight.hdg; return; }
-
-  if (demo.running && !demo.paused && demo.progress < 1.0) {
-    const curPos = { lat: flight.lat, lng: flight.lng };
-    const nextPos = getPositionOnPath(Math.min(1, demo.progress + 0.005));
-    const altDelta = nextPos.alt - curPos.alt;
-    const distM = haversineM(curPos.lat, curPos.lng, nextPos.lat, nextPos.lng);
-    if (distM > 0.01) {
-      const slopeDeg = Cesium.Math.toDegrees(Math.atan2(altDelta, distM));
-      flight.pitch = Math.max(-15, Math.min(25, slopeDeg * 0.8));
-    } else {
-      flight.pitch *= 0.95;
-    }
-  } else {
-    flight.pitch *= 0.95;
-  }
-
-  let hdgDelta = flight.hdg - _prevHdg;
-  if (hdgDelta > 180) hdgDelta -= 360;
-  if (hdgDelta < -180) hdgDelta += 360;
-  const rollTarget = Math.max(-30, Math.min(30, hdgDelta * 3.0));
-  flight.roll += (rollTarget - flight.roll) * 0.3;
-  flight.roll = Math.max(-30, Math.min(30, flight.roll));
-
-  _prevHdg = flight.hdg;
+let _prevHdg=null;
+function computeAttitude(){
+  flight.yaw=flight.hdg;
+  if(_prevHdg===null){flight.pitch=0;flight.roll=0;_prevHdg=flight.hdg;return;}
+  if(demo.running&&!demo.paused&&demo.progress<1.0){
+    const curPos={lat:flight.lat,lng:flight.lng};
+    const nextPos=getPositionOnPath(Math.min(1,demo.progress+0.005));
+    const altDelta=nextPos.alt-curPos.alt;
+    const distM=haversineM(curPos.lat,curPos.lng,nextPos.lat,nextPos.lng);
+    if(distM>0.01){
+      const slopeDeg=Cesium.Math.toDegrees(Math.atan2(altDelta,distM));
+      flight.pitch=Math.max(-15,Math.min(25,slopeDeg*0.8));
+    }else{flight.pitch*=0.95;}
+  }else{flight.pitch*=0.95;}
+  let hdgDelta=flight.hdg-_prevHdg;
+  if(hdgDelta>180)hdgDelta-=360;
+  if(hdgDelta<-180)hdgDelta+=360;
+  const rollTarget=Math.max(-30,Math.min(30,hdgDelta*3.0));
+  flight.roll+=(rollTarget-flight.roll)*0.3;
+  flight.roll=Math.max(-30,Math.min(30,flight.roll));
+  _prevHdg=flight.hdg;
+}
+function computeXTE(){
+  if(demo.progress<=0||demo.progress>=1.0||demo.pathSegments.length===0){flight.xte=0;return;}
+  const targetDist=demo.progress*demo.totalLength;
+  let seg=demo.pathSegments[0];
+  for(const s of demo.pathSegments){if(targetDist<=s.cumLength+s.lengthMeters){seg=s;break;}}
+  const a=WAYPOINTS[seg.startIdx],b=WAYPOINTS[seg.endIdx];
+  const R=6371000;
+  const d13=haversineM(a.lat,a.lng,flight.lat,flight.lng)/R;
+  const brng12=Cesium.Math.toRadians(bearing(a.lat,a.lng,b.lat,b.lng));
+  const brng13=Cesium.Math.toRadians(bearing(a.lat,a.lng,flight.lat,flight.lng));
+  const dxt=Math.asin(Math.sin(d13)*Math.sin(brng13-brng12))*R;
+  flight.xte=Math.abs(dxt);
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  XTE calculation
+//  Wind Disturbance Simulation
 // ═══════════════════════════════════════════════════════════════
-function computeXTE() {
-  if (demo.progress <= 0 || demo.progress >= 1.0 || demo.pathSegments.length === 0) {
-    flight.xte = 0; return;
-  }
-  const targetDist = demo.progress * demo.totalLength;
-  let seg = demo.pathSegments[0];
-  for (const s of demo.pathSegments) {
-    if (targetDist <= s.cumLength + s.lengthMeters) { seg = s; break; }
-  }
-  const a = WAYPOINTS[seg.startIdx], b = WAYPOINTS[seg.endIdx];
-  const R = 6371000;
-  const d13 = haversineM(a.lat, a.lng, flight.lat, flight.lng) / R;
-  const brng12 = Cesium.Math.toRadians(bearing(a.lat, a.lng, b.lat, b.lng));
-  const brng13 = Cesium.Math.toRadians(bearing(a.lat, a.lng, flight.lat, flight.lng));
-  const dxt = Math.asin(Math.sin(d13) * Math.sin(brng13 - brng12)) * R;
-  flight.xte = Math.abs(dxt);
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  Wind Disturbance Simulation (方向1: 风扰补偿)
-// ═══════════════════════════════════════════════════════════════
-function applyWindDisturbance(dt) {
-  demo.windTimer += dt;
-
-  // Generate random crosswind every ~1.5s
-  if (demo.windTimer > 1.5) {
-    demo.windTimer = 0;
-    // Random wind offset in meters (±5m cross-track)
-    const windStrength = (Math.random() - 0.5) * 10; // -5 to +5 m
-    // Apply perpendicular to heading
-    const hdgRad = Cesium.Math.toRadians(flight.hdg + 90); // cross-track direction
-    const latDegPerM = 1.0 / 111320;
-    const lngDegPerM = 1.0 / (111320 * Math.cos(Cesium.Math.toRadians(flight.lat)));
-    flight.windOffsetLat = Math.cos(hdgRad) * windStrength * latDegPerM;
-    flight.windOffsetLng = Math.sin(hdgRad) * windStrength * lngDegPerM;
-
-    const windMag = Math.abs(windStrength);
-    flight.windCompensationActive = true;
-
-    // FC decision: compensate with aileron and rudder
-    flight.surfaceAileron = Math.max(-8, Math.min(8, -windStrength * 1.6));
-    flight.surfaceRudder = Math.max(-3, Math.min(3, -windStrength * 0.6));
-
-    // Log
-    if (windMag > 2.0) {
-      addFCLog(
-        '检测到侧风偏移 ' + windStrength.toFixed(1) + 'm → 副翼修正 ' + flight.surfaceAileron.toFixed(1) + '° / 方向舵 ' + flight.surfaceRudder.toFixed(1) + '° → 航线恢复',
-        windMag > 4 ? 'warning' : 'info'
-      );
+function applyWindDisturbance(dt){
+  demo.windTimer+=dt;
+  if(demo.windTimer>1.5){
+    demo.windTimer=0;
+    const windStrength=(Math.random()-0.5)*10;
+    const hdgRad=Cesium.Math.toRadians(flight.hdg+90);
+    const latDegPerM=1.0/111320;
+    const lngDegPerM=1.0/(111320*Math.cos(Cesium.Math.toRadians(flight.lat)));
+    flight.windOffsetLat=Math.cos(hdgRad)*windStrength*latDegPerM;
+    flight.windOffsetLng=Math.sin(hdgRad)*windStrength*lngDegPerM;
+    const windMag=Math.abs(windStrength);
+    flight.windCompensationActive=true;
+    flight.surfaceAileron=Math.max(-8,Math.min(8,-windStrength*1.6));
+    flight.surfaceRudder=Math.max(-3,Math.min(3,-windStrength*0.6));
+    if(windMag>2.0){
+      addFCLog('检测到侧风偏移 '+windStrength.toFixed(1)+'m → 副翼修正 '+flight.surfaceAileron.toFixed(1)+'° / 方向舵 '+flight.surfaceRudder.toFixed(1)+'° → 航线恢复',windMag>4?'warning':'info');
     }
-
-    // Apply wind offset to position (this frame only, then compensation pulls back)
-    flight.lat += flight.windOffsetLat;
-    flight.lng += flight.windOffsetLng;
-
-    // Compensation: pull back towards planned path
-    const planned = getPositionOnPath(demo.progress);
-    const driftLat = flight.lat - planned.lat;
-    const driftLng = flight.lng - planned.lng;
-    const driftMag = Math.sqrt(driftLat*driftLat + driftLng*driftLng) * 111320;
-    if (driftMag > 0.3) {
-      flight.lat -= driftLat * 0.6;
-      flight.lng -= driftLng * 0.6;
-      const recoveryDist = (driftMag * 0.6).toFixed(1);
-      if (driftMag > 1.5) {
-        addFCLog('偏差恢复: 拉回航线 ' + recoveryDist + 'm (剩余偏差 ' + (driftMag * 0.4).toFixed(1) + 'm)', 'info');
+    flight.lat+=flight.windOffsetLat;
+    flight.lng+=flight.windOffsetLng;
+    const planned=getPositionOnPath(demo.progress);
+    const driftLat=flight.lat-planned.lat;
+    const driftLng=flight.lng-planned.lng;
+    const driftMag=Math.sqrt(driftLat*driftLat+driftLng*driftLng)*111320;
+    if(driftMag>0.3){
+      flight.lat-=driftLat*0.6;
+      flight.lng-=driftLng*0.6;
+      const recoveryDist=(driftMag*0.6).toFixed(1);
+      if(driftMag>1.5){
+        addFCLog('偏差恢复: 拉回航线 '+recoveryDist+'m (剩余偏差 '+(driftMag*0.4).toFixed(1)+'m)','info');
       }
     }
   }
 }
-
-// ═══════════════════════════════════════════════════════════════
-//  Surface output computation
-// ═══════════════════════════════════════════════════════════════
-function computeSurfaceOutputs() {
-  // Pitch → Elevator
-  flight.surfaceElevator = Math.max(-10, Math.min(10, -flight.pitch * 0.4));
-
-  // Roll → Aileron (already set by wind compensation, otherwise from roll)
-  if (!flight.windCompensationActive) {
-    flight.surfaceAileron = Math.max(-10, Math.min(10, -flight.roll * 0.35));
-  } else {
-    flight.windCompensationActive = false; // reset flag
-  }
-
-  // Yaw error → Rudder (add to wind rudder if any)
-  const yawError = flight.hdg - (flight.yaw || flight.hdg);
-  const rudderFromYaw = Math.max(-2, Math.min(2, yawError * 0.1));
-  if (!flight.windCompensationActive) {
-    flight.surfaceRudder = rudderFromYaw;
-  }
+function computeSurfaceOutputs(){
+  flight.surfaceElevator=Math.max(-10,Math.min(10,-flight.pitch*0.4));
+  if(!flight.windCompensationActive){
+    flight.surfaceAileron=Math.max(-10,Math.min(10,-flight.roll*0.35));
+  }else{flight.windCompensationActive=false;}
+  const yawError=flight.hdg-(flight.yaw||flight.hdg);
+  const rudderFromYaw=Math.max(-2,Math.min(2,yawError*0.1));
+  if(!flight.windCompensationActive){flight.surfaceRudder=rudderFromYaw;}
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  Anomaly Triggers (方向4: 异常场景)
+//  Anomaly Triggers
 // ═══════════════════════════════════════════════════════════════
-function triggerAnomaly(type) {
-  switch (type) {
-    case 'gps_lose':
-      if (anomaly.gpsLost) break;
-      anomaly.gpsLost = true;
-      anomaly.insNavActive = true;
-      anomaly.gpsLostTimer = 0;
+function triggerAnomaly(type){
+  switch(type){
+    case'gps_lose':
+      if(anomaly.gpsLost)break;
+      anomaly.gpsLost=true;anomaly.insNavActive=true;anomaly.gpsLostTimer=0;
       document.getElementById('btn-gps-lose').classList.add('active');
-      addFCLog('[异常] GPS信号丢失 → 自主切换INS惯性导航 → 悬停等待信号恢复 → 30秒无恢复则自动返航', 'emergency');
-      addVLog('GPS信号丢失 — 已切换INS惯性导航', 'violation');
-      // Update link panel indicators
-      updateLinkIndicators();
+      addFCLog('[异常] GPS信号丢失 → 自主切换INS惯性导航 → 悬停等待信号恢复 → 30秒无恢复则自动返航','emergency');
+      addVLog('GPS信号丢失 — 已切换INS惯性导航','violation');
+      demo.anomalyCount++;
+      updateFaultTree();
+      setAutonomyLevel(4);
       break;
-    case 'rtk_degrade':
-      if (anomaly.rtkDegraded) break;
-      anomaly.rtkDegraded = true;
+    case'rtk_degrade':
+      if(anomaly.rtkDegraded)break;
+      anomaly.rtkDegraded=true;
       document.getElementById('btn-rtk-dg').classList.add('active');
-      addFCLog('[异常] RTK差分降级 → 定位精度下降至亚米级 → 继续飞行监控', 'warning');
-      addVLog('RTK差分降级 — 定位精度下降', 'warn');
-      updateLinkIndicators();
+      addFCLog('[异常] RTK差分降级 → 定位精度下降至亚米级 → 继续飞行监控','warning');
+      addVLog('RTK差分降级 — 定位精度下降','warn');
+      demo.anomalyCount++;
+      updateFaultTree();
       break;
-    case 'comm_loss':
-      if (anomaly.commLost) break;
-      anomaly.commLost = true;
-      anomaly.autonomousFlight = true;
+    case'comm_loss':
+      if(anomaly.commLost)break;
+      anomaly.commLost=true;anomaly.autonomousFlight=true;
       document.getElementById('btn-comm-loss').classList.add('active');
-      addFCLog('[异常] 通信中断 → 切换自主飞行模式 → 按预定航点继续完成飞行', 'emergency');
-      addVLog('通信中断 — 已切换自主飞行模式', 'violation');
-      updateLinkIndicators();
+      addFCLog('[异常] 通信中断 → 切换自主飞行模式 → 按预定航点继续完成飞行','emergency');
+      addVLog('通信中断 — 已切换自主飞行模式','violation');
+      demo.anomalyCount++;
+      updateFaultTree();
+      setAutonomyLevel(4);
       break;
-    case 'battery_low':
-      if (anomaly.batteryCritical) break;
-      anomaly.batteryCritical = true;
-      demo.batteryLevel = Math.min(demo.batteryLevel, 25);
+    case'battery_low':
+      if(anomaly.batteryCritical)break;
+      anomaly.batteryCritical=true;
+      demo.batteryLevel=Math.min(demo.batteryLevel,25);
       document.getElementById('btn-bat-low').classList.add('active');
-      addFCLog('[异常] 电池电量骤降至25% → 低电量告警 → 自动规划返航 → 开始返航', 'emergency');
-      addVLog('电池异常 — 低电量，触发自动返航', 'violation');
-      updateLinkIndicators();
-      // Trigger RTH
+      addFCLog('[异常] 电池电量骤降至25% → 低电量告警 → 自动规划返航 → 开始返航','emergency');
+      addVLog('电池异常 — 低电量，触发自动返航','violation');
+      demo.anomalyCount++;
+      updateFaultTree();
       triggerRTH('battery');
+      setAutonomyLevel(3);
       break;
   }
   updateHealthPanel();
 }
-
-function triggerRTH(reason) {
-  if (anomaly.rthActive) return;
-  anomaly.rthActive = true;
-  anomaly.rthStartPos = { lat: flight.lat, lng: flight.lng, alt: flight.alt };
-  anomaly.rthProgress = 0;
-
-  if (reason === 'battery') {
-    // Hover first
-    flight.phase = '悬停中';
-    flight.spd = 0;
-    addFCLog('[紧急] 模拟故障触发 → 自动悬停 → 评估返航路径 → 开始返航', 'emergency');
-  } else if (reason === 'fault') {
-    flight.phase = '悬停中';
-    flight.spd = 0;
-    addFCLog('[紧急] 模拟故障触发 → 自动悬停 → 评估返航路径 → 开始返航', 'emergency');
-  } else if (reason === 'gps_timeout') {
-    addFCLog('[自主响应] GPS信号30秒未恢复 → 启动自动返航程序', 'emergency');
+function triggerRTH(reason){
+  if(anomaly.rthActive)return;
+  anomaly.rthActive=true;
+  anomaly.rthStartPos={lat:flight.lat,lng:flight.lng,alt:flight.alt};
+  anomaly.rthProgress=0;
+  if(reason==='battery'||reason==='fault'){
+    flight.phase='悬停中';flight.spd=0;
+    addFCLog('[紧急] 模拟故障触发 → 自动悬停 → 评估返航路径 → 开始返航','emergency');
+  }else if(reason==='gps_timeout'){
+    addFCLog('[自主响应] GPS信号30秒未恢复 → 启动自动返航程序','emergency');
   }
-
-  // Show buttons
-  document.getElementById('btn-fault').style.display = 'none';
-  document.getElementById('btn-recover').style.display = 'inline-block';
-
-  // RTH will be handled in demoLoop
+  setAutonomyLevel(3);
+  document.getElementById('btn-fault').style.display='none';
+  document.getElementById('btn-recover').style.display='inline-block';
 }
-
-function recoverNormal() {
-  // Clear RTH
-  anomaly.rthActive = false;
-  anomaly.rthProgress = 0;
-  anomaly.rthStartPos = null;
-  anomaly.autonomousFlight = false;
-
-  // Resume demo if was running
-  if (demo.running && demo.paused) {
-    demo.paused = false;
-    demo._lastTick = performance.now();
-    flight.phase = '巡航中';
-  }
-
-  document.getElementById('btn-fault').style.display = 'inline-block';
-  document.getElementById('btn-recover').style.display = 'none';
-  addFCLog('[恢复] 正常模式已恢复 → 继续原定飞行路线', 'success');
-  addVLog('已恢复正常飞行模式', 'info');
+function recoverNormal(){
+  anomaly.rthActive=false;anomaly.rthProgress=0;anomaly.rthStartPos=null;
+  anomaly.autonomousFlight=false;
+  if(demo.running&&demo.paused){demo.paused=false;demo._lastTick=performance.now();flight.phase='巡航中';}
+  document.getElementById('btn-fault').style.display='inline-block';
+  document.getElementById('btn-recover').style.display='none';
+  setAutonomyLevel(2);
+  addFCLog('[恢复] 正常模式已恢复 → 继续原定飞行路线','success');
+  addVLog('已恢复正常飞行模式','info');
   updateHUD();
 }
-
-function resetSystem() {
-  // Clear all anomalies
-  anomaly.gpsLost = false;
-  anomaly.rtkDegraded = false;
-  anomaly.commLost = false;
-  anomaly.batteryCritical = false;
-  anomaly.insNavActive = false;
-  anomaly.autonomousFlight = false;
-  anomaly.rthActive = false;
-  anomaly.rthProgress = 0;
-  anomaly.rthStartPos = null;
-  anomaly.gpsLostTimer = 0;
-  anomaly.lastResponse = {};
-
-  // Reset flight state
-  flight.windOffsetLat = 0;
-  flight.windOffsetLng = 0;
-  flight.windCompensationActive = false;
-  flight.surfaceAileron = 0;
-  flight.surfaceElevator = 0;
-  flight.surfaceRudder = 0;
-
-  // Reset battery/link
-  demo.batteryLevel = 100;
-  demo.linkQuality = 98;
-  demo.estRemainingTime = 480;
-
-  // Reset button styles
-  document.querySelectorAll('.anomaly-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('btn-recover').style.display = 'none';
-
-  // Reset link indicators
-  updateLinkIndicators();
-  updateHealthPanel();
-  updateSurfacePanel();
-
-  addFCLog('[系统] 全部异常状态已清除 → 系统恢复正常', 'success');
-  addVLog('系统已重置，所有异常已清除', 'info');
-
-  // Resume demo if paused
-  if (demo.running && demo.paused) {
-    demo.paused = false;
-    demo._lastTick = performance.now();
-    flight.phase = '巡航中';
-    document.getElementById('btn-fault').style.display = 'inline-block';
-    updateHUD();
-  }
+function resetSystem(){
+  anomaly.gpsLost=false;anomaly.rtkDegraded=false;anomaly.commLost=false;anomaly.batteryCritical=false;
+  anomaly.insNavActive=false;anomaly.autonomousFlight=false;
+  anomaly.rthActive=false;anomaly.rthProgress=0;anomaly.rthStartPos=null;
+  anomaly.gpsLostTimer=0;anomaly.lastResponse={};
+  flight.windOffsetLat=0;flight.windOffsetLng=0;flight.windCompensationActive=false;
+  flight.surfaceAileron=0;flight.surfaceElevator=0;flight.surfaceRudder=0;
+  demo.batteryLevel=100;demo.linkQuality=98;demo.estRemainingTime=480;
+  document.querySelectorAll('.anomaly-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn-recover').style.display='none';
+  setAutonomyLevel(2);
+  updateFaultTree();
+  updateHealthPanel();updateSurfacePanel();
+  addFCLog('[系统] 全部异常状态已清除 → 系统恢复正常','success');
+  addVLog('系统已重置，所有异常已清除','info');
+  if(demo.running&&demo.paused){demo.paused=false;demo._lastTick=performance.now();flight.phase='巡航中';document.getElementById('btn-fault').style.display='inline-block';updateHUD();}
 }
-
-function triggerFault() {
-  if (!demo.running || demo.paused) return;
-  // Pause demo
-  demo.paused = true;
-  flight.phase = '悬停中';
-
-  document.getElementById('btn-fault').style.display = 'none';
-  document.getElementById('btn-recover').style.display = 'inline-block';
-
+function triggerFault(){
+  if(!demo.running||demo.paused)return;
+  demo.paused=true;flight.phase='悬停中';
+  document.getElementById('btn-fault').style.display='none';
+  document.getElementById('btn-recover').style.display='inline-block';
   triggerRTH('fault');
   updateHUD();
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  Link indicators update
-// ═══════════════════════════════════════════════════════════════
-function updateLinkIndicators() {
-  // GPS
-  const gpsDot = document.getElementById('link-dot-gps');
-  const gpsVal = document.getElementById('link-gps');
-  if (!gpsDot) return; // indicators moved into health panel...
-
-  // These now need to be accessed differently since we removed the link panel.
-  // We'll use the health panel for subsystem status updates instead.
-}
-
-// ═══════════════════════════════════════════════════════════════
 //  Perf panel update
 // ═══════════════════════════════════════════════════════════════
-function updatePerfPanel(dt) {
-  if (!demo.running || demo.paused) return;
-
-  if (flight.alt > demo.maxAlt) demo.maxAlt = flight.alt;
-  if (flight.spd > demo.maxSpd) demo.maxSpd = flight.spd;
-
-  if (demo.lastPos) {
-    const d = haversineM(demo.lastPos.lat, demo.lastPos.lng, flight.lat, flight.lng);
-    demo.totalDist += d;
-  }
-  demo.lastPos = { lat: flight.lat, lng: flight.lng };
-  demo.flyTime += dt;
-
-  document.getElementById('perf-maxalt').textContent = demo.maxAlt.toFixed(0) + ' m';
-  document.getElementById('perf-maxspd').textContent = demo.maxSpd.toFixed(1) + ' m/s';
-  document.getElementById('perf-dist').textContent = (demo.totalDist / 1000).toFixed(2) + ' km';
-
-  const mins = Math.floor(demo.flyTime / 60);
-  const secs = Math.floor(demo.flyTime % 60);
-  document.getElementById('perf-time').textContent =
-    String(mins).padStart(2,'0') + ':' + String(secs).padStart(2,'0');
+function updatePerfPanel(dt){
+  if(!demo.running||demo.paused)return;
+  if(flight.alt>demo.maxAlt)demo.maxAlt=flight.alt;
+  if(flight.spd>demo.maxSpd)demo.maxSpd=flight.spd;
+  if(demo.lastPos){const d=haversineM(demo.lastPos.lat,demo.lastPos.lng,flight.lat,flight.lng);demo.totalDist+=d;}
+  demo.lastPos={lat:flight.lat,lng:flight.lng};
+  demo.flyTime+=dt;
+  document.getElementById('perf-maxalt').textContent=demo.maxAlt.toFixed(0)+' m';
+  document.getElementById('perf-maxspd').textContent=demo.maxSpd.toFixed(1)+' m/s';
+  document.getElementById('perf-dist').textContent=(demo.totalDist/1000).toFixed(2)+' km';
+  const mins=Math.floor(demo.flyTime/60),secs=Math.floor(demo.flyTime%60);
+  document.getElementById('perf-time').textContent=String(mins).padStart(2,'0')+':'+String(secs).padStart(2,'0');
 }
-
-// ═══════════════════════════════════════════════════════════════
-//  Battery & Link update
-// ═══════════════════════════════════════════════════════════════
-function updateBatteryAndLink(dt) {
-  if (!demo.running || demo.paused) return;
-
-  if (!anomaly.batteryCritical) {
-    demo.batteryLevel -= dt * 2.1;
-    demo.batteryLevel = Math.max(75, demo.batteryLevel);
-  } else {
-    // Battery critical: drain faster
-    demo.batteryLevel -= dt * 2.5;
-    demo.batteryLevel = Math.max(15, demo.batteryLevel);
-  }
-
-  // Link quality fluctuation
-  if (!anomaly.commLost) {
-    demo.linkQuality += (Math.random() - 0.5) * 4;
-    demo.linkQuality = Math.max(94, Math.min(99.5, demo.linkQuality));
-  } else {
-    demo.linkQuality = 30 + Math.random() * 5; // 30% when comm lost
-  }
-
-  // Estimate remaining time
-  if (demo.batteryLevel > 20) {
-    demo.estRemainingTime = (demo.batteryLevel - 20) / 2.1;
-  } else {
-    demo.estRemainingTime = 0;
-  }
+function updateBatteryAndLink(dt){
+  if(!demo.running||demo.paused)return;
+  if(!anomaly.batteryCritical){demo.batteryLevel-=dt*2.1;demo.batteryLevel=Math.max(75,demo.batteryLevel);}
+  else{demo.batteryLevel-=dt*2.5;demo.batteryLevel=Math.max(15,demo.batteryLevel);}
+  if(!anomaly.commLost){demo.linkQuality+=(Math.random()-0.5)*4;demo.linkQuality=Math.max(94,Math.min(99.5,demo.linkQuality));}
+  else{demo.linkQuality=30+Math.random()*5;}
+  if(demo.batteryLevel>20)demo.estRemainingTime=(demo.batteryLevel-20)/2.1;
+  else demo.estRemainingTime=0;
 }
 
 // ═══════════════════════════════════════════════════════════════
 //  RTH (Return to Home) logic
 // ═══════════════════════════════════════════════════════════════
-function processRTH(dt) {
-  if (!anomaly.rthActive || !anomaly.rthStartPos) return;
-
-  const home = WAYPOINTS[0];
-  const totalDist = haversineM(anomaly.rthStartPos.lat, anomaly.rthStartPos.lng, home.lat, home.lng);
-
-  anomaly.rthProgress += dt * 0.12; // RTH speed ~ similar to demo speed
-
-  if (anomaly.rthProgress >= 1.0) {
-    // Arrived at home
-    flight.lat = home.lat;
-    flight.lng = home.lng;
-    flight.alt = home.alt;
-    flight.spd = 0;
-    flight.phase = '已返航';
-    anomaly.rthActive = false;
-    anomaly.rthStartPos = null;
-    addFCLog('[返航完成] 已安全抵达出发点', 'success');
-    addVLog('返航完成 — 已抵达出发点', 'info');
-
-    // Stop demo
+function processRTH(dt){
+  if(!anomaly.rthActive||!anomaly.rthStartPos)return;
+  const home=WAYPOINTS[0];
+  anomaly.rthProgress+=dt*0.12;
+  if(anomaly.rthProgress>=1.0){
+    flight.lat=home.lat;flight.lng=home.lng;flight.alt=home.alt;flight.spd=0;
+    flight.phase='已返航';anomaly.rthActive=false;anomaly.rthStartPos=null;
+    setAutonomyLevel(2);
+    addFCLog('[返航完成] 已安全抵达出发点','success');
+    addVLog('返航完成 — 已抵达出发点','info');
     stopDemo(true);
     return;
   }
-
-  // Interpolate RTH position
-  const t = anomaly.rthProgress;
-  flight.lat = anomaly.rthStartPos.lat + (home.lat - anomaly.rthStartPos.lat) * t;
-  flight.lng = anomaly.rthStartPos.lng + (home.lng - anomaly.rthStartPos.lng) * t;
-  flight.alt = anomaly.rthStartPos.alt + (home.alt - anomaly.rthStartPos.alt) * t;
-  flight.spd = 12 + Math.random() * 3;
-  flight.hdg = bearing(flight.lat, flight.lng, home.lat, home.lng);
-  flight.phase = '返航中';
-  flight.wpIdx = 0; // heading to WP1
-
-  computeAttitude();
-  computeXTE();
+  const t=anomaly.rthProgress;
+  flight.lat=anomaly.rthStartPos.lat+(home.lat-anomaly.rthStartPos.lat)*t;
+  flight.lng=anomaly.rthStartPos.lng+(home.lng-anomaly.rthStartPos.lng)*t;
+  flight.alt=anomaly.rthStartPos.alt+(home.alt-anomaly.rthStartPos.alt)*t;
+  flight.spd=12+Math.random()*3;
+  flight.hdg=bearing(flight.lat,flight.lng,home.lat,home.lng);
+  flight.phase='返航中';flight.wpIdx=0;
+  computeAttitude();computeXTE();
 }
-
-// ═══════════════════════════════════════════════════════════════
-//  GPS lost timer (autonomous response)
-// ═══════════════════════════════════════════════════════════════
-function processGPSLost(dt) {
-  if (!anomaly.gpsLost) return;
-  if (anomaly.rthActive) return; // RTH already active
-
-  anomaly.gpsLostTimer += dt;
-
-  if (anomaly.gpsLostTimer >= 30 && !anomaly.lastResponse.gpsTimeout) {
-    anomaly.lastResponse.gpsTimeout = true;
+function processGPSLost(dt){
+  if(!anomaly.gpsLost)return;
+  if(anomaly.rthActive)return;
+  anomaly.gpsLostTimer+=dt;
+  if(anomaly.gpsLostTimer>=30&&!anomaly.lastResponse.gpsTimeout){
+    anomaly.lastResponse.gpsTimeout=true;
     triggerRTH('gps_timeout');
   }
-
-  // During GPS loss, hover and rely on INS
-  if (!anomaly.rthActive && !anomaly.lastResponse.gpsHover) {
-    anomaly.lastResponse.gpsHover = true;
-    flight.spd = Math.max(0, flight.spd * 0.7);
+  if(!anomaly.rthActive&&!anomaly.lastResponse.gpsHover){
+    anomaly.lastResponse.gpsHover=true;
+    flight.spd=Math.max(0,flight.spd*0.7);
   }
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  Demo Loop
+//  B2: Wingman update
 // ═══════════════════════════════════════════════════════════════
-function demoLoop() {
-  if (!demo.running || demo.paused) { demo.animFrame = null; return; }
-
-  const now = performance.now();
-  const dt = Math.min((now - (demo._lastTick || now)) / 1000, 0.1);
-  demo._lastTick = now;
-
-  // Handle RTH
-  if (anomaly.rthActive) {
-    processRTH(dt);
-    updateBatteryAndLink(dt);
-    updatePerfPanel(dt);
-    updateFlightEntity();
-    trailPositions.push(Cesium.Cartesian3.fromDegrees(flight.lng, flight.lat, flight.alt));
-    if (trailPositions.length > 500) trailPositions.shift();
-    trailEntity.polyline.positions = trailPositions;
-    updateHUD();
-    updateSurfacePanel();
-    updateHealthPanel();
-    updateControlLoopPanel();
-    const { statuses, worst } = checkAllGeofences(flight.lat, flight.lng, flight.alt);
-    flight.gfStatus = worst === 'safe' ? '安全' : worst === 'warn' ? '预警' : '违规';
-    updateGeofencePanel(statuses);
-    demo.animFrame = requestAnimationFrame(demoLoop);
-    return;
+function updateWingmen(dt){
+  if(!demo.running||demo.paused)return;
+  if(formation.mode==='follow'){
+    // Wingman 2: right-rear 80m right, 50m behind
+    const w2=offsetPos(flight.lat,flight.lng,80,-50);
+    wingman2.lat+=(w2.lat-wingman2.lat)*0.3;
+    wingman2.lng+=(w2.lng-wingman2.lng)*0.3;
+    wingman2.alt+=(flight.alt-wingman2.alt)*0.3;
+    wingman2.hdg=flight.hdg;wingman2.spd=flight.spd;wingman2.phase='跟随';
+    // Wingman 3: left-rear 80m left, 50m behind
+    const w3=offsetPos(flight.lat,flight.lng,-80,-50);
+    wingman3.lat+=(w3.lat-wingman3.lat)*0.3;
+    wingman3.lng+=(w3.lng-wingman3.lng)*0.3;
+    wingman3.alt+=(flight.alt-wingman3.alt)*0.3;
+    wingman3.hdg=flight.hdg;wingman3.spd=flight.spd;wingman3.phase='跟随';
+  }else if(formation.mode==='spread'){
+    formation.spreadAngle+=dt*15;
+    const spreadDist=150+formation.spreadAngle*2;
+    const spreadDist2=Math.min(400,spreadDist);
+    const w2=offsetPos(flight.lat,flight.lng,spreadDist2,-spreadDist2*0.5);
+    wingman2.lat+=(w2.lat-wingman2.lat)*0.2;
+    wingman2.lng+=(w2.lng-wingman2.lng)*0.2;
+    wingman2.alt=flight.alt;wingman2.hdg=flight.hdg+20;wingman2.phase='侦查';
+    const w3=offsetPos(flight.lat,flight.lng,-spreadDist2,-spreadDist2*0.5);
+    wingman3.lat+=(w3.lat-wingman3.lat)*0.2;
+    wingman3.lng+=(w3.lng-wingman3.lng)*0.2;
+    wingman3.alt=flight.alt;wingman3.hdg=flight.hdg-20;wingman3.phase='侦查';
+  }else if(formation.mode==='rally'){
+    const w2=offsetPos(flight.lat,flight.lng,80,-50);
+    wingman2.lat+=(w2.lat-wingman2.lat)*0.3;
+    wingman2.lng+=(w2.lng-wingman2.lng)*0.3;
+    wingman2.alt+=(flight.alt-wingman2.alt)*0.3;
+    wingman2.hdg=flight.hdg;
+    const w3=offsetPos(flight.lat,flight.lng,-80,-50);
+    wingman3.lat+=(w3.lat-wingman3.lat)*0.3;
+    wingman3.lng+=(w3.lng-wingman3.lng)*0.3;
+    wingman3.alt+=(flight.alt-wingman3.alt)*0.3;
+    wingman3.hdg=flight.hdg;
+    // Check if close enough → switch to follow
+    const d2=haversineM(flight.lat,flight.lng,wingman2.lat,wingman2.lng);
+    const d3=haversineM(flight.lat,flight.lng,wingman3.lat,wingman3.lng);
+    if(d2<100&&d3<100){formation.mode='follow';wingman2.phase='跟随';wingman3.phase='跟随';}
   }
+  // Update wingman entities
+  updateWingmanEntity(wingman2Body,wingman2Nose,wingman2,wingman2TrailP,wingman2Trail);
+  updateWingmanEntity(wingman3Body,wingman3Nose,wingman3,wingman3TrailP,wingman3Trail);
+}
+function updateWingmanEntity(body,nose,wm,trailArr,trailEnt){
+  const pos=Cesium.Cartesian3.fromDegrees(wm.lng,wm.lat,wm.alt);
+  body.position=pos;
+  const headingRad=Cesium.Math.toRadians(wm.hdg);
+  const noseOffset=17;
+  const latDegPerM=1.0/111320;
+  const lngDegPerM=1.0/(111320*Math.cos(Cesium.Math.toRadians(wm.lat)));
+  const latOff=(noseOffset*latDegPerM)*Math.cos(headingRad);
+  const lngOff=(noseOffset*lngDegPerM)*Math.sin(headingRad);
+  const nosePos=Cesium.Cartesian3.fromDegrees(wm.lng+lngOff,wm.lat+latOff,wm.alt);
+  nose.position=nosePos;
+  const hpr=new Cesium.HeadingPitchRoll(headingRad,Cesium.Math.toRadians(-90),0);
+  nose.orientation=Cesium.Transforms.headingPitchRollQuaternion(nosePos,hpr);
+  trailArr.push(Cesium.Cartesian3.fromDegrees(wm.lng,wm.lat,wm.alt));
+  if(trailArr.length>300)trailArr.shift();
+  trailEnt.polyline.positions=trailArr;
+}
+function formationCmd(cmd){
+  if(!demo.running)return;
+  if(cmd==='follow'){formation.mode='follow';addVLog('编队跟随模式已激活','info');}
+  else if(cmd==='spread'){formation.mode='spread';formation.spreadAngle=0;addVLog('散开侦查模式已激活','info');}
+  else if(cmd==='rally'){formation.mode='rally';addVLog('集结编队中...','info');}
+}
 
-  // Process GPS lost timer
+// ═══════════════════════════════════════════════════════════════
+//  B3: Replay system
+// ═══════════════════════════════════════════════════════════════
+function recordTelemetry(){
+  if(!demo.running||demo.paused)return;
+  if(demo.replayActive)return;
+  const snapshot={
+    ts:demo.flyTime,lat:flight.lat,lng:flight.lng,alt:flight.alt,
+    spd:flight.spd,hdg:flight.hdg,roll:flight.roll,pitch:flight.pitch,
+    phase:flight.phase,gfStatus:flight.gfStatus,xte:flight.xte,
+    surfaceAileron:flight.surfaceAileron,surfaceElevator:flight.surfaceElevator,surfaceRudder:flight.surfaceRudder,
+    gfStatuses:{},anomalyState:{gpsLost:anomaly.gpsLost,rtkDegraded:anomaly.rtkDegraded,commLost:anomaly.commLost,batteryCritical:anomaly.batteryCritical,rthActive:anomaly.rthActive},
+    batteryLevel:demo.batteryLevel,linkQuality:demo.linkQuality
+  };
+  GEOFENCES.forEach(gf=>{snapshot.gfStatuses[gf.id]=gf.status;});
+  demo.replayData.push(snapshot);
+  if(demo.replayData.length>600)demo.replayData.shift();
+}
+function startReplayRecording(){
+  demo.replayData=[];
+  demo.replayActive=false;
+  document.getElementById('replay-bar').classList.remove('hidden');
+}
+function replayPlay(){
+  if(demo.replayData.length===0){addVLog('无回放数据','warn');return;}
+  demo.replayActive=true;demo.replayPaused=false;
+  demo.replaySavedState={
+    running:demo.running,paused:demo.paused,progress:demo.progress,
+    lat:flight.lat,lng:flight.lng,alt:flight.alt,spd:flight.spd,hdg:flight.hdg,pitch:flight.pitch,roll:flight.roll,
+    phase:flight.phase,anomaly:{...anomaly}
+  };
+  if(demo.animFrame){cancelAnimationFrame(demo.animFrame);demo.animFrame=null;}
+  demo.running=false;demo.paused=false;
+  demo.replayIndex=0;
+  document.getElementById('btn-replay-play').style.display='none';
+  document.getElementById('btn-replay-pause').style.display='inline-block';
+  document.getElementById('btn-replay-speed1x').style.display='inline-block';
+  document.getElementById('btn-replay-speed2x').style.display='inline-block';
+  document.getElementById('btn-replay-speed4x').style.display='inline-block';
+  document.getElementById('btn-replay-exit').style.display='inline-block';
+  demo.replaySpeed=1;
+  replayStep();
+}
+function replayStep(){
+  if(!demo.replayActive||demo.replayPaused)return;
+  if(demo.replayIndex>=demo.replayData.length){replayExit();return;}
+  const snap=demo.replayData[demo.replayIndex];
+  flight.lat=snap.lat;flight.lng=snap.lng;flight.alt=snap.alt;
+  flight.spd=snap.spd;flight.hdg=snap.hdg;flight.roll=snap.roll;flight.pitch=snap.pitch;
+  flight.phase=snap.phase;flight.gfStatus=snap.gfStatus;flight.xte=snap.xte;
+  flight.surfaceAileron=snap.surfaceAileron;flight.surfaceElevator=snap.surfaceElevator;flight.surfaceRudder=snap.surfaceRudder;
+  anomaly.gpsLost=snap.anomalyState.gpsLost;anomaly.rtkDegraded=snap.anomalyState.rtkDegraded;
+  anomaly.commLost=snap.anomalyState.commLost;anomaly.batteryCritical=snap.anomalyState.batteryCritical;
+  anomaly.rthActive=snap.anomalyState.rthActive;
+  demo.batteryLevel=snap.batteryLevel;demo.linkQuality=snap.linkQuality;
+  updateFlightEntity();
+  updateHUD();updateSurfacePanel();updateHealthPanel();updateControlLoopPanel();
+  updateGeofencePanel(snap.gfStatuses);
+  updateFaultTree();
+  updateFormationPanel();
+  // Update slider
+  const pct=(demo.replayIndex/demo.replayData.length)*100;
+  document.getElementById('replay-slider').value=pct;
+  const totalMins=Math.floor(demo.replayData[demo.replayData.length-1].ts/60);
+  const totalSecs=Math.floor(demo.replayData[demo.replayData.length-1].ts%60);
+  const curMins=Math.floor(snap.ts/60);
+  const curSecs=Math.floor(snap.ts%60);
+  document.getElementById('replay-time-label').textContent=
+    String(curMins).padStart(2,'0')+':'+String(curSecs).padStart(2,'0')+' / '+
+    String(totalMins).padStart(2,'0')+':'+String(totalSecs).padStart(2,'0');
+  viewer.camera.lookAt(
+    Cesium.Cartesian3.fromDegrees(flight.lng,flight.lat,flight.alt+400),
+    new Cesium.Cartesian3(0,0,600)
+  );
+  demo.replayIndex+=demo.replaySpeed;
+  setTimeout(()=>replayStep(),500/demo.replaySpeed);
+}
+function replayPause(){
+  demo.replayPaused=!demo.replayPaused;
+  if(demo.replayPaused){
+    document.getElementById('btn-replay-pause').textContent='▶ 继续';
+  }else{
+    document.getElementById('btn-replay-pause').textContent='⏸ 暂停';
+    replayStep();
+  }
+}
+function replaySeek(val){
+  if(demo.replayData.length===0)return;
+  demo.replayIndex=Math.floor((val/100)*(demo.replayData.length-1));
+  if(!demo.replayActive){replayPlay();demo.replayPaused=true;demo.replayActive=true;}
+  const snap=demo.replayData[demo.replayIndex];
+  flight.lat=snap.lat;flight.lng=snap.lng;flight.alt=snap.alt;
+  flight.spd=snap.spd;flight.hdg=snap.hdg;flight.phase=snap.phase;flight.gfStatus=snap.gfStatus;
+  flight.surfaceAileron=snap.surfaceAileron;flight.surfaceElevator=snap.surfaceElevator;flight.surfaceRudder=snap.surfaceRudder;
+  updateFlightEntity();updateHUD();updateSurfacePanel();updateHealthPanel();updateControlLoopPanel();
+  if(snap.gfStatuses)updateGeofencePanel(snap.gfStatuses);
+  const curMins=Math.floor(snap.ts/60);const curSecs=Math.floor(snap.ts%60);
+  const totalMins=Math.floor(demo.replayData[demo.replayData.length-1].ts/60);
+  const totalSecs=Math.floor(demo.replayData[demo.replayData.length-1].ts%60);
+  document.getElementById('replay-time-label').textContent=
+    String(curMins).padStart(2,'0')+':'+String(curSecs).padStart(2,'0')+' / '+
+    String(totalMins).padStart(2,'0')+':'+String(totalSecs).padStart(2,'0');
+}
+function replaySpeed(spd){
+  demo.replaySpeed=spd;
+  document.querySelectorAll('#replay-bar .replay-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn-replay-speed'+spd+'x').classList.add('active');
+}
+function replayExit(){
+  demo.replayActive=false;demo.replayPaused=false;
+  if(demo.replaySavedState){
+    flight.lat=demo.replaySavedState.lat;flight.lng=demo.replaySavedState.lng;
+    flight.alt=demo.replaySavedState.alt;flight.spd=demo.replaySavedState.spd;
+    flight.hdg=demo.replaySavedState.hdg;flight.pitch=demo.replaySavedState.pitch;
+    flight.roll=demo.replaySavedState.roll;flight.phase=demo.replaySavedState.phase;
+    Object.assign(anomaly,demo.replaySavedState.anomaly);
+    demo.running=demo.replaySavedState.running;demo.paused=demo.replaySavedState.paused;
+  }
+  document.getElementById('btn-replay-play').style.display='inline-block';
+  document.getElementById('btn-replay-pause').style.display='none';
+  document.getElementById('btn-replay-speed1x').style.display='none';
+  document.getElementById('btn-replay-speed2x').style.display='none';
+  document.getElementById('btn-replay-speed4x').style.display='none';
+  document.getElementById('btn-replay-exit').style.display='none';
+  updateFlightEntity();updateHUD();updateSurfacePanel();updateHealthPanel();updateControlLoopPanel();
+  updateFaultTree();updateFormationPanel();
+  if(demo.running&&!demo.paused){demo._lastTick=performance.now();demo.animFrame=requestAnimationFrame(demoLoop);}
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  B4: AI Analysis Report Modal
+// ═══════════════════════════════════════════════════════════════
+function showAIReport(){
+  const completedWp=Math.max(0,flight.wpIdx);
+  const totalWp=WAYPOINTS.length;
+  const completeRate=totalWp>0?Math.round(completedWp/totalWp*100):0;
+  const maxXte=demo.xteHistory.length>0?Math.max(...demo.xteHistory):0;
+  let ctrlEval='优秀';
+  const overshoot=parseFloat(document.getElementById('cq-overshoot').textContent||'0');
+  if(overshoot>5||demo.cqSteadyError>2.0)ctrlEval='一般';
+  else if(overshoot>2||demo.cqSteadyError>1.0)ctrlEval='良好';
+  const minHealth=demo.minHealth<100?demo.minHealth:98;
+  const flyMins=Math.floor(demo.flyTime/60),flySecs=Math.floor(demo.flyTime%60);
+  const totalKm=(demo.totalDist/1000).toFixed(2);
+  let grade='S';
+  if(completeRate<80||demo.anomalyCount>=3||minHealth<70)grade='C';
+  else if(completeRate<95||demo.anomalyCount>=2||minHealth<80)grade='B';
+  else if(completeRate<100||demo.anomalyCount>=1||minHealth<90)grade='A';
+  document.getElementById('ai-report-complete').textContent=completeRate+'%';
+  document.getElementById('ai-report-maxxte').textContent=maxXte.toFixed(1)+' m';
+  document.getElementById('ai-report-anomalies').textContent=demo.anomalyCount+' 次';
+  document.getElementById('ai-report-ctrl').textContent=ctrlEval;
+  document.getElementById('ai-report-health').textContent=minHealth+'%';
+  document.getElementById('ai-report-time').textContent=String(flyMins).padStart(2,'0')+':'+String(flySecs).padStart(2,'0');
+  document.getElementById('ai-report-dist').textContent=totalKm+' km';
+  document.getElementById('ai-report-grade').textContent=grade;
+  document.getElementById('ai-report-grade').style.color=grade==='S'?'#ffd700':grade==='A'?'#00ff66':grade==='B'?'#ffaa00':'#ff3344';
+  document.getElementById('ai-modal-overlay').style.display='flex';
+  demo.anomalyCount=0;demo.minHealth=100;
+}
+function closeAIReport(){
+  document.getElementById('ai-modal-overlay').style.display='none';
+}
+function exportReport(){
+  const report={
+    task_completion_rate:document.getElementById('ai-report-complete').textContent,
+    max_cross_track_error:document.getElementById('ai-report-maxxte').textContent,
+    anomaly_count:document.getElementById('ai-report-anomalies').textContent,
+    control_quality:document.getElementById('ai-report-ctrl').textContent,
+    min_system_health:document.getElementById('ai-report-health').textContent,
+    total_flight_time:document.getElementById('ai-report-time').textContent,
+    total_distance:document.getElementById('ai-report-dist').textContent,
+    overall_grade:document.getElementById('ai-report-grade').textContent,
+    generated_at:new Date().toISOString()
+  };
+  const blob=new Blob([JSON.stringify(report,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='flyteos_mission_report.json';a.click();
+  URL.revokeObjectURL(url);
+  addVLog('任务分析报告已导出','info');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  B1: Mission Planning Panel handlers
+// ═══════════════════════════════════════════════════════════════
+function toggleMissionPanel(){
+  const panel=document.getElementById('mission-panel');
+  panel.classList.toggle('collapsed');
+}
+function updateMissionTable(){
+  const tbody=document.getElementById('wp-table-body');
+  tbody.innerHTML='';
+  WAYPOINTS.forEach((wp,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td>'+wp.label+'</td>'+
+      '<td>'+wp.lat.toFixed(4)+'</td>'+
+      '<td>'+wp.lng.toFixed(4)+'</td>'+
+      '<td><input type="range" min="50" max="300" value="'+wp.alt+'" onchange="changeWpAlt('+i+',this.value)" class="alt-slider"><span class="alt-val">'+wp.alt+'m</span></td>'+
+      '<td>'+wp.action+'</td>'+
+      '<td><button class="sm-btn danger" onclick="deleteWp('+i+')">删除</button></td>';
+    tbody.appendChild(tr);
+  });
+}
+function changeWpAlt(idx,val){
+  WAYPOINTS[idx].alt=parseInt(val);
+  const row=document.getElementById('wp-table-body').children[idx];
+  if(row)row.children[3].children[1].textContent=val+'m';
+}
+function deleteWp(idx){
+  if(WAYPOINTS.length<=2){addVLog('至少保留2个航点','warn');return;}
+  WAYPOINTS.splice(idx,1);
+  updateMissionTable();applyMission();
+  addVLog('已删除航点 '+(idx+1),'info');
+}
+function addWaypoint(){
+  const last=WAYPOINTS[WAYPOINTS.length-1];
+  const newLat=last.lat+(Math.random()-0.5)*0.02;
+  const newLng=last.lng+(Math.random()-0.5)*0.02;
+  const newWp={lat:newLat,lng:newLng,alt:120,action:'通过',label:'WP'+(WAYPOINTS.length+1).toString().padStart(2,'0')};
+  WAYPOINTS.splice(WAYPOINTS.length-1,0,newWp);
+  updateMissionTable();applyMission();
+  addVLog('已添加航点 '+newWp.label,'info');
+}
+function applyMission(){
+  WAYPOINTS.forEach((wp,i)=>{wp.label='WP'+(i+1).toString().padStart(2,'0');});
+  // Update scene
+  wpPointEntities.forEach(e=>viewer.entities.remove(e));
+  wpPointEntities=[];
+  if(plannedRouteEntity)viewer.entities.remove(plannedRouteEntity);
+  WAYPOINTS.forEach((wp,i)=>{
+    const e=viewer.entities.add({
+      position:Cesium.Cartesian3.fromDegrees(wp.lng,wp.lat,wp.alt),
+      point:{pixelSize:10,color:Cesium.Color.RED,outlineColor:Cesium.Color.WHITE,outlineWidth:2},
+      label:{text:wp.label,font:'11px "Microsoft YaHei",monospace',fillColor:Cesium.Color.WHITE,
+        style:Cesium.LabelStyle.FILL,verticalOrigin:Cesium.VerticalOrigin.BOTTOM,
+        pixelOffset:new Cesium.Cartesian2(0,-14),showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6)}
+    });
+    wpPointEntities.push(e);
+  });
+  updatePlannedRoute();
+  computePathSegments();
+  demo.progress=0;
+  flight.wpIdx=1;
+  updateHUD();
+}
+function autoPatrol(){
+  // Generate 8 waypoints in zigzag pattern inside GF03
+  const gf03=GEOFENCES.find(g=>g.id==='gf03');
+  if(!gf03||gf03.type!=='polygon'){addVLog('GF03围栏不可用','warn');return;}
+  // Simple: use GF03 bounding box
+  const verts=gf03.vertices;
+  let minLat=90,maxLat=-90,minLng=180,maxLng=-180;
+  verts.forEach(v=>{if(v.lat<minLat)minLat=v.lat;if(v.lat>maxLat)maxLat=v.lat;if(v.lng<minLng)minLng=v.lng;if(v.lng>maxLng)maxLng=v.lng;});
+  const newWps=[];
+  const rows=4,cols=2;
+  for(let r=0;r<rows;r++){
+    const lat=minLat+(maxLat-minLat)*(r+0.5)/rows;
+    for(let c=0;c<cols;c++){
+      const colIdx=r%2===0?c:1-c;
+      const lng=minLng+(maxLng-minLng)*(colIdx+0.5)/cols;
+      newWps.push({lat,lng,alt:120,action:'巡逻',label:''});
+    }
+  }
+  WAYPOINTS=[WAYPOINTS[0],...newWps,WAYPOINTS[WAYPOINTS.length-1]];
+  updateMissionTable();applyMission();
+  addVLog('已自动生成8个巡逻航点（之字形扫描）','info');
+}
+function planDetour(){
+  // Simple: offset all waypoints away from GF03 center
+  const gf03=GEOFENCES.find(g=>g.id==='gf03');
+  if(!gf03){addVLog('GF03围栏不存在','warn');return;}
+  let centLat=0,centLng=0;
+  if(gf03.type==='circle'){centLat=gf03.center.lat;centLng=gf03.center.lng;}
+  else if(gf03.type==='polygon'){
+    gf03.vertices.forEach(v=>{centLat+=v.lat;centLng+=v.lng;});
+    centLat/=gf03.vertices.length;centLng/=gf03.vertices.length;
+  }
+  const safeDist=300;
+  WAYPOINTS.forEach(wp=>{
+    const bearingRad=Cesium.Math.toRadians(bearing(centLat,centLng,wp.lat,wp.lng));
+    const dist=haversineM(wp.lat,wp.lng,centLat,centLng);
+    if(gf03.type==='circle'&&dist<gf03.radius+safeDist){
+      const latDegPerM=1.0/111320;
+      const lngDegPerM=1.0/(111320*Math.cos(Cesium.Math.toRadians(centLat)));
+      wp.lat+=Math.cos(bearingRad)*safeDist*latDegPerM;
+      wp.lng+=Math.sin(bearingRad)*safeDist*lngDegPerM;
+    }else if(gf03.type==='polygon'&&pointInPolygon(wp.lat,wp.lng,gf03.vertices)){
+      const latDegPerM=1.0/111320;
+      const lngDegPerM=1.0/(111320*Math.cos(Cesium.Math.toRadians(centLat)));
+      wp.lat+=Math.cos(bearingRad)*safeDist*latDegPerM;
+      wp.lng+=Math.sin(bearingRad)*safeDist*lngDegPerM;
+    }
+  });
+  updateMissionTable();applyMission();
+  addVLog('已完成禁飞区绕行规划','info');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  B5: Interface panel
+// ═══════════════════════════════════════════════════════════════
+function toggleInterfacePanel(){
+  const panel=document.getElementById('iface-panel');
+  panel.classList.toggle('collapsed');
+}
+function showIfaceDetail(type){
+  const details={
+    mavlink:'MAVLink v2.0 协议信息\n━━━━━━━━━━━━━━\n• 心跳包: 1Hz\n• 姿态数据: 10Hz\n• GPS坐标: 5Hz\n• 系统状态: 2Hz\n• 端口: UDP 14550\n• 消息版本: v2.0 (支持签名)',
+    rest:'REST API 文档摘要\n━━━━━━━━━━━━━━\n• Base URL: https://flyteos-api/v1\n• GET /telemetry — 获取实时遥测\n• POST /mission — 上传航点任务\n• GET /system/health — 查询系统健康\n• Webhook 回调支持',
+    ros2:'ROS2 Humble 节点列表\n━━━━━━━━━━━━━━\n• /flyteos/telemetry — 遥测发布\n• /flyteos/cmd_vel — 速度控制订阅\n• /flyteos/geofence — 围栏状态发布\n• QoS: Best Effort, Depth 10',
+    sdk:'Python SDK 示例 (v1.2)\n━━━━━━━━━━━━━━\n```python\nfrom flyteos import FlyteOSClient\nclient = FlyteOSClient("ws://localhost:8080")\n# 读取遥测\ntelemetry = client.get_telemetry()\nprint(telemetry.altitude)\n# 上传任务\nclient.upload_mission("path/to/waypoints.json")\n```',
+    ws:'WebSocket 端点\n━━━━━━━━━━━━━━\n• ws://flyteos-api:8080/telemetry/stream\n• 实时数据推送 (JSON)\n• 支持房间订阅 (room_id)\n• 心跳间隔: 30s\n• 最大连接数: 1000'
+  };
+  alert(details[type]||'接口信息暂无');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Demo Control: Start / Stop
+// ═══════════════════════════════════════════════════════════════
+function startDemo(){
+  if(demo.running)return;
+  const wp0=WAYPOINTS[0];
+  flight.lat=wp0.lat;flight.lng=wp0.lng;flight.alt=wp0.alt;
+  flight.spd=0;flight.hdg=90;flight.phase='巡航中';
+  flight.pitch=0;flight.roll=0;flight.wpIdx=1;
+  flight.surfaceAileron=0;flight.surfaceElevator=0;flight.surfaceRudder=0;
+  flight.windOffsetLat=0;flight.windOffsetLng=0;flight.windCompensationActive=false;
+  anomaly.rthActive=false;anomaly.rthProgress=0;anomaly.rthStartPos=null;
+  anomaly.gpsLostTimer=0;anomaly.lastResponse={};
+  demo.progress=0;demo.running=true;demo.paused=false;demo.flyTime=0;
+  demo.totalDist=0;demo.maxAlt=0;demo.maxSpd=0;demo.batteryLevel=100;
+  demo.linkQuality=98;demo.estRemainingTime=480;
+  demo.anomalyCount=0;demo.minHealth=100;
+  demo.windTimer=0;demo.xteHistory=[];demo._gfblickToggles={};
+  demo.cqPeakAltError=0;demo.cqSettlingStart=0;demo.cqSettlingEnd=0;
+  demo.cqSettlingDone=false;demo.cqPrevAboveThreshold=false;
+  demo.cqSteadySamples=0;demo.cqSteadySum=0;demo.cqSteadyError=0;
+  demo.healthTrend=[98];
+  _prevHdg=null;
+  computePathSegments();
+  updateFlightEntity();
+  updateHUD();updateSurfacePanel();updateHealthPanel();updateControlLoopPanel();
+  const statuses=checkAllGeofences(flight.lat,flight.lng,flight.alt);
+  flight.gfStatus=STATUS_CN[statuses.worst];
+  updateGeofencePanel(statuses.statuses);
+  setAutonomyLevel(2);
+  updateFaultTree();
+  updateFormationPanel();
+  document.getElementById('btn-fault').style.display='inline-block';
+  document.getElementById('btn-recover').style.display='none';
+  // Init wingmen
+  const w2=offsetPos(flight.lat,flight.lng,80,-50);
+  wingman2.lat=w2.lat;wingman2.lng=w2.lng;wingman2.alt=flight.alt;wingman2.hdg=flight.hdg;wingman2.phase='跟随';
+  const w3=offsetPos(flight.lat,flight.lng,-80,-50);
+  wingman3.lat=w3.lat;wingman3.lng=w3.lng;wingman3.alt=flight.alt;wingman3.hdg=flight.hdg;wingman3.phase='跟随';
+  formation.mode='follow';
+  wingman2TrailP=[];wingman3TrailP=[];
+  updateWingmanEntity(wingman2Body,wingman2Nose,wingman2,wingman2TrailP,wingman2Trail);
+  updateWingmanEntity(wingman3Body,wingman3Nose,wingman3,wingman3TrailP,wingman3Trail);
+  // Replay
+  startReplayRecording();
+  addFCLog('[系统] 飞行演示启动 → 开始导航','info');
+  addVLog('飞行演示已启动','info');
+  demo._lastTick=performance.now();
+  demo.animFrame=requestAnimationFrame(demoLoop);
+}
+function stopDemo(showReport){
+  demo.running=false;demo.paused=false;
+  if(demo.animFrame){cancelAnimationFrame(demo.animFrame);demo.animFrame=null;}
+  flight.phase='待命';updateHUD();
+  addFCLog('[系统] 飞行演示已停止','info');
+  addVLog('飞行演示已停止','info');
+  if(showReport)setTimeout(showAIReport,500);
+}
+function updateFlightEntity(){
+  const pos=Cesium.Cartesian3.fromDegrees(flight.lng,flight.lat,0);
+  aircraftBody.position=Cesium.Cartesian3.fromDegrees(flight.lng,flight.lat,flight.alt);
+  const headingRad=Cesium.Math.toRadians(flight.hdg);
+  const noseOffset=28;
+  const latDegPerM=1.0/111320;
+  const lngDegPerM=1.0/(111320*Math.cos(Cesium.Math.toRadians(flight.lat)));
+  const latOff=(noseOffset*latDegPerM)*Math.cos(headingRad);
+  const lngOff=(noseOffset*lngDegPerM)*Math.sin(headingRad);
+  const nosePos=Cesium.Cartesian3.fromDegrees(flight.lng+lngOff,flight.lat+latOff,flight.alt);
+  aircraftNose.position=nosePos;
+  const yawRad=Cesium.Math.toRadians(90+flight.hdg);
+  aircraftBody.orientation=Cesium.Transforms.headingPitchRollQuaternion(
+    Cesium.Cartesian3.fromDegrees(flight.lng,flight.lat,flight.alt),
+    new Cesium.HeadingPitchRoll(yawRad,0,Cesium.Math.toRadians(flight.roll*0.5))
+  );
+  const hpr=new Cesium.HeadingPitchRoll(headingRad,Cesium.Math.toRadians(-90),Cesium.Math.toRadians(flight.roll*0.5));
+  aircraftNose.orientation=Cesium.Transforms.headingPitchRollQuaternion(nosePos,hpr);
+  // Trail
+  demo.trailPositions.push(Cesium.Cartesian3.fromDegrees(flight.lng,flight.lat,flight.alt));
+  if(demo.trailPositions.length>500)demo.trailPositions.shift();
+  trailEntity.polyline.positions=demo.trailPositions;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MAIN DEMO LOOP
+// ═══════════════════════════════════════════════════════════════
+function demoLoop(timestamp){
+  if(!demo.running||demo.paused){demo.animFrame=requestAnimationFrame(demoLoop);return;}
+  const dt=Math.min(0.5,(timestamp-demo._lastTick)/1000);
+  demo._lastTick=timestamp;
+  // 1. Process RTH
+  if(anomaly.rthActive){processRTH(dt);updateFlightEntity();doPostRender();return;}
+  // 2. Process GPS lost timer
   processGPSLost(dt);
-
-  demo.progress += demo.speed * dt;
-  if (demo.progress >= 1.0) {
-    demo.progress = 1.0;
-    const wp = WAYPOINTS[WAYPOINTS.length-1];
-    flight.lat = wp.lat; flight.lng = wp.lng; flight.alt = wp.alt; flight.spd = 0;
-    flight.phase = '已着陆'; flight.wpIdx = WAYPOINTS.length;
-    updateFlightEntity();
-    const { statuses, worst } = checkAllGeofences(flight.lat, flight.lng, flight.alt);
-    flight.gfStatus = worst === 'safe' ? '安全' : worst === 'warn' ? '预警' : '违规';
-    updateGeofencePanel(statuses);
-    updateHUD();
+  // 3. If GPS lost and not RTH, slow down
+  let actualSpeed=15.0;
+  if(anomaly.gpsLost&&!anomaly.rthActive)actualSpeed=Math.max(0,flight.spd*0.85);
+  else if(anomaly.insNavActive)actualSpeed=Math.min(actualSpeed,8);
+  // 4. Path following
+  if(demo.progress<1.0&&demo.totalLength>0){
+    const distThisFrame=actualSpeed*dt;
+    const inc=distThisFrame/demo.totalLength;
+    demo.progress=Math.min(1.0,demo.progress+inc);
+    const tgt=getPositionOnPath(demo.progress);
+    // Smooth interpolation
+    const alpha=0.15;
+    flight.lat+=(tgt.lat-flight.lat)*alpha;
+    flight.lng+=(tgt.lng-flight.lng)*alpha;
+    flight.alt+=(tgt.alt-flight.alt)*alpha;
+    flight.spd+=(actualSpeed-flight.spd)*0.25;
+    if(demo.progress<1.0){
+      const hdg_tgt=bearing(flight.lat,flight.lng,tgt.lat,tgt.lng);
+      let dHdg=hdg_tgt-flight.hdg;
+      if(dHdg>180)dHdg-=360;if(dHdg<-180)dHdg+=360;
+      flight.hdg+=(dHdg)*0.25;
+      flight.hdg=(flight.hdg+360)%360;
+    }
+    // Waypoint update
+    let nextWpDist=Infinity,nextWpIdx=1;
+    for(let i=1;i<WAYPOINTS.length;i++){
+      const d=haversineM(flight.lat,flight.lng,WAYPOINTS[i].lat,WAYPOINTS[i].lng);
+      if(d<nextWpDist){nextWpDist=d;nextWpIdx=i;}
+    }
+    if(nextWpIdx!==flight.wpIdx&&nextWpDist<50){flight.wpIdx=nextWpIdx;}
+    if(demo.progress>=0.999){flight.wpIdx=WAYPOINTS.length-1;flight.spd=0;flight.phase='已完成';}
+  }
+  // 5. Wind disturbance
+  if(!anomaly.rthActive)applyWindDisturbance(dt);
+  // 6. Attitude & XTE
+  computeAttitude();computeXTE();
+  demo.xteHistory.push(flight.xte);
+  if(demo.xteHistory.length>6)demo.xteHistory.shift();
+  // 7. Surface outputs
+  computeSurfaceOutputs();
+  // 8. Geofence
+  const gfResult=checkAllGeofences(flight.lat,flight.lng,flight.alt);
+  flight.gfStatus=STATUS_CN[gfResult.worst];
+  // 9. Wingmen
+  updateWingmen(dt);
+  // 10. Battery & Link
+  updateBatteryAndLink(dt);
+  // 11. Perf panel
+  updatePerfPanel(dt);
+  // 12. UI updates
+  updateFlightEntity();
+  updateHUD();updateSurfacePanel();updateHealthPanel();updateControlLoopPanel();
+  updateGeofencePanel(gfResult.statuses);
+  updateFormationPanel();
+  // 13. Health trend (every 2 seconds)
+  demo.healthTrendTimer=(demo.healthTrendTimer||0)+dt;
+  if(demo.healthTrendTimer>=2){demo.healthTrendTimer=0;updateHealthTrend();}
+  // 14. Replay recording
+  recordTelemetry();
+  // 15. Check demo end
+  if(demo.progress>=1.0){
     stopDemo(true);
     return;
   }
+  doPostRender();
+}
 
-  const pos = getPositionOnPath(demo.progress);
-  flight.lat = pos.lat;
-  flight.lng = pos.lng;
-  flight.alt = pos.alt;
-  flight.spd = demo.speed * demo.totalLength;
-
-  if (demo.progress < 1.0) {
-    const nextPos = getPositionOnPath(Math.min(1, demo.progress + 0.001));
-    flight.hdg = bearing(pos.lat, pos.lng, nextPos.lat, nextPos.lng);
-  }
-
-  let cum = 0;
-  for (let i = 0; i < demo.pathSegments.length; i++) {
-    cum += demo.pathSegments[i].lengthMeters;
-    if (demo.progress * demo.totalLength <= cum) { flight.wpIdx = i + 1; break; }
-  }
-  flight.phase = '巡航中';
-
-  computeAttitude();
-  computeXTE();
-
-  // Wind disturbance (方向1)
-  applyWindDisturbance(dt);
-
-  // Surface outputs (方向3.3)
-  computeSurfaceOutputs();
-
-  // Battery and link
-  updateBatteryAndLink(dt);
-  updatePerfPanel(dt);
-
-  // Update XTE history (方向3.2)
-  demo.xteHistory.push(flight.xte);
-  if (demo.xteHistory.length > 6) demo.xteHistory.shift();
-
-  updateFlightEntity();
-
-  trailPositions.push(Cesium.Cartesian3.fromDegrees(flight.lng, flight.lat, flight.alt));
-  if (trailPositions.length > 500) trailPositions.shift();
-  trailEntity.polyline.positions = trailPositions;
-
-  const { statuses, worst } = checkAllGeofences(flight.lat, flight.lng, flight.alt);
-  flight.gfStatus = worst === 'safe' ? '安全' : worst === 'warn' ? '预警' : '违规';
-
-  Object.keys(statuses).forEach(id => {
-    const prev = demo.lastGfStatus[id] || 'safe';
-    if (statuses[id] !== prev) {
-      const prevCN = STATUS_CN[prev] || prev;
-      const newCN = STATUS_CN[statuses[id]] || statuses[id];
-      let msg = '[' + id + '] ' + prevCN + ' \u2192 ' + newCN;
-      let type = statuses[id] === 'violation' ? 'violation' : statuses[id] === 'warn' ? 'warn' : 'info';
-      addVLog(msg, type);
+// ═══════════════════════════════════════════════════════════════
+//  Post-render hook (camera update + GF violation + next frame)
+// ═══════════════════════════════════════════════════════════════
+function doPostRender(){
+  viewer.camera.lookAt(
+    Cesium.Cartesian3.fromDegrees(flight.lng,flight.lat,flight.alt+300),
+    new Cesium.Cartesian3(0,0,400)
+  );
+  // Detect GF violation for log
+  if(flight.gfStatus==='违规'&&!demo._lastViolationLogged){
+    demo._lastViolationLogged=true;
+    addVLog('围栏违规 — '+flight.gfStatus,'violation');
+    if(flight.phase!=='悬停中'&&flight.phase!=='返航中'&&!anomaly.rthActive){
+      flight.spd=Math.max(0,flight.spd-5);
+      addFCLog('[自主响应] 检测到围栏边界 → 自动减速 → 修正航向远离围栏','warning');
     }
-  });
-  demo.lastGfStatus = { ...statuses };
-
-  updateGeofencePanel(statuses);
-  updateHUD();
-  updateSurfacePanel();
-  updateHealthPanel();
-  updateControlLoopPanel();
-
-  demo.animFrame = requestAnimationFrame(demoLoop);
-}
-
-function updateFlightEntity() {
-  const pos = Cesium.Cartesian3.fromDegrees(flight.lng, flight.lat, flight.alt);
-  aircraftBody.position = pos;
-
-  const headingRad = Cesium.Math.toRadians(flight.hdg);
-  const noseOffsetMeters = 28;
-  const latOffset = (noseOffsetMeters / 111320) * Math.cos(headingRad);
-  const lngOffset = (noseOffsetMeters / (111320 * Math.cos(Cesium.Math.toRadians(flight.lat)))) * Math.sin(headingRad);
-  const nosePos = Cesium.Cartesian3.fromDegrees(flight.lng + lngOffset, flight.lat + latOffset, flight.alt);
-  aircraftNose.position = nosePos;
-
-  const hpr = new Cesium.HeadingPitchRoll(headingRad, Cesium.Math.toRadians(-90), 0);
-  aircraftNose.orientation = Cesium.Transforms.headingPitchRollQuaternion(nosePos, hpr);
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  Demo Controls
-// ═══════════════════════════════════════════════════════════════
-function startDemo() {
-  computePathSegments();
-  demo.progress = 0;
-  demo.running = true;
-  demo.paused = false;
-  demo.speed = 0.08;
-  demo._lastTick = performance.now();
-  demo.lastGfStatus = {};
-  demo._gfblickToggles = {};
-  trailPositions = [];
-  trailEntity.polyline.positions = [];
-
-  flight.lat = WAYPOINTS[0].lat;
-  flight.lng = WAYPOINTS[0].lng;
-  flight.alt = 0;
-  flight.spd = 0;
-  flight.hdg = bearing(WAYPOINTS[0].lat, WAYPOINTS[0].lng, WAYPOINTS[1].lat, WAYPOINTS[1].lng);
-  flight.phase = '起飞';
-  flight.wpIdx = 0;
-  flight.gfStatus = '安全';
-  flight.roll = 0; flight.pitch = 0; flight.yaw = 0; flight.xte = 0;
-  flight.windOffsetLat = 0; flight.windOffsetLng = 0; flight.windCompensationActive = false;
-  flight.surfaceAileron = 0; flight.surfaceElevator = 0; flight.surfaceRudder = 0;
-
-  demo.maxAlt = 0; demo.maxSpd = 0; demo.totalDist = 0; demo.flyTime = 0;
-  demo.lastPos = null;
-  demo.batteryLevel = 100; demo.linkQuality = 98;
-  demo.estRemainingTime = 480;
-  demo.xteHistory = [0,0,0,0,0,0];
-  demo.windTimer = 0;
-  _prevHdg = null;
-
-  // Reset anomaly state
-  anomaly.gpsLost = false; anomaly.rtkDegraded = false;
-  anomaly.commLost = false; anomaly.batteryCritical = false;
-  anomaly.insNavActive = false; anomaly.autonomousFlight = false;
-  anomaly.rthActive = false; anomaly.rthProgress = 0;
-  anomaly.rthStartPos = null; anomaly.gpsLostTimer = 0;
-  anomaly.lastResponse = {};
-  document.querySelectorAll('.anomaly-btn').forEach(b => b.classList.remove('active'));
-
-  // Reset panels
-  document.getElementById('health-score-num').textContent = '98%';
-  document.getElementById('health-score-num').style.color = '#00ff66';
-  ['hb-nav','hb-pwr','hb-comm','hb-ctrl'].forEach(id => {
-    document.getElementById(id).style.width = id==='hb-nav'||id==='hb-ctrl'?'99%':id==='hb-comm'?'98%':'97%';
-    document.getElementById(id).className = 'health-bar-fill green';
-  });
-  ['hp-nav','hp-pwr','hp-comm','hp-ctrl'].forEach((id,i) => {
-    document.getElementById(id).textContent = [99,97,98,99][i] + '%';
-  });
-  document.getElementById('health-predict-text').textContent = '系统正常，无告警';
-  document.getElementById('health-predict-text').className = 'predict-text';
-
-  document.getElementById('surf-ail').textContent = '0.0°';
-  document.getElementById('surf-ele').textContent = '0.0°';
-  document.getElementById('surf-rud').textContent = '0.0°';
-
-  document.getElementById('perf-maxalt').textContent = '0 m';
-  document.getElementById('perf-maxspd').textContent = '0.0 m/s';
-  document.getElementById('perf-dist').textContent = '0.00 km';
-  document.getElementById('perf-time').textContent = '00:00';
-
-  GEOFENCES.forEach(gf => { gf.status = 'safe'; });
-  Object.keys(gfWallEntities).forEach(id => {
-    const w = gfWallEntities[id];
-    if (w && w.wall) {
-      const gf = GEOFENCES.find(g => g.id === id);
-      if (gf) {
-        if (gf.type === 'circle') w.wall.ellipsoid.material = gf.color;
-        else w.wall.polygon.material = gf.color;
+  }else if(flight.gfStatus!=='违规'){demo._lastViolationLogged=false;}
+  // Auto-steer away from fence
+  if(flight.gfStatus==='违规'&&!anomaly.rthActive&&demo.running&&!demo.paused){
+    const gf03=GEOFENCES.find(g=>g.status==='violation');
+    if(gf03){
+      let centerLat,centerLng;
+      if(gf03.type==='circle'){centerLat=gf03.center.lat;centerLng=gf03.center.lng;}
+      else if(gf03.type==='polygon'){
+        centerLat=0;centerLng=0;gf03.vertices.forEach(v=>{centerLat+=v.lat;centerLng+=v.lng;});
+        centerLat/=gf03.vertices.length;centerLng/=gf03.vertices.length;
       }
+      const awayHdg=bearing(centerLat,centerLng,flight.lat,flight.lng);
+      let dHdg=awayHdg-flight.hdg;
+      if(dHdg>180)dHdg-=360;if(dHdg<-180)dHdg+=360;
+      flight.hdg+=(dHdg)*0.1;flight.hdg=(flight.hdg+360)%360;
+      flight.spd*=0.95;
     }
+  }
+  demo.animFrame=requestAnimationFrame(demoLoop);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Initialize
+// ═══════════════════════════════════════════════════════════════
+window.onload=function(){
+  // Set initial HUD values
+  const wp0=WAYPOINTS[0];
+  flight.lat=wp0.lat;flight.lng=wp0.lng;flight.alt=wp0.alt;
+  updateHUD();updateSurfacePanel();updateHealthPanel();updateControlLoopPanel();
+  updateFaultTree();
+  updateFormationPanel();
+  updateMissionTable();
+  buildScene();
+  // Center camera
+  viewer.camera.lookAt(
+    Cesium.Cartesian3.fromDegrees(wp0.lng,wp0.lat,3000),
+    new Cesium.Cartesian3(0,0,100)
+  );
+  // Init wingmen at spawn
+  const w2=offsetPos(flight.lat,flight.lng,80,-50);
+  wingman2.lat=w2.lat;wingman2.lng=w2.lng;wingman2.alt=flight.alt;wingman2.hdg=flight.hdg;
+  const w3=offsetPos(flight.lat,flight.lng,-80,-50);
+  wingman3.lat=w3.lat;wingman3.lng=w3.lng;wingman3.alt=flight.alt;wingman3.hdg=flight.hdg;
+  formation.mode='follow';
+  updateWingmanEntity(wingman2Body,wingman2Nose,wingman2,wingman2TrailP,wingman2Trail);
+  updateWingmanEntity(wingman3Body,wingman3Nose,wingman3,wingman3TrailP,wingman3Trail);
+  // Keyboard shortcuts
+  document.addEventListener('keydown',function(e){
+    if(e.ctrlKey&&e.key==='f'){e.preventDefault();triggerFault();}
+    else if(e.key==='1'){e.preventDefault();triggerAnomaly('gps_lose');}
+    else if(e.key==='2'){e.preventDefault();triggerAnomaly('rtk_degrade');}
+    else if(e.key==='3'){e.preventDefault();triggerAnomaly('comm_loss');}
+    else if(e.key==='4'){e.preventDefault();triggerAnomaly('battery_low');}
+    else if(e.key==='0'){e.preventDefault();resetSystem();}
   });
-
-  document.querySelectorAll('.gf-item').forEach(el => el.className = 'gf-item safe');
-  document.querySelectorAll('.gf-status').forEach(el => { el.textContent = '安全'; el.className = 'gf-status safe'; });
-  document.getElementById('vlog').innerHTML = '<div class="vlog-entry info">[系统] 飞行演示已启动</div>';
-
-  // Reset FC log
-  fcLogEntries.length = 0;
-  addFCLog('飞控决策系统就绪 — 飞行演示启动', 'info');
-
-  viewer.camera.flyTo({
-    destination: Cesium.Cartesian3.fromDegrees(flight.lng, flight.lat, 1200),
-    orientation: { heading: Cesium.Math.toRadians(0), pitch: Cesium.Math.toRadians(-35), roll: 0 },
-    duration: 1.5
-  });
-
-  updateFlightEntity();
-  updateHUD();
-  updateSurfacePanel();
-  updateHealthPanel();
-  updateControlLoopPanel();
-  addVLog('起飞已启动', 'info');
-
-  document.getElementById('btn-start').style.display = 'none';
-  document.getElementById('btn-pause').style.display = 'inline-block';
-  document.getElementById('btn-resume').style.display = 'none';
-  document.getElementById('btn-stop').style.display = 'inline-block';
-  document.getElementById('btn-fault').style.display = 'inline-block';
-  document.getElementById('btn-recover').style.display = 'none';
-  document.getElementById('status-bar').innerHTML = '演示状态: 运行中 &nbsp;|&nbsp; FPS: <span id="fps-counter">--</span>';
-
-  demo.animFrame = requestAnimationFrame(demoLoop);
-}
-
-function pauseDemo() {
-  demo.paused = true;
-  flight.phase = '已暂停';
-  updateHUD();
-  document.getElementById('btn-pause').style.display = 'none';
-  document.getElementById('btn-resume').style.display = 'inline-block';
-  document.getElementById('btn-stop').style.display = 'inline-block';
-  document.getElementById('btn-fault').style.display = 'none';
-  document.getElementById('status-bar').innerHTML = '演示状态: 已暂停 &nbsp;|&nbsp; FPS: <span id="fps-counter">--</span>';
-  addVLog('演示已暂停', 'info');
-}
-
-function resumeDemo() {
-  demo.paused = false;
-  demo._lastTick = performance.now();
-  flight.phase = anomaly.rthActive ? '返航中' : '巡航中';
-  updateHUD();
-  document.getElementById('btn-pause').style.display = 'inline-block';
-  document.getElementById('btn-resume').style.display = 'none';
-  document.getElementById('btn-stop').style.display = 'inline-block';
-  document.getElementById('btn-fault').style.display = anomaly.rthActive ? 'none' : 'inline-block';
-  document.getElementById('status-bar').innerHTML = '演示状态: 运行中 &nbsp;|&nbsp; FPS: <span id="fps-counter">--</span>';
-  addVLog('演示已继续', 'info');
-  demo.animFrame = requestAnimationFrame(demoLoop);
-}
-
-function stopDemo(completed) {
-  demo.running = false;
-  demo.paused = false;
-  if (demo.animFrame) { cancelAnimationFrame(demo.animFrame); demo.animFrame = null; }
-  flight.phase = completed ? (anomaly.rthActive ? '已返航' : '已着陆') : '已停止';
-  flight.spd = 0;
-  updateHUD();
-  updateSurfacePanel();
-  updateHealthPanel();
-  updateControlLoopPanel();
-
-  document.getElementById('btn-start').style.display = 'inline-block';
-  document.getElementById('btn-pause').style.display = 'none';
-  document.getElementById('btn-resume').style.display = 'none';
-  document.getElementById('btn-stop').style.display = 'none';
-  document.getElementById('btn-fault').style.display = 'none';
-  document.getElementById('btn-recover').style.display = 'none';
-  document.getElementById('status-bar').innerHTML = '演示状态: ' + (completed ? '已完成' : '待命') + ' &nbsp;|&nbsp; FPS: <span id="fps-counter">--</span>';
-
-  if (completed) addVLog('演示完成。所有航点已到达。', 'info');
-  else addVLog('演示已被用户停止', 'info');
-
-  // Reset RTH state if active
-  if (anomaly.rthActive) {
-    anomaly.rthActive = false;
-    anomaly.rthProgress = 0;
-    anomaly.rthStartPos = null;
-  }
-}
-
+  addVLog('FlyteOS 智能飞行管理系统已就绪','info');
+  setAutonomyLevel(0);
+};
 // ═══════════════════════════════════════════════════════════════
-//  FPS counter
+//  END
 // ═══════════════════════════════════════════════════════════════
-let fpsFrames = 0, fpsTime = performance.now();
-viewer.scene.postRender.addEventListener(() => {
-  fpsFrames++;
-  const now = performance.now();
-  if (now - fpsTime >= 1000) {
-    const el = document.getElementById('fps-counter');
-    if (el) el.textContent = fpsFrames;
-    fpsFrames = 0; fpsTime = now;
-  }
-});
-
-// ═══════════════════════════════════════════════════════════════
-//  Keyboard shortcuts
-// ═══════════════════════════════════════════════════════════════
-window.addEventListener('keydown', e => {
-  if (e.code === 'Space') {
-    e.preventDefault();
-    if (!demo.running) startDemo();
-    else if (demo.paused) resumeDemo();
-    else pauseDemo();
-  }
-  if (e.code === 'Escape') { e.preventDefault(); stopDemo(false); }
-  // Number keys for anomaly triggers
-  if (e.code === 'Digit1') triggerAnomaly('gps_lose');
-  if (e.code === 'Digit2') triggerAnomaly('rtk_degrade');
-  if (e.code === 'Digit3') triggerAnomaly('comm_loss');
-  if (e.code === 'Digit4') triggerAnomaly('battery_low');
-  if (e.code === 'Digit0') resetSystem();
-  if (e.code === 'KeyF' && e.ctrlKey) { e.preventDefault(); if (demo.running && !demo.paused) triggerFault(); }
-});
-
-// ═══════════════════════════════════════════════════════════════
-//  Boot
-// ═══════════════════════════════════════════════════════════════
-buildScene();
-updateHUD();
-updateSurfacePanel();
-updateHealthPanel();
-updateControlLoopPanel();
-addVLog('FlyteOS 智能飞行管理系统 v2.0 已就绪', 'info');
-addVLog('按空格键或点击"开始飞行演示"启动', 'info');
-addFCLog('飞控决策系统初始化完成 — 所有子系统正常', 'success');
-
-viewer.clock.onTick.addEventListener(() => {
-  if (demo.running && !demo.paused) {
-    const pos = Cesium.Cartesian3.fromDegrees(flight.lng, flight.lat, flight.alt + 400);
-    const target = Cesium.Cartesian3.fromDegrees(flight.lng, flight.lat, flight.alt);
-    viewer.camera.lookAt(target, new Cesium.Cartesian3(0, 0, 600));
-  }
-});
-
-console.log('FlyteOS 智能飞行管理系统 v2.0 已就绪');
 </script>
 </body>
 </html>
