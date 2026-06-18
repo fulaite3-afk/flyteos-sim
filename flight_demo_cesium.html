@@ -10,32 +10,48 @@
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body,#cesiumContainer{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI','Microsoft YaHei','Consolas',monospace;background:#000;}
 
-/* ── HUD Panel ── */
-#hud-panel {
+/* ── Column Wrappers ── */
+#left-col {
   position:absolute; left:16px; top:16px;
-  width:280px; background:rgba(5,10,25,0.92);
+  display:flex; flex-direction:column; gap:10px;
+  z-index:10; width:280px; max-height:calc(100vh - 100px);
+}
+#right-col {
+  position:absolute; right:16px; top:16px;
+  display:flex; flex-direction:column; gap:10px;
+  z-index:10; width:270px; max-height:calc(100vh - 100px);
+}
+
+/* ── Panel Base ── */
+.panel-base {
+  background:rgba(5,10,25,0.92);
   border:1px solid rgba(0,180,255,0.35); border-radius:10px;
   padding:14px 16px; color:#00d4ff; font-size:12px;
-  backdrop-filter:blur(6px); z-index:10;
+  backdrop-filter:blur(6px);
   box-shadow:0 0 30px rgba(0,100,200,0.15);
 }
-#hud-panel h3 { font-size:14px; letter-spacing:1px; margin-bottom:10px; color:#00ffaa; border-bottom:1px solid rgba(0,180,255,0.2); padding-bottom:6px; }
+.panel-base h3 { font-size:14px; letter-spacing:1px; margin-bottom:10px; color:#00ffaa; border-bottom:1px solid rgba(0,180,255,0.2); padding-bottom:6px; }
+
+/* ── HUD Panel ── */
+#hud-panel { }
 .hud-row { display:flex; justify-content:space-between; padding:3px 0; }
 .hud-label { color:rgba(0,200,255,0.6); }
 .hud-val { color:#00ffaa; font-weight:bold; font-size:13px; }
 .hud-val.warn { color:#ffaa00; }
 .hud-val.danger { color:#ff3344; animation:blink 0.6s infinite; }
 
+/* ── 链路状态 Panel ── */
+#link-panel { }
+.link-row { display:flex; align-items:center; padding:3px 0; gap:8px; }
+.link-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.link-dot.green { background:#00ff66; box-shadow:0 0 6px #00ff66; }
+.link-dot.yellow { background:#ffaa00; box-shadow:0 0 6px #ffaa00; }
+.link-dot.red { background:#ff3344; box-shadow:0 0 6px #ff3344; }
+.link-label { color:rgba(0,200,255,0.6); flex:1; }
+.link-val { color:#00ffaa; font-weight:bold; }
+
 /* ── Geofence Panel ── */
-#gf-panel {
-  position:absolute; right:16px; top:16px;
-  width:270px; background:rgba(5,10,25,0.92);
-  border:1px solid rgba(0,180,255,0.35); border-radius:10px;
-  padding:14px 16px; color:#00d4ff; font-size:12px;
-  backdrop-filter:blur(6px); z-index:10;
-  box-shadow:0 0 30px rgba(0,100,200,0.15);
-  max-height:calc(100vh - 100px); overflow-y:auto;
-}
+#gf-panel { overflow-y:auto; }
 #gf-panel h3 { font-size:14px; letter-spacing:1px; margin-bottom:10px; color:#00ffaa; border-bottom:1px solid rgba(0,180,255,0.2); padding-bottom:6px; }
 .gf-item { padding:6px 8px; margin:4px 0; border-radius:5px; border:1px solid rgba(0,180,255,0.2); background:rgba(0,30,60,0.5); display:flex; justify-content:space-between; align-items:center; }
 .gf-item.safe { border-color:rgba(0,160,255,0.4); }
@@ -54,6 +70,12 @@ html,body,#cesiumContainer{width:100%;height:100%;overflow:hidden;font-family:'S
 .vlog-entry.warn { color:#ffaa00; }
 .vlog-entry.violation { color:#ff3344; }
 .vlog-entry.info { color:#00d4ff; }
+
+/* ── 飞行性能 Panel ── */
+#perf-panel { }
+.perf-row { display:flex; justify-content:space-between; padding:3px 0; }
+.perf-label { color:rgba(0,200,255,0.6); }
+.perf-val { color:#ffcc33; font-weight:bold; font-size:13px; }
 
 /* ── Bottom Controls ── */
 #ctrl-bar {
@@ -94,39 +116,68 @@ html,body,#cesiumContainer{width:100%;height:100%;overflow:hidden;font-family:'S
 <body>
 <div id="cesiumContainer"></div>
 
-<!-- HUD Panel -->
-<div id="hud-panel">
-  <h3>FLYTEOS 遥测数据</h3>
-  <div class="hud-row"><span class="hud-label">纬度</span><span class="hud-val" id="tv-lat">37.7700</span></div>
-  <div class="hud-row"><span class="hud-label">经度</span><span class="hud-val" id="tv-lng">-122.4100</span></div>
-  <div class="hud-row"><span class="hud-label">高度 (海平面)</span><span class="hud-val" id="tv-alt">0 m</span></div>
-  <div class="hud-row"><span class="hud-label">速度</span><span class="hud-val" id="tv-spd">0.0 m/s</span></div>
-  <div class="hud-row"><span class="hud-label">航向</span><span class="hud-val" id="tv-hdg">0</span></div>
-  <div class="hud-row"><span class="hud-label">阶段</span><span class="hud-val" id="tv-phase">待命</span></div>
-  <div class="hud-row"><span class="hud-label">航点</span><span class="hud-val" id="tv-wp">-</span></div>
-  <div class="hud-row"><span class="hud-label">围栏状态</span><span class="hud-val safe" id="tv-gf">安全</span></div>
+<!-- Left Column -->
+<div id="left-col">
+  <!-- HUD Panel -->
+  <div id="hud-panel" class="panel-base">
+    <h3>FLYTEOS 遥测数据</h3>
+    <div class="hud-row"><span class="hud-label">纬度</span><span class="hud-val" id="tv-lat">37.7700</span></div>
+    <div class="hud-row"><span class="hud-label">经度</span><span class="hud-val" id="tv-lng">-122.4100</span></div>
+    <div class="hud-row"><span class="hud-label">高度 (海平面)</span><span class="hud-val" id="tv-alt">0 m</span></div>
+    <div class="hud-row"><span class="hud-label">速度</span><span class="hud-val" id="tv-spd">0.0 m/s</span></div>
+    <div class="hud-row"><span class="hud-label">航向</span><span class="hud-val" id="tv-hdg">0</span></div>
+    <div class="hud-row"><span class="hud-label">滚转 (Roll)</span><span class="hud-val" id="tv-roll">0.0°</span></div>
+    <div class="hud-row"><span class="hud-label">俯仰 (Pitch)</span><span class="hud-val" id="tv-pitch">0.0°</span></div>
+    <div class="hud-row"><span class="hud-label">偏航 (Yaw)</span><span class="hud-val" id="tv-yaw">0.0°</span></div>
+    <div class="hud-row"><span class="hud-label">阶段</span><span class="hud-val" id="tv-phase">待命</span></div>
+    <div class="hud-row"><span class="hud-label">航点</span><span class="hud-val" id="tv-wp">-</span></div>
+    <div class="hud-row"><span class="hud-label">围栏状态</span><span class="hud-val safe" id="tv-gf">安全</span></div>
+    <div class="hud-row"><span class="hud-label">偏航误差 (XTE)</span><span class="hud-val" id="tv-xte">0.0 m</span></div>
+  </div>
+
+  <!-- 链路状态 Panel -->
+  <div id="link-panel" class="panel-base">
+    <h3>链路状态</h3>
+    <div class="link-row"><span class="link-dot green" id="link-dot-gps"></span><span class="link-label">GPS定位</span><span class="link-val" id="link-gps">GPS FIX</span></div>
+    <div class="link-row"><span class="link-dot green" id="link-dot-rtk"></span><span class="link-label">RTK差分</span><span class="link-val" id="link-rtk">锁定</span></div>
+    <div class="link-row"><span class="link-dot green" id="link-dot-imu"></span><span class="link-label">IMU状态</span><span class="link-val" id="link-imu">正常</span></div>
+    <div class="link-row"><span class="link-dot green" id="link-dot-bat"></span><span class="link-label">电池电量</span><span class="link-val" id="link-bat">100%</span></div>
+    <div class="link-row"><span class="link-dot green" id="link-dot-sig"></span><span class="link-label">链路质量</span><span class="link-val" id="link-sig">98%</span></div>
+  </div>
 </div>
 
-<!-- Geofence Panel -->
-<div id="gf-panel">
-  <h3>围栏状态</h3>
-  <div class="gf-item safe" id="gf-item-01">
-    <span>GF01 (圆形)</span>
-    <span class="gf-status safe" id="gf-st-01">安全</span>
-  </div>
-  <div class="gf-item safe" id="gf-item-02">
-    <span>GF02 (圆形)</span>
-    <span class="gf-status safe" id="gf-st-02">安全</span>
-  </div>
-  <div class="gf-item safe" id="gf-item-03">
-    <span>GF03 (多边形)</span>
-    <span class="gf-status safe" id="gf-st-03">安全</span>
-  </div>
-  <div id="vlog-section">
-    <h4>违规事件</h4>
-    <div id="vlog">
-      <div class="vlog-entry info">[系统] 就绪。FlyteOS Cesium v1.0</div>
+<!-- Right Column -->
+<div id="right-col">
+  <!-- Geofence Panel -->
+  <div id="gf-panel" class="panel-base">
+    <h3>围栏状态</h3>
+    <div class="gf-item safe" id="gf-item-01">
+      <span>GF01 (圆形)</span>
+      <span class="gf-status safe" id="gf-st-01">安全</span>
     </div>
+    <div class="gf-item safe" id="gf-item-02">
+      <span>GF02 (圆形)</span>
+      <span class="gf-status safe" id="gf-st-02">安全</span>
+    </div>
+    <div class="gf-item safe" id="gf-item-03">
+      <span>GF03 (多边形)</span>
+      <span class="gf-status safe" id="gf-st-03">安全</span>
+    </div>
+    <div id="vlog-section">
+      <h4>违规事件</h4>
+      <div id="vlog">
+        <div class="vlog-entry info">[系统] 就绪。FlyteOS Cesium v1.0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 飞行性能 Panel -->
+  <div id="perf-panel" class="panel-base">
+    <h3>飞行性能</h3>
+    <div class="perf-row"><span class="perf-label">最大高度</span><span class="perf-val" id="perf-maxalt">0 m</span></div>
+    <div class="perf-row"><span class="perf-label">最大速度</span><span class="perf-val" id="perf-maxspd">0.0 m/s</span></div>
+    <div class="perf-row"><span class="perf-label">总航程</span><span class="perf-val" id="perf-dist">0.00 km</span></div>
+    <div class="perf-row"><span class="perf-label">飞行时长</span><span class="perf-val" id="perf-time">00:00</span></div>
   </div>
 </div>
 
@@ -243,6 +294,10 @@ const flight = {
   alt: 0,
   spd: 0,
   hdg: 0,
+  roll: 0,
+  pitch: 0,
+  yaw: 0,
+  xte: 0,
   phase: '待命',
   wpIdx: 0,
   gfStatus: '安全'
@@ -260,7 +315,17 @@ let demo = {
   totalLength: 0,
   lastGfStatus: {},
   animFrame: null,
-  _gfblickToggles: {} // for blinking
+  _gfblickToggles: {}, // for blinking
+  // Flight performance tracking
+  maxAlt: 0,
+  maxSpd: 0,
+  totalDist: 0,     // cumulative distance (meters)
+  flyTime: 0,       // cumulative flight time (seconds)
+  flyStartTime: 0,  // timestamp when flying started
+  lastPos: null,    // previous position for distance calc
+  // Link status
+  batteryLevel: 100,  // percentage
+  linkQuality: 98     // percentage
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -299,32 +364,33 @@ function buildScene() {
     wpPointEntities.push(e);
   });
 
-  // ── Waypoint path: ground polyline + elevated ──
+  // ── Waypoint ground reference (subtle) ──
   const wpPositions = WAYPOINTS.map(w => Cesium.Cartesian3.fromDegrees(w.lng, w.lat, 0));
   viewer.entities.add({
     polyline: {
       positions: wpPositions,
-      width: 2,
-      material: Cesium.Color.YELLOW.withAlpha(0.5),
+      width: 1.5,
+      material: Cesium.Color.GRAY.withAlpha(0.25),
       clampToGround: true
     }
   });
-  // Elevated ghost path
+  // Planned route: white dashed polyline
   const wpPositionsAlt = WAYPOINTS.map(w => Cesium.Cartesian3.fromDegrees(w.lng, w.lat, w.alt));
   viewer.entities.add({
     polyline: {
       positions: wpPositionsAlt,
-      width: 1.5,
-      material: new Cesium.PolylineDashMaterialProperty({ color: Cesium.Color.CYAN.withAlpha(0.3), dashLength: 16 }),
+      width: 2.5,
+      material: new Cesium.PolylineDashMaterialProperty({ color: Cesium.Color.WHITE.withAlpha(0.7), dashLength: 20 }),
     }
   });
 
-  // ── Flight trail entity (initially empty) ──
+  // ── 实际航迹 (bright cyan solid) ──
   trailEntity = viewer.entities.add({
     polyline: {
       positions: [],
-      width: 3,
-      material: Cesium.Color.CYAN.withAlpha(0.8),
+      width: 4,
+      material: Cesium.Color.CYAN.withAlpha(0.95),
+      clampToGround: false
     }
   });
 
@@ -487,8 +553,12 @@ function updateHUD() {
   document.getElementById('tv-alt').textContent = flight.alt.toFixed(0) + ' m';
   document.getElementById('tv-spd').textContent = flight.spd.toFixed(1) + ' m/s';
   document.getElementById('tv-hdg').textContent = String(Math.round(flight.hdg)).padStart(3,'0') + '°';
+  document.getElementById('tv-roll').textContent = flight.roll.toFixed(1) + '°';
+  document.getElementById('tv-pitch').textContent = flight.pitch.toFixed(1) + '°';
+  document.getElementById('tv-yaw').textContent = flight.yaw.toFixed(1) + '°';
   document.getElementById('tv-phase').textContent = flight.phase;
   document.getElementById('tv-wp').textContent = flight.wpIdx < WAYPOINTS.length ? WAYPOINTS[flight.wpIdx].label : '完成';
+  document.getElementById('tv-xte').textContent = flight.xte.toFixed(1) + ' m';
 
   const gfEl = document.getElementById('tv-gf');
   const gfStatusKey = flight.gfStatus === '安全' ? 'safe' : flight.gfStatus === '预警' ? 'warn' : 'violation';
@@ -553,6 +623,125 @@ function computePathSegments() {
     demo.pathSegments.push({ startIdx: i, endIdx: i+1, lengthMeters: len, cumLength: demo.totalLength });
     demo.totalLength += len;
   }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Attitude calculation
+// ═══════════════════════════════════════════════════════════════
+let _prevHdg = null;
+function computeAttitude() {
+  // Yaw ≈ heading
+  flight.yaw = flight.hdg;
+
+  // Pitch: based on altitude change rate
+  if (_prevHdg === null) { flight.pitch = 0; flight.roll = 0; _prevHdg = flight.hdg; return; }
+
+  // Estimate pitch from altitude change
+  const altRate = (demo.speed > 0 && demo.progress < 1.0) ? (demo.speed * demo.totalLength * 0.001) : 0;
+  // Use actual altitude delta: check next position vs current
+  if (demo.running && !demo.paused && demo.progress < 1.0) {
+    const curPos = getPositionOnPath(demo.progress);
+    const nextPos = getPositionOnPath(Math.min(1, demo.progress + 0.005));
+    const altDelta = nextPos.alt - curPos.alt;
+    const distM = haversineM(curPos.lat, curPos.lng, nextPos.lat, nextPos.lng);
+    if (distM > 0.01) {
+      const slopeDeg = Cesium.Math.toDegrees(Math.atan2(altDelta, distM));
+      flight.pitch = Math.max(-15, Math.min(25, slopeDeg * 0.8));
+    } else {
+      flight.pitch *= 0.95;
+    }
+  } else {
+    flight.pitch *= 0.95;
+  }
+
+  // Roll: based on heading change rate (turn rate)
+  let hdgDelta = flight.hdg - _prevHdg;
+  if (hdgDelta > 180) hdgDelta -= 360;
+  if (hdgDelta < -180) hdgDelta += 360;
+  const rollTarget = Math.max(-30, Math.min(30, hdgDelta * 3.0));
+  flight.roll += (rollTarget - flight.roll) * 0.3;
+  flight.roll = Math.max(-30, Math.min(30, flight.roll));
+
+  _prevHdg = flight.hdg;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Cross-Track Error (XTE): shortest distance to planned route
+// ═══════════════════════════════════════════════════════════════
+function computeXTE() {
+  if (demo.progress <= 0 || demo.progress >= 1.0) { flight.xte = 0; return; }
+
+  // Find current segment
+  const targetDist = demo.progress * demo.totalLength;
+  let seg = demo.pathSegments[0];
+  for (const s of demo.pathSegments) {
+    if (targetDist <= s.cumLength + s.lengthMeters) { seg = s; break; }
+  }
+  const a = WAYPOINTS[seg.startIdx];
+  const b = WAYPOINTS[seg.endIdx];
+
+  // Cross-track distance from current position to segment a→b
+  const R = 6371000;
+  const d13 = haversineM(a.lat, a.lng, flight.lat, flight.lng) / R; // angular distance
+  const brng12 = Cesium.Math.toRadians(bearing(a.lat, a.lng, b.lat, b.lng));
+  const brng13 = Cesium.Math.toRadians(bearing(a.lat, a.lng, flight.lat, flight.lng));
+  const dxt = Math.asin(Math.sin(d13) * Math.sin(brng13 - brng12)) * R;
+  flight.xte = Math.abs(dxt);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Update link status
+// ═══════════════════════════════════════════════════════════════
+function updateLinkStatus(dt) {
+  if (!demo.running || demo.paused) return;
+
+  // Battery: drain from 100% to ~75% over demo duration (~12s)
+  demo.batteryLevel -= dt * 2.1; // ~25% over ~12s
+  demo.batteryLevel = Math.max(75, demo.batteryLevel);
+
+  // Link quality: fluctuate 95%-99%
+  demo.linkQuality += (Math.random() - 0.5) * 4;
+  demo.linkQuality = Math.max(94, Math.min(99.5, demo.linkQuality));
+
+  // Update UI
+  document.getElementById('link-bat').textContent = Math.round(demo.batteryLevel) + '%';
+  document.getElementById('link-sig').textContent = Math.round(demo.linkQuality) + '%';
+
+  // Battery dot color
+  const batDot = document.getElementById('link-dot-bat');
+  if (demo.batteryLevel > 85) batDot.className = 'link-dot green';
+  else batDot.className = 'link-dot yellow';
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Update flight performance panel
+// ═══════════════════════════════════════════════════════════════
+function updatePerfPanel(dt) {
+  if (!demo.running || demo.paused) return;
+
+  // Update peaks
+  if (flight.alt > demo.maxAlt) demo.maxAlt = flight.alt;
+  if (flight.spd > demo.maxSpd) demo.maxSpd = flight.spd;
+
+  // Cumulative distance
+  if (demo.lastPos) {
+    const d = haversineM(demo.lastPos.lat, demo.lastPos.lng, flight.lat, flight.lng);
+    demo.totalDist += d;
+  }
+  demo.lastPos = { lat: flight.lat, lng: flight.lng };
+
+  // Flight time
+  demo.flyTime += dt;
+
+  // Update UI
+  document.getElementById('perf-maxalt').textContent = demo.maxAlt.toFixed(0) + ' m';
+  document.getElementById('perf-maxspd').textContent = demo.maxSpd.toFixed(1) + ' m/s';
+  document.getElementById('perf-dist').textContent = (demo.totalDist / 1000).toFixed(2) + ' km';
+
+  const mins = Math.floor(demo.flyTime / 60);
+  const secs = Math.floor(demo.flyTime % 60);
+  document.getElementById('perf-time').textContent =
+    String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
 }
 
 function getPositionOnPath(progress) {
@@ -621,6 +810,12 @@ function demoLoop() {
     }
   }
   flight.phase = '巡航中';
+
+  // Attitude & XTE
+  computeAttitude();
+  computeXTE();
+  updateLinkStatus(dt);
+  updatePerfPanel(dt);
 
   updateFlightEntity();
 
@@ -696,6 +891,31 @@ function startDemo() {
   flight.phase = '起飞';
   flight.wpIdx = 0;
   flight.gfStatus = '安全';
+  flight.roll = 0;
+  flight.pitch = 0;
+  flight.yaw = 0;
+  flight.xte = 0;
+
+  // Reset performance
+  demo.maxAlt = 0;
+  demo.maxSpd = 0;
+  demo.totalDist = 0;
+  demo.flyTime = 0;
+  demo.lastPos = null;
+  demo.batteryLevel = 100;
+  demo.linkQuality = 98;
+  _prevHdg = null;
+
+  // Reset link UI
+  document.getElementById('link-bat').textContent = '100%';
+  document.getElementById('link-sig').textContent = '98%';
+  document.getElementById('link-dot-bat').className = 'link-dot green';
+
+  // Reset perf UI
+  document.getElementById('perf-maxalt').textContent = '0 m';
+  document.getElementById('perf-maxspd').textContent = '0.0 m/s';
+  document.getElementById('perf-dist').textContent = '0.00 km';
+  document.getElementById('perf-time').textContent = '00:00';
 
   // Reset geofence visuals
   GEOFENCES.forEach(gf => { gf.status = 'safe'; });
