@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlyteOS v1.5 — 飞行+围栏演示系统 | 武汉福莱特航空科技</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;overflow:hidden;font-family:'Noto Sans SC','微软雅黑',sans-serif}
+#c{position:fixed;top:0;left:0;width:100vw;height:100vh}
+#hud{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10}
+.panel{position:absolute;background:rgba(0,8,18,0.82);border:1px solid rgba(0,200,255,0.35);border-radius:5px;padding:12px 15px;color:#00d4ff;font-family:'Courier New',monospace;font-size:11px;backdrop-filter:blur(6px);pointer-events:auto;transition:filter .8s}
+#title{top:12px;left:50%;transform:translateX(-50%);text-align:center;white-space:nowrap}
+#title h1{font-size:16px;font-weight:900;letter-spacing:4px;color:#00d4ff;text-shadow:0 0 12px #00d4ff}
+#title .sub{font-size:9px;color:#5ba3b8;margin-top:3px}
+#tele{top:76px;left:14px;min-width:190px}
+.tr{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.tr:last-child{margin-bottom:0}
+.tl{color:#5ba3b8;font-size:9px;margin-right:10px}
+.tv{color:#00d4ff;font-weight:700;font-size:15px;min-width:72px;text-align:right}
+.tu{color:#3a7a8f;font-size:9px;margin-left:3px}
+#status{top:76px;right:14px;min-width:165px}
+.si{display:flex;align-items:center;margin-bottom:6px}
+.si:last-child{margin-bottom:0}
+.sd{width:7px;height:7px;border-radius:50%;margin-right:7px;background:#1a2a3a}
+.sd.on{background:#00ff88;box-shadow:0 0 6px #00ff88;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.5}}
+#phase-panel{top:76px;left:50%;transform:translateX(-50%);text-align:center;min-width:200px}
+#phase-text{font-size:14px;font-weight:700;letter-spacing:2px;color:#00ff88;text-shadow:0 0 8px #00ff88}
+#phase-desc{font-size:9px;color:#5ba3b8;margin-top:4px}
+#mission{bottom:155px;right:14px;text-align:center;min-width:260px}
+#btn-mission{background:linear-gradient(135deg,#ff6b35,#f7931e);border:3px solid #fff;color:#fff;font-family:'Courier New',monospace;font-size:13px;padding:12px 28px;border-radius:50px;cursor:pointer;width:100%;letter-spacing:2px;transition:.3s;box-shadow:0 0 20px rgba(255,107,53,0.4);font-weight:700}
+#btn-mission:hover{background:linear-gradient(135deg,#ff8855,#ffaa44);box-shadow:0 0 35px rgba(255,107,53,0.7);transform:scale(1.03)}
+#btn-mission:disabled{background:#0a1520;color:#334;border-color:#223;cursor:not-allowed;box-shadow:none;transform:none}
+#mission-status{font-size:9px;color:#5ba3b8;margin-top:5px}
+#btn-pause{background:linear-gradient(135deg,#35a0ff,#1e80f7);border:3px solid #fff;color:#fff;font-family:'Courier New',monospace;font-size:12px;padding:8px 18px;border-radius:50px;cursor:pointer;width:48%;letter-spacing:1px;transition:.3s;box-shadow:0 0 15px rgba(53,160,255,0.4);font-weight:700}
+#btn-pause:hover{background:linear-gradient(135deg,#55b8ff,#3598ff);box-shadow:0 0 25px rgba(53,160,255,0.7)}
+#btn-stop{background:linear-gradient(135deg,#ff3545,#d71e30);border:3px solid #fff;color:#fff;font-family:'Courier New',monospace;font-size:12px;padding:8px 18px;border-radius:50px;cursor:pointer;width:48%;letter-spacing:1px;transition:.3s;box-shadow:0 0 15px rgba(255,53,69,0.4);font-weight:700;margin-left:4%}
+#btn-stop:hover{background:linear-gradient(135deg,#ff5565,#ff3040);box-shadow:0 0 25px rgba(255,53,69,0.7)}
+#demo-ctrls{display:none;margin-top:8px}
+#help{bottom:14px;left:50%;transform:translateX(-50%);font-size:9px;color:#2a4a5a;line-height:2;text-align:center;white-space:nowrap}
+#loading{position:fixed;top:0;left:0;width:100%;height:100%;background:#000010;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;transition:opacity .6s}
+#loading h1{font-family:'Courier New',monospace;font-size:24px;color:#00d4ff;text-shadow:0 0 24px #00d4ff;letter-spacing:8px;margin-bottom:8px}
+#loading .ver{font-size:11px;color:#5ba3b8;letter-spacing:3px;margin-bottom:40px}
+#prog-bar{width:360px;height:3px;background:#0a1520;border-radius:2px;overflow:hidden;margin-bottom:10px}
+#prog-fill{height:100%;background:linear-gradient(90deg,#0066cc,#00d4ff,#00ff88);width:0%;transition:width .4s}
+#prog-text{font-size:10px;color:#5ba3b8}
+#speedmeter{position:fixed;left:50%;bottom:46px;transform:translateX(-50%);width:90px;height:26px;background:rgba(0,8,18,.75);border:1px solid rgba(0,200,255,.2);border-radius:13px;display:flex;align-items:center;justify-content:center;z-index:11;gap:4px}
+#speedmeter .sm-val{font-family:'Courier New',monospace;font-size:14px;font-weight:700;color:#00d4ff}
+#speedmeter .sm-unit{font-size:9px;color:#3a7a8f}
+#fps-counter{position:fixed;top:14px;right:14px;font-family:'Courier New',monospace;font-size:10px;color:#00ff88;z-index:12;background:rgba(0,8,18,.7);padding:3px 8px;border-radius:4px;border:1px solid rgba(0,255,136,.3)}
+#altbar{position:fixed;right:270px;top:50%;transform:translateY(-50%);width:16px;height:200px;background:rgba(0,8,18,.7);border:1px solid rgba(0,200,255,.2);border-radius:8px;overflow:hidden;z-index:11}
+#altbar-fill{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,#0066cc,#00d4ff,#00ff88);border-radius:8px;transition:height .2s}
+#through-cloud{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at center,rgba(230,240,255,0.5),rgba(200,220,245,0.3) 40%,rgba(180,200,230,0.1) 70%,transparent 90%);pointer-events:none;z-index:9;opacity:0;transition:opacity .3s}
+#cloud-indicator{position:fixed;top:148px;left:50%;transform:translateX(-50%);background:rgba(0,8,18,.85);border:1px solid rgba(100,180,255,.3);border-radius:16px;padding:5px 18px;color:#fff;font-size:10px;z-index:11;white-space:nowrap;pointer-events:none;transition:all .4s}
+#log{position:fixed;top:280px;left:14px;width:210px;max-height:160px;overflow:hidden;background:rgba(0,8,18,0.82);border:1px solid rgba(0,200,255,0.35);border-radius:5px;padding:12px 15px;color:#00d4ff;font-family:'Courier New',monospace;font-size:11px;z-index:10;pointer-events:auto}
+.le{font-size:9px;color:#7ec8e3;line-height:1.7}
+.le.warn{color:#ffaa00}
+/* 穿云时HUD模糊效果 */
+.hud-fog{filter:blur(1.5px) brightness(1.2)}
+
+/* ═══ 围栏面板 — 右侧 ═══ */
+#gf-panel{position:fixed;top:230px;right:14px;width:240px;background:rgba(0,8,18,0.82);border:1px solid rgba(0,200,255,0.35);border-radius:5px;padding:12px 14px;color:#00d4ff;font-family:'Courier New',monospace;font-size:10px;z-index:10;pointer-events:auto;backdrop-filter:blur(6px)}
+#gf-panel h3{font-size:12px;letter-spacing:2px;color:#00d4ff;text-shadow:0 0 8px #00d4ff;margin-bottom:10px;text-align:center}
+.gf-row{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;margin-bottom:4px;border-radius:4px;background:rgba(0,20,40,0.5);border:1px solid rgba(0,200,255,0.15);transition:all .3s}
+.gf-name{color:#8abed8;font-size:9px}
+.gf-status{font-weight:700;font-size:10px;padding:2px 6px;border-radius:3px;min-width:48px;text-align:center}
+.gf-status.safe{color:#00ff88;background:rgba(0,255,136,0.1)}
+.gf-status.warn{color:#ffdd00;background:rgba(255,221,0,0.15);animation:pulse-yellow 0.8s infinite}
+.gf-status.violate{color:#ff3355;background:rgba(255,51,85,0.2);animation:pulse-red 0.5s infinite}
+@keyframes pulse-yellow{0%,100%{box-shadow:0 0 0 rgba(255,221,0,0)}50%{box-shadow:0 0 12px rgba(255,221,0,0.5)}}
+@keyframes pulse-red{0%,100%{box-shadow:0 0 0 rgba(255,51,85,0)}50%{box-shadow:0 0 14px rgba(255,51,85,0.6)}}
+
+/* ═══ 违规日志 — 底部 ═══ */
+#violation-log{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);width:520px;max-height:100px;overflow-y:auto;background:rgba(0,8,18,0.82);border:1px solid rgba(255,100,100,0.35);border-radius:5px;padding:8px 14px;color:#ff8888;font-family:'Courier New',monospace;font-size:9px;z-index:10;pointer-events:auto;backdrop-filter:blur(6px)}
+#violation-log h4{font-size:10px;letter-spacing:2px;color:#ff6666;margin-bottom:4px;text-align:center}
+.vl-entry{line-height:1.6;border-bottom:1px solid rgba(255,100,100,0.08);padding:2px 0}
+.vl-entry.enter{color:#ffdd00}
+.vl-entry.exit{color:#00ff88}
+.vl-entry.violate{color:#ff3355;font-weight:700}
+</style>
+</head>
+<body>
+<div id="loading"><h1>FLYTEOS</h1><div class="ver">v1.5 · 飞行+围栏演示 · 沉浸版</div><div id="prog-bar"><div id="prog-fill"></div></div><div id="prog-text">正在初始化...</div></div>
+<canvas id="c"></canvas>
+<div id="through-cloud"></div>
+<div id="hud">
+  <div class="panel" id="title"><h1>FLYTEOS v1.5</h1><div class="sub">武汉福莱特航空科技 · 飞行+围栏演示系统</div></div>
+  <div class="panel" id="tele">
+    <div class="tr"><span class="tl">高度 ALT</span><span><span class="tv" id="tv-alt">0.0</span><span class="tu">m</span></span></div>
+    <div class="tr"><span class="tl">速度 SPD</span><span><span class="tv" id="tv-spd">0.0</span><span class="tu">m/s</span></span></div>
+    <div class="tr"><span class="tl">航向 HDG</span><span><span class="tv" id="tv-hdg">000</span><span class="tu">°</span></span></div>
+    <div class="tr"><span class="tl">爬升率 VS</span><span><span class="tv" id="tv-vs">+0.0</span><span class="tu">m/s</span></span></div>
+    <div class="tr"><span class="tl">离地高 AGL</span><span><span class="tv" id="tv-agl">0.0</span><span class="tu">m</span></span></div>
+    <div class="tr"><span class="tl">位置 X/Z</span><span><span class="tv" id="tv-xz" style="font-size:10px">0,0</span><span class="tu"></span></span></div>
+  </div>
+  <div class="panel" id="phase-panel"><div id="phase-text">待机</div><div id="phase-desc">点击"开始飞行演示"</div></div>
+  <div class="panel" id="status">
+    <div class="si"><div class="sd on" id="sd-pwr"></div><span>电源系统</span></div>
+    <div class="si"><div class="sd on" id="sd-gps"></div><span>GPS导航</span></div>
+    <div class="si"><div class="sd on" id="sd-fc"></div><span>飞控系统</span></div>
+    <div class="si"><div class="sd" id="sd-motor"></div><span>涡轮电机</span></div>
+    <div class="si"><div class="sd" id="sd-gf" style="background:#00ff88;box-shadow:0 0 6px #00ff88"></div><span>围栏监控</span></div>
+  </div>
+  <div class="panel" id="mission">
+    <button id="btn-mission" onclick="startDemo()">&#9654; 开始飞行演示</button>
+    <div id="demo-ctrls">
+      <button id="btn-pause" onclick="togglePause()">&#10074;&#10074; 暂停演示</button>
+      <button id="btn-stop" onclick="stopDemo()">&#9632; 停止演示</button>
+    </div>
+    <div id="mission-status">点击开始围栏演示</div>
+  </div>
+  <div id="help">WASD 移动 | Q 上升 | E 下降 | 空格 起飞 | 1/2/3 视角</div>
+  <div id="altbar"><div id="altbar-fill" style="height:0%"></div></div>
+  <div id="speedmeter"><span class="sm-val" id="sm-spd">0.0</span><span class="sm-unit">m/s</span></div>
+  <div id="fps-counter">FPS: --</div>
+  <div id="cloud-indicator"><span id="cloud-status">&#9729; 晴朗</span></div>
+  <div id="log"><div id="log-entries"></div></div>
+  <!-- 围栏面板 -->
+  <div id="gf-panel">
+    <h3>&#9654; GEOFENCE 围栏</h3>
+    <div id="gf-list"></div>
+  </div>
+  <!-- 违规日志 -->
+  <div id="violation-log">
+    <h4>&#9888; VIOLATION EVENTS</h4>
+    <div id="vl-entries"></div>
+  </div>
+</div>
+
+<script src="three.min.js" onerror="this.src='https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js'"></script>
+<script>
+'use strict';
+if (typeof THREE === 'undefined') { document.getElementById('prog-text').textContent = 'Three.js 加载失败'; throw new Error('No THREE'); }
+
+// ═══════════════════════════════════════════════════════════════
+//  常量
+// ═══════════════════════════════════════════════════════════════
+const TERRAIN_SIZE = 6000, TERRAIN_SEG = 200, MAX_ALT = 320;
+const DRONE_SPEED = 18, DRONE_VS_UP = 8, DRONE_VS_DN = 5, DRONE_TURN = 60, TAKEOFF_ALT = 30;
+const CLOUD_MIN = 100, CLOUD_MAX = 260, CLOUD_COUNT = 45;
+
+// ═══════════════════════════════════════════════════════════════
+//  飞行状态
+// ═══════════════════════════════════════════════════════════════
+const flight = { x:0, z:0, alt:2, hdg:0, spd:0, vs:0, propRPM:0, phase:'GROUNDED', isAuto:false, autoIdx:0, cloudDensity:0 };
+const keys = {};
+
+// ═══════════════════════════════════════════════════════════════
+//  Three.js 核心
+// ═══════════════════════════════════════════════════════════════
+const canvas = document.getElementById('c');
+let _fallback2D = false, renderer;
+try {
+  const tc = document.createElement('canvas');
+  const gl = tc.getContext('webgl2') || tc.getContext('webgl');
+  if (!gl) throw new Error('no WebGL');
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;
+} catch(e) { _fallback2D = true; renderer = null; }
+
+const scene = new THREE.Scene();
+const fogColor = new THREE.Color(0x8abed8);
+if (!_fallback2D) { scene.background = fogColor.clone(); scene.fog = new THREE.FogExp2(fogColor, 0.00008); }
+
+const camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.5, 26000);
+camera.position.set(0, 16, -32);
+
+let sunLight, ambLight, hemiLight;
+if (!_fallback2D) {
+  sunLight = new THREE.DirectionalLight(0xfff5e0, 1.8); sunLight.position.set(300, 500, 200); scene.add(sunLight);
+  ambLight = new THREE.AmbientLight(0x446688, 0.6); scene.add(ambLight);
+  hemiLight = new THREE.HemisphereLight(0x8abed8, 0x3a5a3a, 0.4); scene.add(hemiLight);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  噪声函数
+// ═══════════════════════════════════════════════════════════════
+function _hash(x, y) { let n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return n - Math.floor(n); }
+function _smooth(x, y) {
+  const ix = Math.floor(x), iy = Math.floor(y), fx = x - ix, fy = y - iy;
+  const sx = fx*fx*(3-2*fx), sy = fy*fy*(3-2*fy);
+  return _hash(ix,iy) + (_hash(ix+1,iy)-_hash(ix,iy))*sx + (_hash(ix,iy+1)-_hash(ix,iy))*sy + (_hash(ix,iy)-_hash(ix+1,iy)-_hash(ix,iy+1)+_hash(ix+1,iy+1))*sx*sy;
+}
+function fbm(x, y, oct) { let v=0,a=1,f=1,t=0; for(let i=0;i<(oct||5);i++){v+=_smooth(x*f,y*f)*a;t+=a;a*=0.5;f*=2;} return v/t; }
+function getTerrainY(wx, wz) { const nx=wx/TERRAIN_SIZE*6, nz=wz/TERRAIN_SIZE*6; const e=fbm(nx+10,nz+10,6); return Math.max(0,(e-0.3)*130); }
+
+// ═══════════════════════════════════════════════════════════════
+//  地形 — 7层着色 + 细节噪声
+// ═══════════════════════════════════════════════════════════════
+if (!_fallback2D) {
+  const geo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, TERRAIN_SEG, TERRAIN_SEG);
+  geo.rotateX(-Math.PI / 2);
+  const pos = geo.attributes.position;
+  const colors = new Float32Array(pos.count * 3);
+
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), z = pos.getZ(i);
+    const nx = x/TERRAIN_SIZE*6, nz = z/TERRAIN_SIZE*6;
+    const e = fbm(nx+10, nz+10, 6);
+    const detail = fbm(nx*3+50, nz*3+50, 3) * 8;
+    const h = Math.max(-2, (e - 0.3) * 130 + detail);
+    pos.setY(i, h);
+
+    let r, g, b;
+    if (h < -0.5)      { r=0.06; g=0.14; b=0.35; }
+    else if (h < 0.5)   { const t=(h+0.5)/1; r=0.06+t*0.12; g=0.14+t*0.18; b=0.35+t*0.15; }
+    else if (h < 3)     { const t=(h-0.5)/2.5; r=0.18+t*0.08; g=0.32+t*0.18; b=0.50-t*0.28; }
+    else if (h < 20)    { const t=(h-3)/17; r=0.26-t*0.06; g=0.50+t*0.05; b=0.22-t*0.04; }
+    else if (h < 50)    { const t=(h-20)/30; r=0.20+t*0.22; g=0.55-t*0.18; b=0.18+t*0.08; }
+    else if (h < 80)    { const t=(h-50)/30; r=0.42+t*0.20; g=0.37+t*0.15; b=0.26+t*0.18; }
+    else                { const t=Math.min(1,(h-80)/30); r=0.62+t*0.30; g=0.52+t*0.40; b=0.44+t*0.50; }
+    colors[i*3]=r; colors[i*3+1]=g; colors[i*3+2]=b;
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geo.computeVertexNormals();
+  scene.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.85, metalness:0.02 })));
+
+  const waterGeo = new THREE.PlaneGeometry(TERRAIN_SIZE*1.2, TERRAIN_SIZE*1.2);
+  waterGeo.rotateX(-Math.PI / 2);
+  const waterMat = new THREE.MeshStandardMaterial({ color:0x1a5588, transparent:true, opacity:0.55, roughness:0.1, metalness:0.3 });
+  const water = new THREE.Mesh(waterGeo, waterMat);
+  water.position.y = 0.3; water.name = 'water'; scene.add(water);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  飞行器模型
+// ═══════════════════════════════════════════════════════════════
+function createAerostat() {
+  const g = new THREE.Group();
+  const env = new THREE.Mesh(new THREE.SphereGeometry(1,20,14).scale(0.7,0.5,1.0), new THREE.MeshStandardMaterial({color:0xe8e8f0, roughness:0.4}));
+  env.position.y = 0.6; g.add(env);
+  const gon = new THREE.Mesh(new THREE.BoxGeometry(0.35,0.2,0.5), new THREE.MeshStandardMaterial({color:0x2a3a4a}));
+  gon.position.y = -0.15; g.add(gon);
+  for (let i = 0; i < 4; i++) {
+    const p = new THREE.Mesh(new THREE.BoxGeometry(0.03,0.25,0.02), new THREE.MeshStandardMaterial({color:0x44ddff,emissive:0x226688,transparent:true,opacity:0.8}));
+    p.userData.isProp = true;
+    const a = (i/4)*Math.PI*2;
+    p.position.set(Math.cos(a)*0.55, 0.25, Math.sin(a)*0.55);
+    g.add(p);
+  }
+  const lt = new THREE.Mesh(new THREE.SphereGeometry(0.05,6,6), new THREE.MeshBasicMaterial({color:0x00ff88}));
+  lt.position.y = -0.3; g.add(lt);
+  return g;
+}
+const drone = _fallback2D ? new THREE.Group() : createAerostat();
+if (!_fallback2D) drone.scale.setScalar(2.5);
+drone.position.set(0, flight.alt, 0);
+scene.add(drone);
+
+// ═══════════════════════════════════════════════════════════════
+//  云层系统 — Sprite + 程序化纹理
+// ═══════════════════════════════════════════════════════════════
+
+function makeCloudTexture(sz) {
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = sz;
+  const ctx = cv.getContext('2d');
+  const cx = sz/2, cy = sz/2, r = sz*0.42;
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+  grad.addColorStop(0, 'rgba(255,255,255,0.95)');
+  grad.addColorStop(0.3, 'rgba(245,248,255,0.75)');
+  grad.addColorStop(0.6, 'rgba(220,230,245,0.35)');
+  grad.addColorStop(1, 'rgba(200,215,235,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, sz, sz);
+  const img = ctx.getImageData(0, 0, sz, sz);
+  for (let y = 0; y < sz; y++) for (let x = 0; x < sz; x++) {
+    const idx = (y*sz+x)*4;
+    const n = _smooth(x*0.08, y*0.08) * 40 - 20;
+    img.data[idx]   = Math.min(255, Math.max(0, img.data[idx] + n));
+    img.data[idx+1] = Math.min(255, Math.max(0, img.data[idx+1] + n));
+    img.data[idx+2] = Math.min(255, Math.max(0, img.data[idx+2] + n));
+  }
+  ctx.putImageData(img, 0, 0);
+  return cv;
+}
+
+const cloudSpriteTex = !_fallback2D ? new THREE.CanvasTexture(makeCloudTexture(256)) : null;
+const clouds = [];
+
+if (!_fallback2D) {
+  for (let i = 0; i < CLOUD_COUNT; i++) {
+    const cloudGroup = new THREE.Group();
+    const count = 5 + Math.floor(Math.random() * 4);
+    const baseScale = 40 + Math.random() * 60;
+    for (let j = 0; j < count; j++) {
+      const mat = new THREE.SpriteMaterial({ map: cloudSpriteTex, transparent: true, opacity: 0.55 + Math.random()*0.2, depthWrite: false });
+      const sp = new THREE.Sprite(mat);
+      const s = baseScale * (0.5 + Math.random() * 0.8);
+      sp.scale.set(s, s * 0.5, 1);
+      sp.position.set((Math.random()-0.5)*baseScale*1.2, (Math.random()-0.5)*baseScale*0.2, (Math.random()-0.5)*baseScale*1.2);
+      cloudGroup.add(sp);
+    }
+    cloudGroup.position.set(
+      (Math.random()-0.5) * TERRAIN_SIZE * 0.75,
+      CLOUD_MIN + Math.random() * (CLOUD_MAX - CLOUD_MIN),
+      (Math.random()-0.5) * TERRAIN_SIZE * 0.75
+    );
+    cloudGroup.userData.radius = baseScale * 1.2;
+    cloudGroup.userData.driftX = (0.2 + Math.random()*0.5) * (Math.random()>0.5?1:-1);
+    cloudGroup.userData.driftZ = (0.1 + Math.random()*0.2) * (Math.random()>0.5?1:-1);
+    scene.add(cloudGroup);
+    clouds.push(cloudGroup);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  穿云粒子系统
+// ═══════════════════════════════════════════════════════════════
+const cloudParticles = [];
+if (!_fallback2D) {
+  const particleTex = (() => {
+    const cv = document.createElement('canvas'); cv.width = cv.height = 32;
+    const ctx = cv.getContext('2d');
+    const g = ctx.createRadialGradient(16,16,0,16,16,16);
+    g.addColorStop(0, 'rgba(255,255,255,0.8)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g; ctx.fillRect(0,0,32,32);
+    return new THREE.CanvasTexture(cv);
+  })();
+
+  for (let i = 0; i < 60; i++) {
+    const mat = new THREE.SpriteMaterial({ map: particleTex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+    const sp = new THREE.Sprite(mat);
+    sp.scale.set(3 + Math.random()*4, 3 + Math.random()*4, 1);
+    sp.visible = false;
+    scene.add(sp);
+    cloudParticles.push({ sprite: sp, vx: (Math.random()-0.5)*8, vy: (Math.random()-0.5)*3, vz: (Math.random()-0.5)*8, life: Math.random() });
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  音效系统 — Web Audio API，零外部文件
+// ═══════════════════════════════════════════════════════════════
+let audioCtx = null, windGain, windFilter, engineGains = [], cloudGain, cloudFilter;
+
+function initAudio() {
+  if (audioCtx) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const windBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate);
+    const windData = windBuf.getChannelData(0);
+    for (let i = 0; i < windData.length; i++) windData[i] = Math.random() * 2 - 1;
+    const windSrc = audioCtx.createBufferSource();
+    windSrc.buffer = windBuf; windSrc.loop = true;
+    windFilter = audioCtx.createBiquadFilter();
+    windFilter.type = 'lowpass'; windFilter.frequency.value = 600;
+    windGain = audioCtx.createGain(); windGain.gain.value = 0;
+    windSrc.connect(windFilter); windFilter.connect(windGain); windGain.connect(audioCtx.destination);
+    windSrc.start();
+    const engineMaster = audioCtx.createGain(); engineMaster.gain.value = 0;
+    engineMaster.connect(audioCtx.destination);
+    const freqs = [55, 110, 220, 330];
+    for (const f of freqs) {
+      const osc = audioCtx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.value = f;
+      const g = audioCtx.createGain(); g.gain.value = 0.02;
+      osc.connect(g); g.connect(engineMaster);
+      osc.start();
+      engineGains.push(g);
+    }
+    const delay = audioCtx.createDelay(0.05); delay.delayTime.value = 0.018;
+    const fb = audioCtx.createGain(); fb.gain.value = 0.3;
+    engineMaster.connect(delay); delay.connect(fb); fb.connect(delay); fb.connect(audioCtx.destination);
+    engineGains.push(engineMaster);
+    const cBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate);
+    const cData = cBuf.getChannelData(0);
+    for (let i = 0; i < cData.length; i++) cData[i] = Math.random() * 2 - 1;
+    const cSrc = audioCtx.createBufferSource(); cSrc.buffer = cBuf; cSrc.loop = true;
+    cloudFilter = audioCtx.createBiquadFilter(); cloudFilter.type = 'bandpass'; cloudFilter.frequency.value = 500; cloudFilter.Q.value = 2;
+    cloudGain = audioCtx.createGain(); cloudGain.gain.value = 0;
+    cSrc.connect(cloudFilter); cloudFilter.connect(cloudGain); cloudGain.connect(audioCtx.destination);
+    cSrc.start();
+    addLog('音效系统已启动', 'info');
+  } catch(e) { console.warn('音频初始化失败:', e); }
+}
+
+function updateAudio() {
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime;
+  if (windFilter) { windFilter.frequency.setTargetAtTime(500 + flight.spd * 40 + Math.sin(t*0.3)*100, t, 0.1); }
+  if (windGain) { windGain.gain.setTargetAtTime(0.03 + flight.spd * 0.006, t, 0.2); }
+  const rpmFrac = flight.propRPM / 2800;
+  engineGains.forEach((g, i) => {
+    if (i < 4) { g.gain.setTargetAtTime(rpmFrac * 0.025, t, 0.3); }
+    else { g.gain.setTargetAtTime(rpmFrac * 0.06, t, 0.3); }
+  });
+  if (cloudGain) { cloudGain.gain.setTargetAtTime(flight.cloudDensity * 0.15, t, 0.3); }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  键盘输入 + 首次交互初始化音频
+// ═══════════════════════════════════════════════════════════════
+window.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  initAudio();
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (flight.phase === 'GROUNDED') { flight.phase = 'TAKEOFF'; flight.propRPM = 1500; addLog('手动起飞！','info'); setPhase('起飞','爬升中...'); }
+  }
+  if (e.code === 'Digit1') camMode = 1;
+  if (e.code === 'Digit2') camMode = 2;
+  if (e.code === 'Digit3') camMode = 3;
+});
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+document.addEventListener('click', initAudio, { once: true });
+
+// ═══════════════════════════════════════════════════════════════
+//  围栏系统
+// ═══════════════════════════════════════════════════════════════
+
+// 围栏数据定义
+const geofences = [
+  {
+    id: 'GF01', name: '圆形围栏 1', type: 'circle',
+    cx: 100, cz: -80, radius: 80,
+    minAlt: 0, maxAlt: 300, buffer: 15,
+    mesh: null
+  },
+  {
+    id: 'GF02', name: '圆形围栏 2', type: 'circle',
+    cx: -150, cz: 150, radius: 100,
+    minAlt: 0, maxAlt: 300, buffer: 20,
+    mesh: null
+  },
+  {
+    id: 'GF03', name: '多边形围栏', type: 'polygon',
+    vertices: [[-180,-120],[220,-100],[200,180],[-160,160]],
+    minAlt: 0, maxAlt: 250,
+    mesh: null
+  }
+];
+
+// 围栏状态追踪
+const gfState = {};
+geofences.forEach(g => { gfState[g.id] = 'safe'; });
+
+// 围栏3D可视化材质缓存
+const gfMaterials = {};
+
+function createGfMaterial(name, baseColor) {
+  if (!gfMaterials[name]) {
+    gfMaterials[name] = new THREE.MeshBasicMaterial({
+      color: baseColor, transparent: true, opacity: 0.12,
+      side: THREE.DoubleSide, depthWrite: false
+    });
+  }
+  return gfMaterials[name].clone();
+}
+
+function updateGfMaterial(mesh, color, opacity) {
+  mesh.traverse(child => {
+    if (child.isMesh && child.material.isMeshBasicMaterial) {
+      child.material.color.set(color);
+      child.material.opacity = opacity;
+    }
+  });
+}
+
+// 创建圆形围栏圆柱体（半透明）
+function createCircleFence(gf) {
+  if (_fallback2D) return;
+  const h = gf.maxAlt - gf.minAlt;
+  const midY = (gf.maxAlt + gf.minAlt) / 2;
+  const geo = new THREE.CylinderGeometry(gf.radius + gf.buffer, gf.radius + gf.buffer, h, 64);
+  const mat = new THREE.MeshBasicMaterial({
+    color: 0x3388ff, transparent: true, opacity: 0.12,
+    side: THREE.DoubleSide, depthWrite: false
+  });
+  const cyl = new THREE.Mesh(geo, mat);
+  cyl.position.set(gf.cx, midY, gf.cz);
+  cyl.name = 'gf-' + gf.id + '-buffer';
+
+  // 顶面/底面 光环
+  const ringGeo = new THREE.TorusGeometry(gf.radius + gf.buffer, 0.8, 16, 80);
+  const ringMat = new THREE.MeshBasicMaterial({ color: 0x3388ff, transparent: true, opacity: 0.6, depthWrite: false });
+  const topRing = new THREE.Mesh(ringGeo, ringMat);
+  topRing.rotation.x = Math.PI / 2;
+  topRing.position.set(gf.cx, gf.maxAlt, gf.cz);
+  const btmRing = new THREE.Mesh(ringGeo, ringMat.clone());
+  btmRing.rotation.x = Math.PI / 2;
+  btmRing.position.set(gf.cx, gf.minAlt, gf.cz);
+
+  const group = new THREE.Group();
+  group.add(cyl); group.add(topRing); group.add(btmRing);
+  group.name = 'gf-group-' + gf.id;
+  scene.add(group);
+  gf.mesh = group;
+}
+
+// 创建多边形围栏棱柱
+function createPolygonFence(gf) {
+  if (_fallback2D) return;
+  const verts = gf.vertices;
+  const h = gf.maxAlt - gf.minAlt;
+  const midY = (gf.maxAlt + gf.minAlt) / 2;
+  const shape = new THREE.Shape();
+  shape.moveTo(verts[0][0], verts[0][1]);
+  for (let i = 1; i < verts.length; i++) shape.lineTo(verts[i][0], verts[i][1]);
+  shape.closePath();
+
+  const extrudeSettings = { steps: 1, depth: h, bevelEnabled: false };
+  const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+  // ExtrudeGeometry 默认沿 z 轴，需要调整
+  // 先变换到正确位置和方向
+  geo.translate(0, 0, -h/2);
+  geo.rotateX(-Math.PI / 2);
+  geo.translate(0, midY, 0);
+
+  const mat = new THREE.MeshBasicMaterial({
+    color: 0x3388ff, transparent: true, opacity: 0.12,
+    side: THREE.DoubleSide, depthWrite: false
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.name = 'gf-' + gf.id;
+
+  // 顶面+底面边框线
+  const pts3DTop = verts.map(v => new THREE.Vector3(v[0], gf.maxAlt, v[1]));
+  const pts3DBtm = verts.map(v => new THREE.Vector3(v[0], gf.minAlt, v[1]));
+  pts3DTop.push(pts3DTop[0].clone());
+  pts3DBtm.push(pts3DBtm[0].clone());
+
+  const lineGeoTop = new THREE.BufferGeometry().setFromPoints(pts3DTop);
+  const lineGeoBtm = new THREE.BufferGeometry().setFromPoints(pts3DBtm);
+
+  const lineMat = new THREE.LineBasicMaterial({ color: 0x3388ff, transparent: true, opacity: 0.6, depthTest: true });
+
+  const group = new THREE.Group();
+  group.add(mesh);
+  group.add(new THREE.Line(lineGeoTop, lineMat.clone()));
+  group.add(new THREE.Line(lineGeoBtm, lineMat.clone()));
+  group.name = 'gf-group-' + gf.id;
+  scene.add(group);
+  gf.mesh = group;
+}
+
+// 创建所有围栏可视化
+function createAllGeofences() {
+  if (_fallback2D) return;
+  geofences.forEach(gf => {
+    if (gf.type === 'circle') createCircleFence(gf);
+    else if (gf.type === 'polygon') createPolygonFence(gf);
+  });
+}
+
+// 围栏检测：点是否在圆形内
+function pointInCircle(px, pz, cx, cz, r) {
+  const dx = px - cx, dz = pz - cz;
+  return Math.sqrt(dx*dx + dz*dz) <= r;
+}
+
+// 围栏检测：点是否在多边形内（射线法）
+function pointInPolygon(px, pz, vertices) {
+  let inside = false;
+  const n = vertices.length;
+  for (let i = 0, j = n - 1; i < n; j = i++) {
+    const xi = vertices[i][0], zi = vertices[i][1];
+    const xj = vertices[j][0], zj = vertices[j][1];
+    if ((zi > pz) !== (zj > pz) && px < (xj - xi) * (pz - zi) / (zj - zi) + xi) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+// 检查飞行器与围栏的关系
+function checkGeofence(gf, fx, fz, falt) {
+  if (falt < gf.minAlt || falt > gf.maxAlt) return 'safe'; // 高度不在范围内视为安全
+
+  let inside = false;
+  if (gf.type === 'circle') {
+    inside = pointInCircle(fx, fz, gf.cx, gf.cz, gf.radius + gf.buffer);
+  } else if (gf.type === 'polygon') {
+    inside = pointInPolygon(fx, fz, gf.vertices);
+  }
+
+  if (!inside) return 'safe';
+
+  // 在缓冲区内，检测是否在内圈
+  if (gf.type === 'circle') {
+    if (pointInCircle(fx, fz, gf.cx, gf.cz, gf.radius)) return 'violate';
+  } else if (gf.type === 'polygon') {
+    // 多边形无独立缓冲区概念，直接违规
+    return 'violate';
+  }
+
+  return 'warn'; // 在缓冲区但不在核心区
+}
+
+// 更新围栏3D颜色
+function updateGeofenceColors() {
+  if (_fallback2D) return;
+  geofences.forEach(gf => {
+    if (!gf.mesh) return;
+    const st = gfState[gf.id];
+    let color, opacity;
+    if (st === 'safe') { color = 0x3388ff; opacity = 0.12; }
+    else if (st === 'warn') { color = 0xffdd00; opacity = 0.35; }
+    else { color = 0xff3355; opacity = 0.45; }
+    updateGfMaterial(gf.mesh, color, opacity);
+  });
+}
+
+// 更新右侧围栏面板
+function updateGfPanel() {
+  const el = document.getElementById('gf-list');
+  if (!el) return;
+  el.innerHTML = '';
+  geofences.forEach(gf => {
+    const st = gfState[gf.id];
+    let cls = 'safe', txt = '安全';
+    if (st === 'warn') { cls = 'warn'; txt = '⚠ 预警'; }
+    else if (st === 'violate') { cls = 'violate'; txt = '✕ 违规'; }
+    el.innerHTML += `<div class="gf-row"><span class="gf-name">${gf.name}</span><span class="gf-status ${cls}">${txt}</span></div>`;
+  });
+}
+
+// 添加违规日志条目
+function addViolationLog(msg, type) {
+  const el = document.getElementById('vl-entries');
+  if (!el) return;
+  const d = document.createElement('div');
+  d.className = 'vl-entry ' + type;
+  const n = new Date();
+  d.textContent = `[${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}] ${msg}`;
+  el.prepend(d);
+  if (el.children.length > 30) el.removeChild(el.lastChild);
+}
+
+// 围栏检测主函数（每帧调用）
+function checkAllGeofences() {
+  const fx = flight.x, fz = flight.z, falt = flight.alt;
+  geofences.forEach(gf => {
+    const newState = checkGeofence(gf, fx, fz, falt);
+    const oldState = gfState[gf.id];
+
+    if (newState !== oldState) {
+      gfState[gf.id] = newState;
+      if (newState === 'warn') {
+        addViolationLog(`${gf.name}: 进入缓冲区预警 (X=${fx.toFixed(0)} Z=${fz.toFixed(0)} ALT=${falt.toFixed(0)}m)`, 'enter');
+        addLog(`${gf.name}: 缓冲区预警`, 'warn');
+      } else if (newState === 'violate') {
+        addViolationLog(`${gf.name}: ⚠ 围栏违规！(X=${fx.toFixed(0)} Z=${fz.toFixed(0)} ALT=${falt.toFixed(0)}m)`, 'violate');
+        addLog(`${gf.name}: 围栏违规！`, 'warn');
+      } else { // safe
+        addViolationLog(`${gf.name}: 退出 → 安全 (X=${fx.toFixed(0)} Z=${fz.toFixed(0)} ALT=${falt.toFixed(0)}m)`, 'exit');
+      }
+    }
+  });
+
+  updateGeofenceColors();
+  updateGfPanel();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  飞行演示系统
+// ═══════════════════════════════════════════════════════════════
+
+// 演示航点（故意穿越围栏触发违规）
+const DEMO_WAYPOINTS = [
+  { x: 0,   z: 0,   alt: 30,  label: '起飞' },
+  { x: 120, z: -40, alt: 120, label: '穿越 GF01' },
+  { x: -80, z: 160, alt: 180, label: '穿越 GF02' },
+  { x: 200, z: 50,  alt: 90,  label: '穿越 GF03' },
+  { x: 50,  z: 20,  alt: 20,  label: '降落' }
+];
+
+let demoState = {
+  active: false,
+  paused: false,
+  waypointIdx: 0,
+  progress: 0,       // 当前段内进度 0~1
+  pathDistances: [],  // 每段距离
+  totalDistance: 0,
+  startTime: 0,
+  pauseTime: 0,
+  cruiseSpeed: 22     // 演示速度 m/s
+};
+
+// 计算路径距离
+function computePathDistances() {
+  const dists = [];
+  let total = 0;
+  for (let i = 0; i < DEMO_WAYPOINTS.length - 1; i++) {
+    const a = DEMO_WAYPOINTS[i], b = DEMO_WAYPOINTS[i+1];
+    const d = Math.sqrt((b.x-a.x)**2 + (b.z-a.z)**2);
+    dists.push(d);
+    total += d;
+  }
+  demoState.pathDistances = dists;
+  demoState.totalDistance = total;
+}
+
+// 根据进度获取路径上的位置
+function getPositionOnPath(progress, wpIdx) {
+  const from = DEMO_WAYPOINTS[wpIdx];
+  const to = DEMO_WAYPOINTS[Math.min(wpIdx + 1, DEMO_WAYPOINTS.length - 1)];
+  const t = Math.max(0, Math.min(1, progress));
+  return {
+    x: from.x + (to.x - from.x) * t,
+    z: from.z + (to.z - from.z) * t,
+    alt: from.alt + (to.alt - from.alt) * t
+  };
+}
+
+// 开始演示
+function startDemo() {
+  initAudio();
+  if (demoState.active && !demoState.paused) return;
+
+  if (!demoState.active) {
+    demoState.active = true;
+    demoState.paused = false;
+    demoState.waypointIdx = 0;
+    demoState.progress = 0;
+    demoState.startTime = performance.now();
+    computePathDistances();
+
+    flight.isAuto = false;
+    flight.phase = 'FLIGHT';
+    flight.propRPM = 2200;
+
+    const wp0 = DEMO_WAYPOINTS[0];
+    flight.x = wp0.x;
+    flight.z = wp0.z;
+    flight.alt = wp0.alt;
+
+    setPhase('飞行演示', '航点 1/' + (DEMO_WAYPOINTS.length));
+    addLog('围栏飞行演示启动', 'info');
+    addLog('将穿越3个围栏区域演示检测功能', 'info');
+
+    // 初始化围栏状态
+    geofences.forEach(g => { gfState[g.id] = 'safe'; });
+    document.getElementById('vl-entries').innerHTML = '';
+  } else if (demoState.paused) {
+    resumeDemo();
+    return;
+  }
+
+  document.getElementById('btn-mission').style.display = 'none';
+  document.getElementById('demo-ctrls').style.display = 'block';
+  document.getElementById('btn-pause').textContent = '\u275A\u275A 暂停演示';
+  document.getElementById('mission-status').textContent = '演示进行中...';
+}
+
+// 暂停演示
+function togglePause() {
+  if (!demoState.active) return;
+  if (demoState.paused) {
+    resumeDemo();
+  } else {
+    demoState.paused = true;
+    demoState.pauseTime = performance.now();
+    document.getElementById('btn-pause').textContent = '\u25B6 继续演示';
+    document.getElementById('mission-status').textContent = '已暂停';
+    setPhase('暂停', '点击继续');
+    addLog('飞行演示已暂停', 'info');
+  }
+}
+
+function resumeDemo() {
+  demoState.paused = false;
+  demoState.startTime += (performance.now() - demoState.pauseTime);
+  document.getElementById('btn-pause').textContent = '\u275A\u275A 暂停演示';
+  document.getElementById('mission-status').textContent = '演示进行中...';
+  setPhase('飞行演示', '航点 ' + (demoState.waypointIdx + 1) + '/' + DEMO_WAYPOINTS.length);
+  addLog('飞行演示继续', 'info');
+}
+
+// 停止演示
+function stopDemo() {
+  demoState.active = false;
+  demoState.paused = false;
+  demoState.waypointIdx = 0;
+  demoState.progress = 0;
+
+  flight.spd = 0;
+  flight.vs = 0;
+  flight.propRPM = 0;
+  flight.phase = 'GROUNDED';
+  flight.isAuto = false;
+
+  // 重置围栏状态
+  geofences.forEach(g => { gfState[g.id] = 'safe'; });
+  updateGeofenceColors();
+  updateGfPanel();
+  document.getElementById('vl-entries').innerHTML = '';
+
+  document.getElementById('btn-mission').style.display = 'block';
+  document.getElementById('demo-ctrls').style.display = 'none';
+  document.getElementById('mission-status').textContent = '点击开始围栏演示';
+  setPhase('待机', '点击"开始飞行演示"');
+  addLog('飞行演示已停止', 'info');
+
+  // 回到起点
+  flight.x = 0; flight.z = 0; flight.alt = 2;
+}
+
+// 演示循环
+function updateDemo(dt) {
+  if (!demoState.active || demoState.paused) return;
+
+  // 检查是否完成所有航点
+  if (demoState.waypointIdx >= DEMO_WAYPOINTS.length - 1) {
+    // 已到最后一段，降落
+    const wp = DEMO_WAYPOINTS[DEMO_WAYPOINTS.length - 1];
+    const dx = wp.x - flight.x, dz = wp.z - flight.z;
+    const dist = Math.sqrt(dx*dx + dz*dz);
+    if (dist < 3 && flight.alt < 5) {
+      demoState.active = false;
+      flight.alt = getTerrainY(flight.x, flight.z) + 0.5;
+      flight.spd = 0; flight.vs = 0; flight.propRPM = 0;
+      flight.phase = 'GROUNDED';
+      setPhase('降落完成', '围栏演示结束');
+      addLog('围栏演示完成！', 'info');
+      document.getElementById('btn-mission').style.display = 'block';
+      document.getElementById('demo-ctrls').style.display = 'none';
+      document.getElementById('mission-status').textContent = '演示完成，点击重新开始';
+      return;
+    }
+  }
+
+  // 到达当前航点 → 进入下一段
+  if (demoState.progress >= 1.0) {
+    demoState.waypointIdx++;
+    demoState.progress = 0;
+    if (demoState.waypointIdx >= DEMO_WAYPOINTS.length - 1) {
+      // 开始降落段
+      setPhase('降落', '围栏演示结束中...');
+      addLog('进入降落阶段', 'info');
+    } else {
+      setPhase('飞行演示', '航点 ' + (demoState.waypointIdx + 1) + '/' + DEMO_WAYPOINTS.length);
+      addLog('到达航点 ' + DEMO_WAYPOINTS[demoState.waypointIdx].label, 'info');
+    }
+    return;
+  }
+
+  const wpIdx = demoState.waypointIdx;
+  const segDist = demoState.pathDistances[wpIdx] || 50;
+  const speed = demoState.cruiseSpeed;
+
+  // 进度推进
+  demoState.progress += (speed * dt) / segDist;
+
+  // 计算当前位置
+  const pos = getPositionOnPath(demoState.progress, wpIdx);
+
+  // 平滑移动到目标位置
+  const lerpF = 0.5;
+  flight.x += (pos.x - flight.x) * lerpF * dt * 8;
+  flight.z += (pos.z - flight.z) * lerpF * dt * 8;
+  flight.alt += (pos.alt - flight.alt) * lerpF * dt * 8;
+
+  // 航向计算
+  const dx = pos.x - flight.x, dz = pos.z - flight.z;
+  if (Math.abs(dx) > 0.1 || Math.abs(dz) > 0.1) {
+    const tHdg = (Math.atan2(dx, -dz) * 180 / Math.PI + 360) % 360;
+    let diff = tHdg - flight.hdg;
+    if (diff > 180) diff -= 360; if (diff < -180) diff += 360;
+    flight.hdg = (flight.hdg + diff * 4 * dt + 360) % 360;
+  }
+
+  flight.spd = speed;
+  flight.vs = (pos.alt - flight.alt) * 1.5;
+  flight.propRPM = Math.min(2800, 1800 + Math.abs(flight.vs) * 80);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  飞行物理（保留原v13逻辑）
+// ═══════════════════════════════════════════════════════════════
+function updateFlight(dt) {
+  // 演示模式
+  if (demoState.active) {
+    updateDemo(dt);
+  }
+
+  const groundY = getTerrainY(flight.x, flight.z);
+
+  // 自动任务（保留原v13任务）
+  if (flight.isAuto) updateAutoMission(dt);
+
+  // 手动控制
+  if (!flight.isAuto && !demoState.active && (flight.phase === 'HOVER' || flight.phase === 'FLIGHT')) {
+    const rad = flight.hdg * Math.PI / 180;
+    if (keys['KeyW']) { flight.x += Math.sin(rad)*DRONE_SPEED*dt; flight.z -= Math.cos(rad)*DRONE_SPEED*dt; flight.spd = DRONE_SPEED; }
+    else if (keys['KeyS']) { flight.x -= Math.sin(rad)*DRONE_SPEED*0.5*dt; flight.z += Math.cos(rad)*DRONE_SPEED*0.5*dt; flight.spd = DRONE_SPEED*0.5; }
+    else { flight.spd *= Math.max(0, 1-3*dt); }
+    if (keys['KeyA']) flight.hdg = (flight.hdg - DRONE_TURN*dt + 360) % 360;
+    if (keys['KeyD']) flight.hdg = (flight.hdg + DRONE_TURN*dt + 360) % 360;
+    if (keys['KeyQ']) { flight.vs = DRONE_VS_UP; flight.alt += flight.vs*dt; }
+    else if (keys['KeyE']) { flight.vs = -DRONE_VS_DN; flight.alt += flight.vs*dt; }
+    else { flight.vs *= Math.max(0, 1-5*dt); }
+  }
+
+  // 起飞
+  if (flight.phase === 'TAKEOFF') {
+    flight.alt += DRONE_VS_UP * dt; flight.vs = DRONE_VS_UP;
+    flight.propRPM = Math.min(flight.propRPM + 800*dt, 2800);
+    if (flight.alt >= TAKEOFF_ALT) { flight.alt = TAKEOFF_ALT; flight.phase = 'HOVER'; flight.vs = 0; setPhase('悬停','WASD移动 Q/E升降'); addLog('到达起飞高度','info'); }
+  }
+
+  // 安全限制
+  if (flight.alt < groundY + 0.5) { flight.alt = groundY + 0.5; if (flight.vs < 0) flight.vs = 0; if (flight.phase === 'LANDING') { flight.phase = 'GROUNDED'; flight.propRPM = 0; flight.spd = 0; flight.vs = 0; flight.isAuto = false; setPhase('待机','按 [空格] 起飞'); addLog('着陆完成','info'); document.getElementById('btn-mission').disabled = false; document.getElementById('mission-status').textContent = '点击开始'; } }
+  if (flight.alt > MAX_ALT) { flight.alt = MAX_ALT; if (flight.vs > 0) flight.vs = 0; }
+
+  // 3D模型位置
+  if (!_fallback2D) {
+    drone.position.set(flight.x, flight.alt, flight.z);
+    drone.rotation.y = flight.hdg * Math.PI / 180;
+    if (flight.propRPM > 0) drone.traverse(o => { if (o.userData.isProp) o.rotation.x += dt * flight.propRPM * 0.001; });
+  }
+
+  if (flight.phase === 'HOVER' && flight.spd > 1) flight.phase = 'FLIGHT';
+  if (flight.phase === 'FLIGHT' && flight.spd < 0.5) flight.phase = 'HOVER';
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  自动任务（保留原v13）
+// ═══════════════════════════════════════════════════════════════
+const MISSION = [
+  { cmd:'takeoff', alt:80 }, { cmd:'goto', x:300, z:-200, alt:120 },
+  { cmd:'goto', x:-150, z:-400, alt:160 }, { cmd:'goto', x:-300, z:100, alt:140 },
+  { cmd:'goto', x:0, z:0, alt:100 }, { cmd:'land' },
+];
+function startAutoMission() {
+  if (flight.isAuto) return;
+  if (demoState.active) { stopDemo(); }
+  flight.isAuto = true; flight.autoIdx = 0; flight.phase = 'TAKEOFF'; flight.propRPM = 1500;
+  addLog('自动任务启动','info'); setPhase('起飞','自动任务进行中');
+  document.getElementById('btn-mission').disabled = true;
+  document.getElementById('mission-status').textContent = '任务执行中...';
+}
+
+function updateAutoMission(dt) {
+  if (flight.autoIdx >= MISSION.length) { flight.isAuto = false; return; }
+  const step = MISSION[flight.autoIdx];
+  if (step.cmd === 'takeoff') {
+    flight.alt += DRONE_VS_UP*dt; flight.vs = DRONE_VS_UP; flight.propRPM = Math.min(flight.propRPM+800*dt, 2800);
+    if (flight.alt >= step.alt) { flight.alt = step.alt; flight.phase = 'HOVER'; flight.vs = 0; flight.autoIdx++; setPhase('巡航','航点 '+flight.autoIdx+'/'+MISSION.length); addLog('到达巡航高度 '+step.alt+'m','info'); }
+  } else if (step.cmd === 'goto') {
+    const dx=step.x-flight.x, dz=step.z-flight.z, dist=Math.sqrt(dx*dx+dz*dz);
+    const tHdg = (Math.atan2(dx,-dz)*180/Math.PI+360)%360;
+    let diff = tHdg - flight.hdg; if (diff>180) diff-=360; if (diff<-180) diff+=360;
+    flight.hdg = (flight.hdg + diff*3*dt + 360)%360;
+    const spd = Math.min(DRONE_SPEED, dist*0.5+2); flight.spd = spd;
+    const rad = flight.hdg*Math.PI/180;
+    flight.x += Math.sin(rad)*spd*dt; flight.z -= Math.cos(rad)*spd*dt;
+    flight.vs = Math.max(-DRONE_VS_DN, Math.min(DRONE_VS_UP, (step.alt-flight.alt)*0.5));
+    flight.alt += flight.vs*dt; flight.propRPM = 2400;
+    if (dist < 15) { flight.autoIdx++; addLog('到达航点 '+flight.autoIdx,'info'); if (flight.autoIdx<MISSION.length) setPhase('巡航','航点 '+flight.autoIdx+'/'+MISSION.length); }
+  } else if (step.cmd === 'land') {
+    flight.vs = -DRONE_VS_DN*0.6; flight.alt += flight.vs*dt; flight.spd *= Math.max(0,1-dt); flight.propRPM = Math.max(800,flight.propRPM-200*dt); flight.phase = 'LANDING'; setPhase('降落','自动降落中...');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  穿云检测 + 效果
+// ═══════════════════════════════════════════════════════════════
+function updateCloudEffects(dt, now) {
+  const boundary = TERRAIN_SIZE * 0.4;
+  for (const c of clouds) {
+    c.position.x += c.userData.driftX * dt;
+    c.position.z += c.userData.driftZ * dt;
+    if (c.position.x > boundary) c.position.x = -boundary;
+    if (c.position.x < -boundary) c.position.x = boundary;
+    if (c.position.z > boundary) c.position.z = -boundary;
+    if (c.position.z < -boundary) c.position.z = boundary;
+  }
+
+  let density = 0;
+  for (const c of clouds) {
+    const dx = flight.x - c.position.x, dy = flight.alt - c.position.y, dz = flight.z - c.position.z;
+    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+    const r = c.userData.radius;
+    if (dist < r) density += (1 - dist/r) * 0.8;
+  }
+  flight.cloudDensity = Math.min(1, density);
+
+  if (scene.fog) {
+    const targetDensity = 0.00008 + flight.cloudDensity * 0.015;
+    scene.fog.density += (targetDensity - scene.fog.density) * 3 * dt;
+  }
+
+  const cloudOverlay = document.getElementById('through-cloud');
+  if (cloudOverlay) cloudOverlay.style.opacity = flight.cloudDensity * 0.8;
+
+  if (sunLight) {
+    sunLight.intensity += ((1.8 - flight.cloudDensity * 1.3) - sunLight.intensity) * 2 * dt;
+    ambLight.intensity += ((0.6 + flight.cloudDensity * 0.5) - ambLight.intensity) * 2 * dt;
+    ambLight.color.setRGB(0.27 + flight.cloudDensity*0.2, 0.40 + flight.cloudDensity*0.15, 0.53 + flight.cloudDensity*0.2);
+  }
+
+  for (const p of cloudParticles) {
+    if (flight.cloudDensity > 0.1) {
+      p.sprite.visible = true;
+      p.sprite.material.opacity = flight.cloudDensity * 0.4;
+      p.life += dt * 0.5;
+      if (p.life > 1) p.life = 0;
+      p.sprite.position.set(
+        camera.position.x + Math.sin(p.life*6.28+p.vx)*15,
+        camera.position.y + Math.sin(p.life*3+p.vy)*5,
+        camera.position.z + Math.cos(p.life*6.28+p.vz)*15
+      );
+    } else {
+      p.sprite.visible = false;
+    }
+  }
+
+  const hud = document.getElementById('hud');
+  if (hud) {
+    if (flight.cloudDensity > 0.3) hud.classList.add('hud-fog');
+    else hud.classList.remove('hud-fog');
+  }
+
+  const cs = document.getElementById('cloud-status');
+  if (cs) {
+    if (flight.cloudDensity < 0.05) cs.innerHTML = '&#9728; 晴朗';
+    else if (flight.cloudDensity < 0.3) cs.innerHTML = '&#9729; 薄云';
+    else if (flight.cloudDensity < 0.6) cs.innerHTML = '&#9729; 浓云 · 能见度低';
+    else cs.innerHTML = '&#9729; 穿云中 · 白化';
+  }
+
+  const water = scene.getObjectByName('water');
+  if (water) water.position.y = 0.3 + Math.sin(now * 0.001) * 0.15;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  相机
+// ═══════════════════════════════════════════════════════════════
+let camMode = 1;
+const camOff = { 1:{x:0,y:14,z:-32}, 2:{x:0,y:80,z:-5}, 3:{x:0,y:300,z:-100} };
+function updateCamera() {
+  const o = camOff[camMode];
+  camera.position.x += (flight.x+o.x - camera.position.x)*0.05;
+  camera.position.y += (flight.alt+o.y - camera.position.y)*0.05;
+  camera.position.z += (flight.z+o.z - camera.position.z)*0.05;
+  camera.lookAt(flight.x, flight.alt, flight.z);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  HUD
+// ═══════════════════════════════════════════════════════════════
+function updateHUD() {
+  const groundY = getTerrainY(flight.x, flight.z);
+  const agl = Math.max(0, flight.alt - groundY);
+  document.getElementById('tv-alt').textContent = flight.alt.toFixed(1);
+  document.getElementById('tv-spd').textContent = flight.spd.toFixed(1);
+  document.getElementById('tv-hdg').textContent = String(Math.round(flight.hdg)).padStart(3,'0');
+  document.getElementById('tv-agl').textContent = agl.toFixed(1);
+  document.getElementById('tv-xz').textContent = flight.x.toFixed(0) + ',' + flight.z.toFixed(0);
+  document.getElementById('sm-spd').textContent = flight.spd.toFixed(1);
+  const vsEl = document.getElementById('tv-vs');
+  vsEl.textContent = (flight.vs>=0?'+':'') + flight.vs.toFixed(1);
+  vsEl.style.color = flight.vs>0.5?'#00ff88':flight.vs<-0.5?'#ffaa00':'#00d4ff';
+  document.getElementById('altbar-fill').style.height = Math.min(agl/MAX_ALT*100,100)+'%';
+  const motorEl = document.getElementById('sd-motor');
+  if (motorEl && flight.propRPM>100) motorEl.classList.add('on');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  辅助
+// ═══════════════════════════════════════════════════════════════
+function addLog(msg, type) {
+  const el = document.getElementById('log-entries'); if (!el) return;
+  const d = document.createElement('div'); d.className = 'le'+(type==='warn'?' warn':'');
+  const n = new Date(); d.textContent = `[${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}] ${msg}`;
+  el.prepend(d); if (el.children.length > 20) el.removeChild(el.lastChild);
+}
+function setPhase(t, d) { document.getElementById('phase-text').textContent = t; document.getElementById('phase-desc').textContent = d; }
+
+// ═══════════════════════════════════════════════════════════════
+//  2D降级渲染
+// ═══════════════════════════════════════════════════════════════
+function render2D() {
+  const c = document.getElementById('c'); const ctx = c.getContext('2d'); if (!ctx) return;
+  const W = c.width = innerWidth, H = c.height = innerHeight;
+  const grad = ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'#4a8ab8'); grad.addColorStop(0.5,'#8abed8'); grad.addColorStop(1,'#2a5a3a');
+  ctx.fillStyle = grad; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(0,180,255,0.08)'; ctx.lineWidth=1;
+  const gs=60; for(let x=W/2%gs;x<W;x+=gs){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=H/2%gs;y<H;y+=gs){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  ctx.save(); ctx.translate(W/2,H/2); ctx.rotate(flight.hdg*Math.PI/180);
+  ctx.beginPath();ctx.moveTo(0,-18);ctx.lineTo(-10,10);ctx.lineTo(0,4);ctx.lineTo(10,10);ctx.closePath();
+  ctx.fillStyle='#00ff88';ctx.fill();ctx.strokeStyle='#00ffaa';ctx.lineWidth=2;ctx.stroke();ctx.restore();
+  ctx.fillStyle='#ffaa00';ctx.font='bold 13px monospace';ctx.textAlign='center';
+  ctx.fillText('2D模式 (WebGL不可用)',W/2,28);
+  ctx.fillStyle='#00d4ff';ctx.font='11px monospace';
+  ctx.fillText(`ALT:${flight.alt.toFixed(1)}m  SPD:${flight.spd.toFixed(1)}m/s  HDG:${String(Math.round(flight.hdg)).padStart(3,'0')}°  FPS:${fpsDisplay}`,W/2,48);
+
+  // 2D模式下也画围栏
+  const scale = 1.2;
+  for (const gf of geofences) {
+    const st = gfState[gf.id];
+    ctx.strokeStyle = st === 'violate' ? 'rgba(255,51,85,0.8)' : st === 'warn' ? 'rgba(255,221,0,0.7)' : 'rgba(51,136,255,0.5)';
+    ctx.lineWidth = 2;
+    if (gf.type === 'circle') {
+      ctx.beginPath();
+      ctx.arc(W/2 + gf.cx*scale, H/2 - gf.cz*scale, (gf.radius+gf.buffer)*scale, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.strokeStyle = st === 'violate' ? 'rgba(255,51,85,0.4)' : st === 'warn' ? 'rgba(255,221,0,0.3)' : 'rgba(51,136,255,0.2)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(W/2 + gf.cx*scale, H/2 - gf.cz*scale, gf.radius*scale, 0, Math.PI*2); ctx.stroke();
+    } else if (gf.type === 'polygon') {
+      ctx.beginPath();
+      ctx.moveTo(W/2 + gf.vertices[0][0]*scale, H/2 - gf.vertices[0][1]*scale);
+      for (let i = 1; i < gf.vertices.length; i++) ctx.lineTo(W/2 + gf.vertices[i][0]*scale, H/2 - gf.vertices[i][1]*scale);
+      ctx.closePath(); ctx.stroke();
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  渲染循环
+// ═══════════════════════════════════════════════════════════════
+let lastTime = performance.now(), fpsFrames = 0, fpsTime = 0, fpsDisplay = 0;
+
+function tick() {
+  const now = performance.now();
+  const dt = Math.min((now - lastTime) / 1000, 0.1);
+  lastTime = now;
+  fpsFrames++; if (now - fpsTime >= 1000) { fpsDisplay = fpsFrames; fpsFrames = 0; fpsTime = now; document.getElementById('fps-counter').textContent = 'FPS: ' + fpsDisplay; }
+
+  try { updateFlight(dt); } catch(e) { console.error('flight:', e); }
+  try { checkAllGeofences(); } catch(e) { console.error('geofence:', e); }
+  try { if (!_fallback2D) updateCloudEffects(dt, now); } catch(e) { console.error('cloud:', e); }
+  try { updateCamera(); } catch(e) { console.error('camera:', e); }
+  try { updateHUD(); } catch(e) { console.error('hud:', e); }
+  try { updateAudio(); } catch(e) {}
+
+  if (_fallback2D) { render2D(); }
+  else { try { renderer.render(scene, camera); } catch(e) { _fallback2D = true; } }
+
+  setTimeout(tick, 16);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  resize
+// ═══════════════════════════════════════════════════════════════
+window.addEventListener('resize', () => {
+  try { camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix(); if (renderer && !_fallback2D) renderer.setSize(innerWidth, innerHeight); } catch(e) {}
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  启动
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('prog-fill').style.width = '100%';
+document.getElementById('prog-text').textContent = '就绪！';
+addLog('FlyteOS v1.5 飞行+围栏演示就绪','info');
+addLog('点击"开始飞行演示"体验围栏检测','info');
+addLog('将穿越3个围栏区域演示违规检测','info');
+createAllGeofences();
+updateGeofenceColors();
+updateGfPanel();
+const loadEl = document.getElementById('loading');
+loadEl.style.opacity = '0'; setTimeout(() => { loadEl.style.display = 'none'; }, 600);
+lastTime = performance.now(); fpsTime = lastTime;
+tick();
+</script>
+</body>
+</html>

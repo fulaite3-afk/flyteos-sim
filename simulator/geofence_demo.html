@@ -290,7 +290,16 @@ const sim = {
   violationCount: 0,
   log: [],
   vlog: [],
-  paused: false
+  paused: false,
+  // Demo mode
+  demoMode: false,
+  demoPaused: false,
+  demoProgress: 0,
+  demoPathCoords: [],
+  demoTotalDist: 0,
+  demoAnimId: null,
+  demoLastTs: null,
+  demoPrevViolations: {}
 };
 
 // ======================================================================
@@ -317,14 +326,29 @@ function renderControls() {
   const ct = document.getElementById('controls');
   const s = sim.currentState;
   const st = STATES[s];
-  const btns = [];
 
   function btn(label, target, cls) {
     const ok = st.transitions.includes(target) || target === 'EMERGENCY' || target === 'RESET';
     return `<button class="${cls||''}" ${ok?'':'disabled'} onclick="transitionTo('${target}')">${label}</button>`;
   }
 
+  // Demo buttons
+  let demoBtns = '';
+  if (sim.demoMode) {
+    if (sim.demoPaused) {
+      demoBtns = `<button style="background:rgba(0,230,118,0.12);border-color:var(--green)" onclick="resumeDemo()">继续演示</button>
+                  <button class="danger" onclick="stopDemo()">停止演示</button>`;
+    } else {
+      demoBtns = `<button style="background:rgba(255,215,64,0.12);border-color:var(--yellow)" onclick="pauseDemo()">暂停演示</button>
+                  <button class="danger" onclick="stopDemo()">停止演示</button>`;
+    }
+  } else {
+    demoBtns = `<button style="background:rgba(0,229,255,0.1);border-color:var(--cyan)" onclick="startDemo()">开始飞行演示</button>`;
+  }
+
   ct.innerHTML = `
+    ${demoBtns}
+    <div style="width:100%;height:1px;background:var(--border);margin:4px 0"></div>
     ${btn('ARM', 'ARMED')}
     ${btn('TAKEOFF', 'TAKEOFF')}
     ${btn('LOAD MS', 'MISSION')}
@@ -441,11 +465,20 @@ function renderLog() {
 // --- Telemetry ---
 function renderTelemetry() {
   const p = document.getElementById('telemetryPanel');
+  let extraHtml = '';
+  if (sim.demoMode) {
+    const pct = sim.demoTotalDist > 0 ? (sim.demoProgress / sim.demoTotalDist * 100).toFixed(0) : 0;
+    extraHtml = `
+      <span class="tl">PATH DIST</span><span class="tv">${sim.demoProgress.toFixed(0)} / ${sim.demoTotalDist.toFixed(0)} m</span>
+      <span class="tl">PATH %</span><span class="tv" style="color:var(--yellow)">${pct}%</span>
+    `;
+  }
   p.innerHTML = `
     <span class="tl">LAT</span><span class="tv">${sim.lat.toFixed(6)}</span>
     <span class="tl">LNG</span><span class="tv">${sim.lng.toFixed(6)}</span>
     <span class="tl">ALT</span><span class="tv">${sim.alt.toFixed(1)} m</span>
     <span class="tl">SPD</span><span class="tv">${sim.speed.toFixed(1)} m/s</span>
+    ${extraHtml}
     <span class="tl">ROLL</span><span class="tv">${sim.attitude.roll.toFixed(1)}°</span>
     <span class="tl">PITCH</span><span class="tv">${sim.attitude.pitch.toFixed(1)}°</span>
     <span class="tl">YAW</span><span class="tv">${sim.attitude.yaw.toFixed(1)}°</span>
@@ -516,8 +549,8 @@ function checkGeofences() {
       } else {
         const edgeDist = distToPolygonEdge(sim.lat, sim.lng, gf.coords);
         if (edgeDist <= gf.bufferM) {
-          violated = true;
-          detail = `Buffer breach: ${edgeDist.toFixed(1)}m from edge (buffer=${gf.bufferM}m)`;
+          results[gf.id] = { status: 'warn', detail: `Buffer zone: ${edgeDist.toFixed(1)}m from edge (buffer=${gf.bufferM}m)` };
+          return;
         } else {
           detail = `Outside (${edgeDist.toFixed(0)}m from edge)`;
         }
@@ -532,8 +565,8 @@ function checkGeofences() {
         violated = true;
         detail = `Inside circle (${dist.toFixed(0)}m)${!altOk ? ` + ALT ${sim.alt.toFixed(0)}m violation` : ''}`;
       } else if (dist <= gf.radiusM + gf.bufferM) {
-        violated = true;
-        detail = `Buffer breach: ${dist.toFixed(0)}m (radius=${gf.radiusM}m, buffer=${gf.bufferM}m)`;
+        results[gf.id] = { status: 'warn', detail: `Buffer zone: ${dist.toFixed(0)}m (radius=${gf.radiusM}m, buffer=${gf.bufferM}m)` };
+        return;
       } else {
         detail = `Outside (${dist.toFixed(0)}m from center)`;
       }
@@ -571,8 +604,8 @@ function renderGeoList() {
   const el = document.getElementById('geoList');
   el.innerHTML = geofences.map(gf => {
     const st = sim.geofenceStatuses[gf.id];
-    const statusClass = !gf.enabled ? 'safe' : (st && st.status === 'violation' ? 'violation' : 'safe');
-    const statusText = !gf.enabled ? 'OFF' : (st && st.status === 'violation' ? 'VIOLATION' : 'SAFE');
+    const statusClass = !gf.enabled ? 'safe' : (st && st.status === 'violation' ? 'violation' : (st && st.status === 'warn' ? 'warn' : 'safe'));
+    const statusText = !gf.enabled ? 'OFF' : (st && st.status === 'violation' ? 'VIOLATION' : (st && st.status === 'warn' ? 'WARN' : 'SAFE'));
     const twClass = gf.enabled ? 'active' : '';
     return `
     <div class="geo-item">
@@ -593,6 +626,13 @@ function toggleGeofence(id) {
   const gf = geofences.find(g => g.id === id);
   if (!gf) return;
   gf.enabled = !gf.enabled;
+  // Remove existing layers for this geofence
+  const entry = geoLayers[id];
+  if (entry) {
+    if (entry.main && entry.main.remove) entry.main.remove();
+    if (entry.buffer && entry.buffer.remove) entry.buffer.remove();
+    delete geoLayers[id];
+  }
   updateMapGeofences();
   renderGeoList();
 }
@@ -600,7 +640,7 @@ function toggleGeofence(id) {
 // ======================================================================
 // LEAFLET MAP
 // ======================================================================
-let map, vehicleMarker, waypointMarkers = [], waypointLine, geoLayers = [];
+let map, vehicleMarker, waypointMarkers = [], waypointLine, geoLayers = {}, demoTrailLine = null;
 
 function initMap() {
   map = L.map('map', {
@@ -667,42 +707,70 @@ function drawWaypoints() {
 }
 
 function updateMapGeofences() {
-  geoLayers.forEach(l => l.remove());
-  geoLayers = [];
+  // Remove old layers
+  Object.values(geoLayers).forEach(entry => {
+    if (Array.isArray(entry)) {
+      entry.forEach(l => l.remove());
+    } else if (entry && entry.remove) {
+      entry.remove();
+    }
+  });
+  geoLayers = {};
 
   geofences.forEach(gf => {
     if (!gf.enabled) return;
 
     if (gf.type === 'polygon') {
-      // Main polygon
       const poly = L.polygon(gf.coords, {
         color: '#448aff', weight: 2, fillColor: '#448aff', fillOpacity: 0.08
       }).addTo(map);
       poly.bindPopup(`<b>${gf.name}</b><br>Polygon geofence<br>Alt: ${gf.minAlt}-${gf.maxAlt}m`);
-      geoLayers.push(poly);
 
-      // Buffer (dashed)
       const bufPoly = L.polygon(gf.coords, {
         color: '#ffd740', weight: 1.5, dashArray: '5 5', fill: false, opacity: 0.5
-      });
-      // Approximate buffer by offsetting (simplified: just show dashed outline)
-      geoLayers.push(bufPoly);
-      bufPoly.addTo(map);
+      }).addTo(map);
+
+      geoLayers[gf.id] = { main: poly, buffer: bufPoly };
     }
 
     if (gf.type === 'circle') {
-      // Main circle
       const circle = L.circle(gf.center, {
         radius: gf.radiusM, color: '#ff1744', weight: 2, fillColor: '#ff1744', fillOpacity: 0.08
       }).addTo(map);
       circle.bindPopup(`<b>${gf.name}</b><br>Circle geofence<br>Radius: ${gf.radiusM}m`);
-      geoLayers.push(circle);
 
-      // Buffer circle
       const bufCircle = L.circle(gf.center, {
         radius: gf.radiusM + gf.bufferM, color: '#ffd740', weight: 1.5, dashArray: '5 5', fill: false, opacity: 0.5
       }).addTo(map);
-      geoLayers.push(bufCircle);
+
+      geoLayers[gf.id] = { main: circle, buffer: bufCircle };
+    }
+  });
+}
+
+// Update geofence layer colors based on current status
+function updateGeofenceColors() {
+  geofences.forEach(gf => {
+    const entry = geoLayers[gf.id];
+    if (!entry || !gf.enabled) return;
+
+    const status = sim.geofenceStatuses[gf.id];
+    const s = status ? status.status : 'safe';
+    let mainColor, fillColor;
+
+    if (s === 'violation') {
+      mainColor = '#ff1744';
+      fillColor = '#ff1744';
+    } else if (s === 'warn') {
+      mainColor = '#ffd740';
+      fillColor = '#ffd740';
+    } else {
+      mainColor = gf.type === 'circle' ? '#ff1744' : '#448aff';
+      fillColor = mainColor;
+    }
+
+    if (entry.main.setStyle) {
+      entry.main.setStyle({ color: mainColor, fillColor: fillColor });
     }
   });
 }
@@ -803,6 +871,13 @@ const VIOLATION_COOLDOWN = {}; // prevent duplicate violation logs
 function mainLoop() {
   const dt = 0.5; // 500ms tick
 
+  if (sim.demoMode) {
+    // Demo mode handles its own updates via requestAnimationFrame
+    // Still refresh non-movement displays
+    renderBottomBar();
+    return;
+  }
+
   // Simulate movement
   simulateMission(dt);
   simulateRTL(dt);
@@ -838,6 +913,246 @@ function refreshAll() {
   renderTelemetry();
   renderBottomBar();
   renderGeoList();
+}
+
+// ======================================================================
+// DEMO FLIGHT MODE — smooth animation along waypoints
+// ======================================================================
+
+// Precompute cumulative distances along waypoint path
+function computePathDistances() {
+  const dists = [0];
+  for (let i = 1; i < waypoints.length; i++) {
+    const d = haversine(waypoints[i-1].lat, waypoints[i-1].lng, waypoints[i].lat, waypoints[i].lng);
+    dists.push(dists[i-1] + d);
+  }
+  return dists;
+}
+
+// Get interpolated position at distance 'dist' meters along the path
+function getPositionOnPath(dist) {
+  if (waypoints.length === 1) return { lat: waypoints[0].lat, lng: waypoints[0].lng };
+  const cumDist = computePathDistances();
+  if (dist <= 0) return { lat: waypoints[0].lat, lng: waypoints[0].lng };
+  if (dist >= cumDist[cumDist.length - 1]) return { lat: waypoints[waypoints.length-1].lat, lng: waypoints[waypoints.length-1].lng };
+
+  for (let i = 1; i < cumDist.length; i++) {
+    if (dist <= cumDist[i]) {
+      const segDist = cumDist[i] - cumDist[i-1];
+      const t = segDist > 0 ? (dist - cumDist[i-1]) / segDist : 0;
+      return {
+        lat: waypoints[i-1].lat + (waypoints[i].lat - waypoints[i-1].lat) * t,
+        lng: waypoints[i-1].lng + (waypoints[i].lng - waypoints[i-1].lng) * t
+      };
+    }
+  }
+}
+
+function startDemo() {
+  const cumDist = computePathDistances();
+  sim.demoTotalDist = cumDist[cumDist.length - 1];
+  sim.demoProgress = 0;
+  sim.demoPathCoords = [];
+  sim.demoMode = true;
+  sim.demoPaused = false;
+  sim.demoPrevViolations = {};
+
+  // Reset vehicle to first waypoint
+  sim.lat = waypoints[0].lat;
+  sim.lng = waypoints[0].lng;
+  sim.alt = 120;
+  sim.speed = 15;
+  sim.heading = 0;
+  sim.thrust = 72;
+  sim.turbineRPM = 5800;
+  sim.battery = 100;
+  sim.attitude = { roll: 0, pitch: 0, yaw: 0 };
+  sim.currentState = 'MISSION';
+  sim.missionActive = false;
+  sim.paused = false;
+  sim.startTime = Date.now();
+  sim.violationCount = 0;
+  sim.vlog = [];
+
+  // Clear old trail
+  if (demoTrailLine) { demoTrailLine.remove(); demoTrailLine = null; }
+
+  // Create trail polyline
+  demoTrailLine = L.polyline([], {
+    color: '#00e5ff', weight: 2.5, opacity: 0.7, dashArray: null
+  }).addTo(map);
+
+  updateVehicleOnMap();
+  renderViolationLog();
+  refreshAll();
+
+  const now = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+  addLog(now, 'Demo flight started — following waypoint path', 'info');
+
+  sim.demoLastTs = null;
+  sim.demoAnimId = requestAnimationFrame(demoLoop);
+}
+
+function pauseDemo() {
+  sim.demoPaused = true;
+  sim.demoLastTs = null;
+  if (sim.demoAnimId) { cancelAnimationFrame(sim.demoAnimId); sim.demoAnimId = null; }
+  refreshAll();
+  const now = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+  addLog(now, 'Demo paused', 'info');
+}
+
+function resumeDemo() {
+  sim.demoPaused = false;
+  sim.demoLastTs = null;
+  refreshAll();
+  const now = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+  addLog(now, 'Demo resumed', 'info');
+  sim.demoAnimId = requestAnimationFrame(demoLoop);
+}
+
+function stopDemo() {
+  if (sim.demoAnimId) { cancelAnimationFrame(sim.demoAnimId); sim.demoAnimId = null; }
+  sim.demoMode = false;
+  sim.demoPaused = false;
+  sim.demoProgress = 0;
+  sim.demoPathCoords = [];
+
+  // Remove trail
+  if (demoTrailLine) { demoTrailLine.remove(); demoTrailLine = null; }
+
+  // Reset vehicle
+  sim.lat = HOME_LAT;
+  sim.lng = HOME_LNG;
+  sim.alt = 0;
+  sim.speed = 0;
+  sim.heading = 0;
+  sim.thrust = 0;
+  sim.turbineRPM = 0;
+  sim.battery = 100;
+  sim.attitude = { roll: 0, pitch: 0, yaw: 0 };
+  sim.currentState = 'DISARMED';
+  sim.missionActive = false;
+  sim.paused = false;
+  sim.startTime = null;
+  sim.flightTime = 0;
+
+  updateVehicleOnMap();
+  checkGeofences();
+  updateGeofenceColors();
+  refreshAll();
+
+  const now = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+  addLog(now, 'Demo stopped — vehicle reset to home', 'info');
+}
+
+function demoLoop(timestamp) {
+  if (!sim.demoMode || sim.demoPaused) return;
+
+  if (sim.demoLastTs === null) {
+    sim.demoLastTs = timestamp;
+    sim.demoAnimId = requestAnimationFrame(demoLoop);
+    return;
+  }
+
+  let dt = (timestamp - sim.demoLastTs) / 1000;
+  sim.demoLastTs = timestamp;
+
+  // Clamp dt to avoid huge jumps (e.g. tab was backgrounded)
+  if (dt > 0.2) dt = 0.2;
+
+  // Advance along path
+  sim.demoProgress += sim.speed * dt / 10; // scaled for visual appeal
+
+  // Loop when reaching end
+  if (sim.demoProgress >= sim.demoTotalDist) {
+    sim.demoProgress = 0;
+    sim.demoPathCoords = [];
+    if (demoTrailLine) { demoTrailLine.setLatLngs([]); }
+    const now = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+    addLog(now, 'Demo lap complete — restarting loop', 'info');
+  }
+
+  // Get current position
+  const pos = getPositionOnPath(sim.demoProgress);
+  sim.lat = pos.lat;
+  sim.lng = pos.lng;
+
+  // Compute heading from path direction
+  const nextPos = getPositionOnPath(Math.min(sim.demoProgress + 1, sim.demoTotalDist));
+  sim.heading = Math.atan2(
+    (nextPos.lng - pos.lng) * Math.cos(pos.lat * Math.PI / 180),
+    nextPos.lat - pos.lat
+  ) * 180 / Math.PI;
+  if (sim.heading < 0) sim.heading += 360;
+
+  // Simulated telemetry
+  sim.attitude.roll = (Math.random() - 0.5) * 4;
+  sim.attitude.pitch = (Math.random() - 0.5) * 3;
+  sim.attitude.yaw = sim.heading;
+  sim.battery = Math.max(0, sim.battery - dt * 0.01);
+  sim.thrust = 68 + Math.random() * 8;
+  sim.turbineRPM = 5000 + Math.random() * 1500;
+  sim.alt = 110 + Math.sin(sim.demoProgress * 0.1) * 20;
+
+  // Add trail point (sample every ~2m of movement)
+  sim.demoPathCoords.push([sim.lat, sim.lng]);
+  if (demoTrailLine && sim.demoPathCoords.length % 3 === 0) {
+    demoTrailLine.setLatLngs(sim.demoPathCoords);
+  }
+
+  // Geofence detection with change tracking
+  const prevGf = { ...sim.geofenceStatuses };
+  checkGeofences();
+
+  // Log status changes
+  geofences.forEach(gf => {
+    const prev = prevGf[gf.id];
+    const curr = sim.geofenceStatuses[gf.id];
+    if (!prev || !curr) return;
+
+    const key = gf.id;
+    const prevStatus = prev.status;
+    const currStatus = curr.status;
+    if (prevStatus !== currStatus) {
+      const cooldownKey = key + '_' + currStatus;
+      if (!sim.demoPrevViolations[cooldownKey] || timestamp - sim.demoPrevViolations[cooldownKey] > 2000) {
+        sim.demoPrevViolations[cooldownKey] = timestamp;
+        if (currStatus === 'violation') {
+          addViolationLog(gf.id, curr.detail);
+        } else if (currStatus === 'warn') {
+          const now = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+          sim.vlog.unshift({
+            ts: now,
+            msg: `[${gf.name}] ⚠ ENTER BUFFER: ${curr.detail}`,
+            lat: sim.lat.toFixed(5),
+            lng: sim.lng.toFixed(5)
+          });
+          if (sim.vlog.length > 100) sim.vlog.length = 100;
+          renderViolationLog();
+        } else if (currStatus === 'safe' && (prevStatus === 'violation' || prevStatus === 'warn')) {
+          const now = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+          sim.vlog.unshift({
+            ts: now,
+            msg: `[${gf.name}] ✓ CLEAR: exited zone`,
+            lat: sim.lat.toFixed(5),
+            lng: sim.lng.toFixed(5)
+          });
+          if (sim.vlog.length > 100) sim.vlog.length = 100;
+          renderViolationLog();
+        }
+      }
+    }
+  });
+
+  // Update UI
+  updateVehicleOnMap();
+  updateGeofenceColors();
+  renderTelemetry();
+  renderBottomBar();
+  renderGeoList();
+
+  sim.demoAnimId = requestAnimationFrame(demoLoop);
 }
 
 // ======================================================================
