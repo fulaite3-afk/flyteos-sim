@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FlyteOS Cesium – 3D Flight + Geofence Demo</title>
+<title>FlyteOS Cesium – 3D 飞行 + 围栏演示</title>
 <script src="https://cesium.com/downloads/cesiumjs/releases/1.120/Build/Cesium/Cesium.js"></script>
 <link href="https://cesium.com/downloads/cesiumjs/releases/1.120/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-html,body,#cesiumContainer{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI','Consolas',monospace;background:#000;}
+html,body,#cesiumContainer{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI','Microsoft YaHei','Consolas',monospace;background:#000;}
 
 /* ── HUD Panel ── */
 #hud-panel {
@@ -19,7 +19,7 @@ html,body,#cesiumContainer{width:100%;height:100%;overflow:hidden;font-family:'S
   backdrop-filter:blur(6px); z-index:10;
   box-shadow:0 0 30px rgba(0,100,200,0.15);
 }
-#hud-panel h3 { font-size:13px; letter-spacing:1px; margin-bottom:10px; color:#00ffaa; border-bottom:1px solid rgba(0,180,255,0.2); padding-bottom:6px; text-transform:uppercase; }
+#hud-panel h3 { font-size:14px; letter-spacing:1px; margin-bottom:10px; color:#00ffaa; border-bottom:1px solid rgba(0,180,255,0.2); padding-bottom:6px; }
 .hud-row { display:flex; justify-content:space-between; padding:3px 0; }
 .hud-label { color:rgba(0,200,255,0.6); }
 .hud-val { color:#00ffaa; font-weight:bold; font-size:13px; }
@@ -36,7 +36,7 @@ html,body,#cesiumContainer{width:100%;height:100%;overflow:hidden;font-family:'S
   box-shadow:0 0 30px rgba(0,100,200,0.15);
   max-height:calc(100vh - 100px); overflow-y:auto;
 }
-#gf-panel h3 { font-size:13px; letter-spacing:1px; margin-bottom:10px; color:#00ffaa; border-bottom:1px solid rgba(0,180,255,0.2); padding-bottom:6px; text-transform:uppercase; }
+#gf-panel h3 { font-size:14px; letter-spacing:1px; margin-bottom:10px; color:#00ffaa; border-bottom:1px solid rgba(0,180,255,0.2); padding-bottom:6px; }
 .gf-item { padding:6px 8px; margin:4px 0; border-radius:5px; border:1px solid rgba(0,180,255,0.2); background:rgba(0,30,60,0.5); display:flex; justify-content:space-between; align-items:center; }
 .gf-item.safe { border-color:rgba(0,160,255,0.4); }
 .gf-item.warn { border-color:#ffaa00; background:rgba(255,170,0,0.08); }
@@ -96,48 +96,48 @@ html,body,#cesiumContainer{width:100%;height:100%;overflow:hidden;font-family:'S
 
 <!-- HUD Panel -->
 <div id="hud-panel">
-  <h3>FlyteOS Telemetry</h3>
-  <div class="hud-row"><span class="hud-label">Latitude</span><span class="hud-val" id="tv-lat">37.7700</span></div>
-  <div class="hud-row"><span class="hud-label">Longitude</span><span class="hud-val" id="tv-lng">-122.4100</span></div>
-  <div class="hud-row"><span class="hud-label">Altitude (MSL)</span><span class="hud-val" id="tv-alt">0 m</span></div>
-  <div class="hud-row"><span class="hud-label">Speed</span><span class="hud-val" id="tv-spd">0.0 m/s</span></div>
-  <div class="hud-row"><span class="hud-label">Heading</span><span class="hud-val" id="tv-hdg">0</span></div>
-  <div class="hud-row"><span class="hud-label">Phase</span><span class="hud-val" id="tv-phase">IDLE</span></div>
-  <div class="hud-row"><span class="hud-label">Waypoint</span><span class="hud-val" id="tv-wp">-</span></div>
-  <div class="hud-row"><span class="hud-label">Geofence Status</span><span class="hud-val safe" id="tv-gf">SAFE</span></div>
+  <h3>FLYTEOS 遥测数据</h3>
+  <div class="hud-row"><span class="hud-label">纬度</span><span class="hud-val" id="tv-lat">37.7700</span></div>
+  <div class="hud-row"><span class="hud-label">经度</span><span class="hud-val" id="tv-lng">-122.4100</span></div>
+  <div class="hud-row"><span class="hud-label">高度 (海平面)</span><span class="hud-val" id="tv-alt">0 m</span></div>
+  <div class="hud-row"><span class="hud-label">速度</span><span class="hud-val" id="tv-spd">0.0 m/s</span></div>
+  <div class="hud-row"><span class="hud-label">航向</span><span class="hud-val" id="tv-hdg">0</span></div>
+  <div class="hud-row"><span class="hud-label">阶段</span><span class="hud-val" id="tv-phase">待命</span></div>
+  <div class="hud-row"><span class="hud-label">航点</span><span class="hud-val" id="tv-wp">-</span></div>
+  <div class="hud-row"><span class="hud-label">围栏状态</span><span class="hud-val safe" id="tv-gf">安全</span></div>
 </div>
 
 <!-- Geofence Panel -->
 <div id="gf-panel">
-  <h3>Geofence Status</h3>
+  <h3>围栏状态</h3>
   <div class="gf-item safe" id="gf-item-01">
-    <span>GF01 (Circle)</span>
-    <span class="gf-status safe" id="gf-st-01">SAFE</span>
+    <span>GF01 (圆形)</span>
+    <span class="gf-status safe" id="gf-st-01">安全</span>
   </div>
   <div class="gf-item safe" id="gf-item-02">
-    <span>GF02 (Circle)</span>
-    <span class="gf-status safe" id="gf-st-02">SAFE</span>
+    <span>GF02 (圆形)</span>
+    <span class="gf-status safe" id="gf-st-02">安全</span>
   </div>
   <div class="gf-item safe" id="gf-item-03">
-    <span>GF03 (Polygon)</span>
-    <span class="gf-status safe" id="gf-st-03">SAFE</span>
+    <span>GF03 (多边形)</span>
+    <span class="gf-status safe" id="gf-st-03">安全</span>
   </div>
   <div id="vlog-section">
-    <h4>Violation Events</h4>
+    <h4>违规事件</h4>
     <div id="vlog">
-      <div class="vlog-entry info">[System] Ready. FlyteOS Cesium v1.0</div>
+      <div class="vlog-entry info">[系统] 就绪。FlyteOS Cesium v1.0</div>
     </div>
   </div>
 </div>
 
 <!-- Control Bar -->
 <div id="ctrl-bar">
-  <button class="ctrl-btn primary" id="btn-start" onclick="startDemo()">START DEMO</button>
-  <button class="ctrl-btn" id="btn-pause" onclick="pauseDemo()" style="display:none;">PAUSE</button>
-  <button class="ctrl-btn" id="btn-resume" onclick="resumeDemo()" style="display:none;">RESUME</button>
-  <button class="ctrl-btn danger" id="btn-stop" onclick="stopDemo()" style="display:none;">STOP</button>
+  <button class="ctrl-btn primary" id="btn-start" onclick="startDemo()">开始飞行演示</button>
+  <button class="ctrl-btn" id="btn-pause" onclick="pauseDemo()" style="display:none;">暂停</button>
+  <button class="ctrl-btn" id="btn-resume" onclick="resumeDemo()" style="display:none;">继续</button>
+  <button class="ctrl-btn danger" id="btn-stop" onclick="stopDemo()" style="display:none;">停止</button>
 </div>
-<div id="status-bar">DEMO STATUS: IDLE &nbsp;|&nbsp; FPS: <span id="fps-counter">--</span></div>
+<div id="status-bar">演示状态: 待命 &nbsp;|&nbsp; FPS: <span id="fps-counter">--</span></div>
 
 <script>
 // ═══════════════════════════════════════════════════════════════
@@ -181,11 +181,11 @@ viewer.camera.flyTo({
 //  Waypoints
 // ═══════════════════════════════════════════════════════════════
 const WAYPOINTS = [
-  { lat: 37.7700, lng: -122.4100, alt: 50,  label: 'WP1 (Takeoff)' },
+  { lat: 37.7700, lng: -122.4100, alt: 50,  label: 'WP1 (起飞)' },
   { lat: 37.7800, lng: -122.3800, alt: 200, label: 'WP2' },
   { lat: 37.8000, lng: -122.4200, alt: 300, label: 'WP3' },
   { lat: 37.7600, lng: -122.4500, alt: 250, label: 'WP4' },
-  { lat: 37.7900, lng: -122.3900, alt: 100, label: 'WP5 (Landing)' },
+  { lat: 37.7900, lng: -122.3900, alt: 100, label: 'WP5 (降落)' },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -227,7 +227,8 @@ const GEOFENCES = [
 // ═══════════════════════════════════════════════════════════════
 //  Entity references
 // ═══════════════════════════════════════════════════════════════
-let aircraftEntity = null;
+let aircraftBody = null;    // ellipsoid – 飞行器主体（白色椭球）
+let aircraftNose = null;    // cone (cylinder) – 机头方向指示（蓝色锥体）
 let trailEntity = null;
 let wpPointEntities = [];
 let gfWallEntities = {}; // id -> { wall, ring }
@@ -242,9 +243,9 @@ const flight = {
   alt: 0,
   spd: 0,
   hdg: 0,
-  phase: 'IDLE',
+  phase: '待命',
   wpIdx: 0,
-  gfStatus: 'SAFE'
+  gfStatus: '安全'
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -290,7 +291,7 @@ function buildScene() {
     const e = viewer.entities.add({
       position: Cesium.Cartesian3.fromDegrees(wp.lng, wp.lat, wp.alt),
       point: { pixelSize: 10, color: Cesium.Color.RED, outlineColor: Cesium.Color.WHITE, outlineWidth: 2 },
-      label: { text: wp.label, font: '11px monospace', fillColor: Cesium.Color.WHITE,
+      label: { text: wp.label, font: '11px "Microsoft YaHei",monospace', fillColor: Cesium.Color.WHITE,
                style: Cesium.LabelStyle.FILL, verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
                pixelOffset: new Cesium.Cartesian2(0, -14),
                showBackground: true, backgroundColor: Cesium.Color.BLACK.withAlpha(0.6) }
@@ -327,15 +328,35 @@ function buildScene() {
     }
   });
 
-  // ── Aircraft entity ──
-  aircraftEntity = viewer.entities.add({
+  // ── Aircraft: ellipsoid body (white/silver) + cone nose (blue) ──
+  // Body: flat ellipsoid ~50m x 50m x 18m
+  aircraftBody = viewer.entities.add({
     position: Cesium.Cartesian3.fromDegrees(flight.lng, flight.lat, 0),
-    model: {
-      uri: 'Cesium_Air.glb',
-      minimumPixelSize: 128,
-      maximumScale: 200,
+    ellipsoid: {
+      radii: new Cesium.Cartesian3(25, 25, 10),
+      material: Cesium.Color.WHITE.withAlpha(0.85),
+      outline: true,
+      outlineColor: Cesium.Color.SLATEGRAY.withAlpha(0.6),
+      outlineWidth: 1,
+    }
+  });
+
+  // Nose: cone (cylinder with topRadius=0) pointing forward
+  // Default cylinder extends along local Z (up); pitch=-90° makes it horizontal
+  aircraftNose = viewer.entities.add({
+    position: Cesium.Cartesian3.fromDegrees(flight.lng, flight.lat, 0),
+    cylinder: {
+      length: 20,
+      topRadius: 0,
+      bottomRadius: 6,
+      material: Cesium.Color.DODGERBLUE.withAlpha(0.9),
+      outline: true,
+      outlineColor: Cesium.Color.BLUE.withAlpha(0.7),
     },
-    orientation: new Cesium.VelocityOrientationProperty(new Cesium.SampledPositionProperty()),
+    orientation: Cesium.Transforms.headingPitchRollQuaternion(
+      Cesium.Cartesian3.fromDegrees(flight.lng, flight.lat, 0),
+      new Cesium.HeadingPitchRoll(Cesium.Math.toRadians(flight.hdg), Cesium.Math.toRadians(-90), 0)
+    )
   });
 
   // ── Geofence Walls ──
@@ -453,6 +474,11 @@ function checkAllGeofences(lat, lng, alt) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+//  状态文本映射
+// ═══════════════════════════════════════════════════════════════
+const STATUS_CN = { safe: '安全', warn: '预警', violation: '违规' };
+
+// ═══════════════════════════════════════════════════════════════
 //  UI Update
 // ═══════════════════════════════════════════════════════════════
 function updateHUD() {
@@ -462,20 +488,22 @@ function updateHUD() {
   document.getElementById('tv-spd').textContent = flight.spd.toFixed(1) + ' m/s';
   document.getElementById('tv-hdg').textContent = String(Math.round(flight.hdg)).padStart(3,'0') + '°';
   document.getElementById('tv-phase').textContent = flight.phase;
-  document.getElementById('tv-wp').textContent = flight.wpIdx < WAYPOINTS.length ? WAYPOINTS[flight.wpIdx].label : 'DONE';
+  document.getElementById('tv-wp').textContent = flight.wpIdx < WAYPOINTS.length ? WAYPOINTS[flight.wpIdx].label : '完成';
 
   const gfEl = document.getElementById('tv-gf');
-  gfEl.textContent = flight.gfStatus.toUpperCase();
-  gfEl.className = 'hud-val ' + (flight.gfStatus === 'violation' ? 'danger' : flight.gfStatus === 'warn' ? 'warn' : 'safe');
+  const gfStatusKey = flight.gfStatus === '安全' ? 'safe' : flight.gfStatus === '预警' ? 'warn' : 'violation';
+  gfEl.textContent = flight.gfStatus;
+  gfEl.className = 'hud-val ' + (gfStatusKey === 'violation' ? 'danger' : gfStatusKey === 'warn' ? 'warn' : 'safe');
 }
 
 function updateGeofencePanel(statuses) {
   GEOFENCES.forEach(gf => {
     const s = statuses[gf.id];
+    const cnText = STATUS_CN[s] || s;
     const item = document.getElementById('gf-item-' + gf.id.slice(-2));
     const st = document.getElementById('gf-st-' + gf.id.slice(-2));
     if (item) { item.className = 'gf-item ' + s; }
-    if (st) { st.textContent = s.toUpperCase(); st.className = 'gf-status ' + s; }
+    if (st) { st.textContent = cnText; st.className = 'gf-status ' + s; }
     // Only change wall material on status transition
     if (s !== gf.status) {
       gf.status = s;
@@ -559,10 +587,10 @@ function demoLoop() {
     demo.progress = 1.0;
     const wp = WAYPOINTS[WAYPOINTS.length-1];
     flight.lat = wp.lat; flight.lng = wp.lng; flight.alt = wp.alt; flight.spd = 0;
-    flight.phase = 'LANDED'; flight.wpIdx = WAYPOINTS.length;
+    flight.phase = '已着陆'; flight.wpIdx = WAYPOINTS.length;
     updateFlightEntity();
     const { statuses, worst } = checkAllGeofences(flight.lat, flight.lng, flight.alt);
-    flight.gfStatus = worst;
+    flight.gfStatus = worst === 'safe' ? '安全' : worst === 'warn' ? '预警' : '违规';
     updateGeofencePanel(statuses);
     updateHUD();
     stopDemo(true);
@@ -592,7 +620,7 @@ function demoLoop() {
       flight.wpIdx = i + 1; break;
     }
   }
-  flight.phase = 'CRUISE';
+  flight.phase = '巡航中';
 
   updateFlightEntity();
 
@@ -603,13 +631,15 @@ function demoLoop() {
 
   // Geofence check
   const { statuses, worst } = checkAllGeofences(flight.lat, flight.lng, flight.alt);
-  flight.gfStatus = worst;
+  flight.gfStatus = worst === 'safe' ? '安全' : worst === 'warn' ? '预警' : '违规';
 
   // Log transitions
   Object.keys(statuses).forEach(id => {
     const prev = demo.lastGfStatus[id] || 'safe';
     if (statuses[id] !== prev) {
-      let msg = `[${id}] ${prev.toUpperCase()} → ${statuses[id].toUpperCase()}`;
+      const prevCN = STATUS_CN[prev] || prev;
+      const newCN = STATUS_CN[statuses[id]] || statuses[id];
+      let msg = `[${id}] ${prevCN} → ${newCN}`;
       let type = statuses[id] === 'violation' ? 'violation' : statuses[id] === 'warn' ? 'warn' : 'info';
       addVLog(msg, type);
     }
@@ -624,14 +654,22 @@ function demoLoop() {
 
 function updateFlightEntity() {
   const pos = Cesium.Cartesian3.fromDegrees(flight.lng, flight.lat, flight.alt);
-  aircraftEntity.position = pos;
-  // Orientation
-  const hpr = new Cesium.HeadingPitchRoll(
-    Cesium.Math.toRadians(flight.hdg),
-    Cesium.Math.toRadians(-5), // slight pitch down in cruise
-    0
-  );
-  aircraftEntity.orientation = Cesium.Transforms.headingPitchRollQuaternion(pos, hpr);
+
+  // Body position
+  aircraftBody.position = pos;
+
+  // Nose: offset forward along heading by ~28m (body radius + half nose length)
+  const headingRad = Cesium.Math.toRadians(flight.hdg);
+  const noseOffsetMeters = 28;
+  // Approximate offset in lat/lng degrees
+  const latOffset = (noseOffsetMeters / 111320) * Math.cos(headingRad);
+  const lngOffset = (noseOffsetMeters / (111320 * Math.cos(Cesium.Math.toRadians(flight.lat)))) * Math.sin(headingRad);
+  const nosePos = Cesium.Cartesian3.fromDegrees(flight.lng + lngOffset, flight.lat + latOffset, flight.alt);
+  aircraftNose.position = nosePos;
+
+  // Nose orientation: pitch=-90° to make cylinder horizontal, heading for yaw
+  const hpr = new Cesium.HeadingPitchRoll(headingRad, Cesium.Math.toRadians(-90), 0);
+  aircraftNose.orientation = Cesium.Transforms.headingPitchRollQuaternion(nosePos, hpr);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -655,9 +693,9 @@ function startDemo() {
   flight.alt = 0;
   flight.spd = 0;
   flight.hdg = bearing(WAYPOINTS[0].lat, WAYPOINTS[0].lng, WAYPOINTS[1].lat, WAYPOINTS[1].lng);
-  flight.phase = 'TAKEOFF';
+  flight.phase = '起飞';
   flight.wpIdx = 0;
-  flight.gfStatus = 'SAFE';
+  flight.gfStatus = '安全';
 
   // Reset geofence visuals
   GEOFENCES.forEach(gf => { gf.status = 'safe'; });
@@ -674,8 +712,8 @@ function startDemo() {
 
   // Reset UI
   document.querySelectorAll('.gf-item').forEach(el => el.className = 'gf-item safe');
-  document.querySelectorAll('.gf-status').forEach(el => { el.textContent = 'SAFE'; el.className = 'gf-status safe'; });
-  document.getElementById('vlog').innerHTML = '<div class="vlog-entry info">[System] Demo started</div>';
+  document.querySelectorAll('.gf-status').forEach(el => { el.textContent = '安全'; el.className = 'gf-status safe'; });
+  document.getElementById('vlog').innerHTML = '<div class="vlog-entry info">[系统] 飞行演示已启动</div>';
 
   // Camera follow
   viewer.camera.flyTo({
@@ -686,39 +724,39 @@ function startDemo() {
 
   updateFlightEntity();
   updateHUD();
-  addVLog('Takeoff initiated', 'info');
+  addVLog('起飞已启动', 'info');
 
   // Buttons
   document.getElementById('btn-start').style.display = 'none';
   document.getElementById('btn-pause').style.display = 'inline-block';
   document.getElementById('btn-resume').style.display = 'none';
   document.getElementById('btn-stop').style.display = 'inline-block';
-  document.getElementById('status-bar').innerHTML = 'DEMO STATUS: RUNNING &nbsp;|&nbsp; FPS: <span id="fps-counter">--</span>';
+  document.getElementById('status-bar').innerHTML = '演示状态: 运行中 &nbsp;|&nbsp; FPS: <span id="fps-counter">--</span>';
 
   demo.animFrame = requestAnimationFrame(demoLoop);
 }
 
 function pauseDemo() {
   demo.paused = true;
-  flight.phase = 'PAUSED';
+  flight.phase = '已暂停';
   updateHUD();
   document.getElementById('btn-pause').style.display = 'none';
   document.getElementById('btn-resume').style.display = 'inline-block';
   document.getElementById('btn-stop').style.display = 'inline-block';
-  document.getElementById('status-bar').innerHTML = 'DEMO STATUS: PAUSED &nbsp;|&nbsp; FPS: <span id="fps-counter">--</span>';
-  addVLog('Demo paused', 'info');
+  document.getElementById('status-bar').innerHTML = '演示状态: 已暂停 &nbsp;|&nbsp; FPS: <span id="fps-counter">--</span>';
+  addVLog('演示已暂停', 'info');
 }
 
 function resumeDemo() {
   demo.paused = false;
   demo._lastTick = performance.now();
-  flight.phase = 'CRUISE';
+  flight.phase = '巡航中';
   updateHUD();
   document.getElementById('btn-pause').style.display = 'inline-block';
   document.getElementById('btn-resume').style.display = 'none';
   document.getElementById('btn-stop').style.display = 'inline-block';
-  document.getElementById('status-bar').innerHTML = 'DEMO STATUS: RUNNING &nbsp;|&nbsp; FPS: <span id="fps-counter">--</span>';
-  addVLog('Demo resumed', 'info');
+  document.getElementById('status-bar').innerHTML = '演示状态: 运行中 &nbsp;|&nbsp; FPS: <span id="fps-counter">--</span>';
+  addVLog('演示已继续', 'info');
   demo.animFrame = requestAnimationFrame(demoLoop);
 }
 
@@ -726,17 +764,17 @@ function stopDemo(completed) {
   demo.running = false;
   demo.paused = false;
   if (demo.animFrame) { cancelAnimationFrame(demo.animFrame); demo.animFrame = null; }
-  flight.phase = completed ? 'LANDED' : 'STOPPED';
+  flight.phase = completed ? '已着陆' : '已停止';
   updateHUD();
 
   document.getElementById('btn-start').style.display = 'inline-block';
   document.getElementById('btn-pause').style.display = 'none';
   document.getElementById('btn-resume').style.display = 'none';
   document.getElementById('btn-stop').style.display = 'none';
-  document.getElementById('status-bar').innerHTML = `DEMO STATUS: ${completed ? 'COMPLETED' : 'IDLE'} &nbsp;|&nbsp; FPS: <span id="fps-counter">--</span>`;
+  document.getElementById('status-bar').innerHTML = `演示状态: ${completed ? '已完成' : '待命'} &nbsp;|&nbsp; FPS: <span id="fps-counter">--</span>`;
 
-  if (completed) addVLog('Demo completed. All waypoints reached.', 'info');
-  else addVLog('Demo stopped by user', 'info');
+  if (completed) addVLog('演示完成。所有航点已到达。', 'info');
+  else addVLog('演示已被用户停止', 'info');
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -771,20 +809,19 @@ window.addEventListener('keydown', e => {
 // ═══════════════════════════════════════════════════════════════
 buildScene();
 updateHUD();
-addVLog('FlyteOS Cesium v1.0 ready', 'info');
-addVLog('Press SPACE or click START DEMO to begin', 'info');
+addVLog('FlyteOS Cesium v1.0 已就绪', 'info');
+addVLog('按空格键或点击"开始飞行演示"启动', 'info');
 
-// Camera follows aircraft initially
+// Camera follows aircraft during flight
 viewer.clock.onTick.addEventListener(() => {
   if (demo.running && !demo.paused) {
-    // Smooth camera follow
     const pos = Cesium.Cartesian3.fromDegrees(flight.lng, flight.lat, flight.alt + 400);
     const target = Cesium.Cartesian3.fromDegrees(flight.lng, flight.lat, flight.alt);
     viewer.camera.lookAt(target, new Cesium.Cartesian3(0, 0, 600));
   }
 });
 
-console.log('FlyteOS Cesium Demo ready');
+console.log('FlyteOS Cesium Demo 已就绪');
 </script>
 </body>
 </html>
