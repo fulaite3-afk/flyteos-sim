@@ -60,6 +60,71 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI','Microso
 .health-trend{margin-top:6px;text-align:center;}
 .health-trend canvas{border-radius:4px;border:1px solid rgba(0,180,255,0.15);}
 
+/* ── 传感器健康 Panel ── */
+#sensor-health-panel{}
+.sensor-row{display:flex;justify-content:space-between;padding:2px 0;font-size:10px;}
+.sensor-label{color:rgba(0,200,255,0.5);}
+.sensor-val{color:#ffcc33;font-weight:bold;}
+.sensor-val.good{color:#00ff66;}
+.sensor-val.warn{color:#ffaa00;}
+
+/* ── MAVLink数据流 ── */
+#mavlink-panel{}
+#mavlink-stream{max-height:100px;overflow-y:auto;font-family:'Consolas',monospace;font-size:8px;color:rgba(150,220,255,0.75);line-height:1.4;}
+.mavlink-msg{padding:1px 0;border-bottom:1px solid rgba(0,180,255,0.05);}
+.mavlink-msg .msg-type{color:#ffcc33;}
+.mavlink-msg .msg-data{color:rgba(180,220,255,0.6);}
+
+/* ── 操作日志 Panel ── */
+#ops-log-panel{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:96%;max-width:1200px;z-index:8;margin-bottom:0;}
+#ops-log-content{display:none;max-height:140px;overflow-y:auto;font-family:'Consolas',monospace;font-size:8px;color:rgba(180,220,240,0.7);padding:4px 8px;}
+#ops-log-content.open{display:block;}
+.ops-entry{padding:1px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;gap:8px;}
+.ops-ts{color:rgba(0,200,255,0.4);min-width:70px;flex-shrink:0;}
+.ops-tag{min-width:52px;flex-shrink:0;font-size:7px;padding:0 4px;border-radius:2px;text-align:center;font-weight:bold;}
+.ops-tag.init{color:#00d4ff;background:rgba(0,180,255,0.1);}
+.ops-tag.user{color:#00ffaa;background:rgba(0,255,170,0.1);}
+.ops-tag.flight{color:#ffcc33;background:rgba(255,200,50,0.1);}
+.ops-tag.fence{color:#ff9944;background:rgba(255,150,50,0.1);}
+.ops-tag.event{color:#ff5566;background:rgba(255,50,60,0.1);}
+.ops-tag.decision{color:#bb88ff;background:rgba(180,130,255,0.1);}
+.ops-msg{color:rgba(200,220,240,0.75);}
+.ops-summary{margin-top:4px;padding:3px 8px;background:rgba(0,30,60,0.4);border-radius:4px;font-size:8px;color:rgba(0,200,255,0.55);}
+
+/* ── 用户角色栏 ── */
+#user-role-bar{display:flex;align-items:center;gap:10px;margin-left:auto;font-size:10px;}
+#user-role-bar .user-name{color:#00ffaa;font-weight:bold;}
+#user-role-bar select{background:rgba(0,20,40,0.8);border:1px solid rgba(0,180,255,0.3);color:#00d4ff;font-size:9px;padding:1px 4px;border-radius:3px;cursor:pointer;font-family:inherit;}
+
+/* ── 控制性能认证印章 ── */
+.cert-stamp{position:absolute;top:10px;right:15px;width:70px;height:70px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;text-align:center;line-height:1.2;transform:rotate(-15deg);opacity:0.85;pointer-events:none;z-index:5;}
+.cert-stamp.s{border:3px solid #ffd700;color:#ffd700;text-shadow:0 0 6px rgba(255,215,0,0.4);}
+.cert-stamp.a{border:3px solid #00ff66;color:#00ff66;text-shadow:0 0 6px rgba(0,255,102,0.4);}
+.cert-stamp.b{border:3px solid #ffaa00;color:#ffaa00;text-shadow:0 0 6px rgba(255,170,0,0.4);}
+.cert-stamp.c{border:3px solid #aaaaaa;color:#aaaaaa;text-shadow:0 0 6px rgba(170,170,170,0.4);}
+
+/* ── AI报告控制性能章节 ── */
+.ai-cert-section{margin-bottom:10px;padding:8px 10px;background:rgba(0,30,60,0.4);border-radius:8px;border:1px solid rgba(0,180,255,0.15);}
+.ai-cert-section h4{color:#ffcc33;font-size:10px;margin-bottom:4px;text-align:center;}
+
+/* ── 安全审查按钮 ── */
+.mission-btn.audit-btn{border-color:rgba(255,200,50,0.5);color:#ffcc33;}
+.mission-btn.audit-btn:hover{background:rgba(255,200,0,0.15);}
+
+/* ── 回放时间轴事件标记 ── */
+.replay-event-marker{position:absolute;top:-8px;width:6px;height:6px;border-radius:50%;transform:translateX(-50%);cursor:pointer;z-index:2;transition:transform 0.1s;}
+.replay-event-marker.red{background:#ff3344;box-shadow:0 0 4px rgba(255,50,60,0.6);}
+.replay-event-marker.yellow{background:#ffaa00;box-shadow:0 0 4px rgba(255,170,0,0.6);}
+.replay-event-marker.green{background:#00ff66;box-shadow:0 0 4px rgba(0,255,102,0.6);}
+.replay-event-marker.blue{background:#4488ff;box-shadow:0 0 4px rgba(68,136,255,0.6);}
+.replay-event-marker:hover{transform:translateX(-50%) scale(2);}
+.replay-event-tooltip{display:none;position:absolute;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(0,10,30,0.92);border:1px solid rgba(0,180,255,0.4);border-radius:4px;padding:3px 6px;font-size:8px;color:#00d4ff;white-space:nowrap;z-index:10;pointer-events:none;}
+.replay-event-marker:hover .replay-event-tooltip{display:block;}
+
+/* ── 遥测数据源标识 ── */
+.datasource-tag{font-size:9px;color:rgba(0,255,170,0.5);margin-left:6px;font-weight:normal;letter-spacing:0;}
+
+
 /* ── 舵面输出 Panel ── */
 #surface-panel{}
 .surface-row{display:flex;justify-content:space-between;padding:2px 0;}
@@ -226,12 +291,22 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI','Microso
 </head>
 <body>
 <div id="cesiumContainer"></div>
-<div id="title-bar">FLYTEOS 智能飞行管理系统</div>
+<div id="title-bar" style="display:flex;justify-content:center;align-items:center;gap:16px;">
+  <span>FLYTEOS 智能飞行管理系统</span>
+  <div id="user-role-bar">
+    <span class="user-name" id="current-user">操作员</span>
+    <select id="role-selector" onchange="switchRole(this.value)">
+      <option value="operator" selected>操作员 (全权限)</option>
+      <option value="engineer">工程师 (可查看/不可启动)</option>
+      <option value="observer">观察员 (只读)</option>
+    </select>
+  </div>
+</div>
 
 <!-- Left Column -->
 <div id="left-col">
   <div id="hud-panel" class="panel-base">
-    <h3>遥测数据</h3>
+    <h3>遥测数据 <span class="datasource-tag">数据源: Pixhawk 2.4.8 @ 10Hz</span></h3>
     <div class="hud-row"><span class="hud-label">纬度</span><span class="hud-val" id="tv-lat">37.7700</span></div>
     <div class="hud-row"><span class="hud-label">经度</span><span class="hud-val" id="tv-lng">-122.4100</span></div>
     <div class="hud-row"><span class="hud-label">高度 (海平面)</span><span class="hud-val" id="tv-alt">0 m</span></div>
@@ -264,6 +339,16 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI','Microso
     </div>
   </div>
 
+  <div id="sensor-health-panel" class="panel-base">
+    <h3>传感器健康</h3>
+    <div class="sensor-row"><span class="sensor-label">GPS卫星数</span><span class="sensor-val good" id="sh-gps-sats">14</span></div>
+    <div class="sensor-row"><span class="sensor-label">HDOP</span><span class="sensor-val good" id="sh-hdop">0.8</span></div>
+    <div class="sensor-row"><span class="sensor-label">气压计</span><span class="sensor-val good" id="sh-barometer">正常</span></div>
+    <div class="sensor-row"><span class="sensor-label">磁罗盘</span><span class="sensor-val good" id="sh-compass">正常</span></div>
+    <div class="sensor-row"><span class="sensor-label">IMU温度</span><span class="sensor-val" id="sh-imu-temp">42°C</span></div>
+    <div class="sensor-row"><span class="sensor-label">振动等级</span><span class="sensor-val good" id="sh-vibration">低</span></div>
+  </div>
+
   <div id="surface-panel" class="panel-base">
     <h3>舵面输出</h3>
     <div class="surface-row"><span class="surface-label">副翼 (Aileron)</span><span class="surface-val" id="surf-ail">0.0°</span></div>
@@ -286,6 +371,13 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI','Microso
     </div>
     <div id="fc-log">
       <div class="fc-log-entry info">[系统] 飞控决策系统就绪</div>
+    </div>
+  </div>
+
+  <div id="mavlink-panel" class="panel-base">
+    <h3>MAVLink数据流 <span style="font-size:9px;color:rgba(0,200,255,0.4);font-weight:normal;">(每秒5条)</span></h3>
+    <div id="mavlink-stream">
+      <div class="mavlink-msg"><span class="msg-type">#0 HEARTBEAT</span> <span class="msg-data">type=18 autopilot=8 base_mode=81 custom_mode=0 system_status=4</span></div>
     </div>
   </div>
 </div>
@@ -382,11 +474,24 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI','Microso
   <button class="anomaly-btn reset-btn" id="btn-reset-sys" onclick="resetSystem()">重置系统</button>
 </div>
 
+
+<!-- Operations Log Panel -->
+<div id="ops-log-panel" class="panel-base">
+  <h3>操作日志 <span class="collapse-btn" onclick="toggleOpsLogPanel()">&#9660;</span></h3>
+  <div id="ops-log-content" class="open">
+    <div class="ops-entry"><span class="ops-ts">--:--:--</span><span class="ops-tag init">初始化</span><span class="ops-msg">系统就绪</span></div>
+  </div>
+  <div class="ops-summary" id="ops-summary">审计统计: 操作0 | 飞行事件0 | 围栏0 | 异常0 | 决策0</div>
+</div>
+
 <!-- Replay Bar -->
 <div id="replay-bar" class="hidden">
   <button class="replay-btn" id="btn-replay-play" onclick="replayPlay()">▶ 回放</button>
   <button class="replay-btn" id="btn-replay-pause" onclick="replayPause()" style="display:none;">⏸ 暂停</button>
-  <input type="range" class="replay-slider" id="replay-slider" min="0" max="100" value="0" oninput="replaySeek(this.value)">
+  <div style="position:relative;display:inline-block;width:180px;margin:0 8px;">
+      <div id="replay-events-container" style="position:absolute;top:-10px;left:0;width:100%;height:12px;"></div>
+      <input type="range" class="replay-slider" id="replay-slider" min="0" max="100" value="0" oninput="replaySeek(this.value)" style="width:100%;">
+    </div>
   <span class="replay-label" id="replay-time-label">00:00 / 00:00</span>
   <button class="replay-btn" id="btn-replay-speed1x" onclick="replaySpeed(1)" style="display:none;">1x</button>
   <button class="replay-btn" id="btn-replay-speed2x" onclick="replaySpeed(2)" style="display:none;">2x</button>
@@ -404,6 +509,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI','Microso
     <div class="mission-row">
       <button class="mission-btn" onclick="applyMissionPlan()">应用航线</button>
       <button class="mission-btn" onclick="autoGenPatrol()">自动生成巡逻航线</button>
+      <button class="mission-btn audit-btn" id="btn-safety-audit" onclick="safetyAudit()">安全审查</button>
       <button class="mission-btn" id="btn-detour" onclick="detourNoFlyZone()">绕行规划</button>
     </div>
   </div>
@@ -440,7 +546,21 @@ d.command.takeoff(altitude=100)</div>
 <!-- AI Report Modal -->
 <div id="ai-modal-overlay">
   <div id="ai-modal">
-    <h2>任务分析报告</h2>
+    <div style="position:relative;">
+      <h2>任务分析报告</h2>
+      <div class="cert-stamp" id="cert-stamp" style="display:none;">控制性能<br>认证</div>
+    </div>
+    <div class="ai-cert-section" id="ai-cert-section" style="display:none;">
+      <h4>控制性能验证</h4>
+      <div class="ai-row"><span class="ai-label">高度超调量</span><span class="ai-val" id="ai-cert-overshoot">--</span></div>
+      <div class="ai-row"><span class="ai-label">航向超调量</span><span class="ai-val" id="ai-cert-hdg-overshoot">--</span></div>
+      <div class="ai-row"><span class="ai-label">速度超调量</span><span class="ai-val" id="ai-cert-spd-overshoot">--</span></div>
+      <div class="ai-row"><span class="ai-label">稳定时间</span><span class="ai-val" id="ai-cert-settling">--</span></div>
+      <div class="ai-row"><span class="ai-label">稳态误差</span><span class="ai-val" id="ai-cert-steadyerr">--</span></div>
+      <div class="ai-row"><span class="ai-label">抗扰能力(风扰最大偏差)</span><span class="ai-val" id="ai-cert-wind">--</span></div>
+      <div class="ai-row"><span class="ai-label">抗扰能力(恢复时间)</span><span class="ai-val" id="ai-cert-recovery">--</span></div>
+      <div class="ai-row"><span class="ai-label" style="font-size:13px;font-weight:bold;">控制性能综合评级</span><span class="ai-val" id="ai-cert-grade" style="font-size:16px;">--</span></div>
+    </div>
     <div class="ai-section">
       <div class="ai-row"><span class="ai-label">任务完成率</span><span class="ai-val" id="ai-completion">--</span></div>
       <div class="ai-row"><span class="ai-label">最大偏航误差</span><span class="ai-val" id="ai-max-xte">--</span></div>
@@ -452,6 +572,7 @@ d.command.takeoff(altitude=100)</div>
       <div class="ai-row"><span class="ai-label">围栏违规次数</span><span class="ai-val" id="ai-violations">--</span></div>
     </div>
     <div class="ai-grade" id="ai-overall-grade" style="text-align:center;">--</div>
+    <div class="ai-grade" id="ai-cert-grade-display" style="text-align:center;margin-top:-8px;font-size:20px;font-weight:bold;">--</div>
     <div class="ai-btns">
       <button class="ai-btn primary" onclick="exportReport()">导出报告</button>
       <button class="ai-btn" onclick="closeReport()">关闭</button>
@@ -836,6 +957,7 @@ function updatePredictText(){
     else{el.textContent='预计 '+remainMin+' 分钟后电量不足，需要返航';el.className=remainMin<10?'predict-text urgent':'predict-text';}
   }
 }
+let _globalTargetAlt=0;
 function updateControlLoopPanel(){
   let tgtAlt=0,tgtHdg=0,tgtSpd=15.0;
   if(demo.running&&demo.progress<1.0&&demo.pathSegments.length>0){
@@ -848,6 +970,7 @@ function updateControlLoopPanel(){
     tgtHdg=bearing(a.lat,a.lng,b.lat,b.lng);
     tgtSpd=15.0;
   }
+  _globalTargetAlt=tgtAlt;
   document.getElementById('cl-tgt-alt').textContent=tgtAlt.toFixed(0)+'m';
   document.getElementById('cl-tgt-hdg').textContent=String(Math.round(tgtHdg)).padStart(3,'0')+'°';
   document.getElementById('cl-tgt-spd').textContent=tgtSpd.toFixed(1)+'m/s';
@@ -957,6 +1080,7 @@ function updateGeofencePanel(statuses){
     if(item)item.className='gf-item '+s;
     if(st){st.textContent=cnText;st.className='gf-status '+s;}
     if(s!==gf.status){
+      if(s==='violation'||s==='warn')addOpsLog('围栏状态变化: '+gf.id+' \u2192 '+cnText,'fence');
       gf.status=s;
       const w=gfWallEntities[gf.id];
       if(w&&w.wall){
@@ -1132,6 +1256,150 @@ function computeXTE(){
   flight.xte=Math.abs(dxt);
 }
 
+
+// ═══════════════════════════════════════════════════════════════
+//  Gap1: Sensor Noise Model
+// ═══════════════════════════════════════════════════════════════
+function gpsNoise(){return (Math.random()-0.5)*1.6;} // ±0.8m
+function baroNoise(){return (Math.random()-0.5)*0.6;} // ±0.3m
+function imuNoise(){return (Math.random()-0.5)*0.04;} // ±0.02g
+function compassNoise(){return (Math.random()-0.5)*3.0;} // ±1.5°
+function speedNoise(){return (Math.random()-0.5)*0.4;} // ±0.2m/s
+
+let sensorHealthState={
+  gpsSats:14,hdop:0.8,barometer:'正常',compass:'正常',imuTemp:42,vibration:'低'
+};
+
+function updateSensorHealth(){
+  if(anomaly.gpsLost){sensorHealthState.gpsSats=Math.max(3,14-Math.floor(Math.random()*8));sensorHealthState.hdop=(3+Math.random()*4).toFixed(1);}
+  else{sensorHealthState.gpsSats=12+Math.floor(Math.random()*4);sensorHealthState.hdop=(0.7+Math.random()*0.4).toFixed(1);}
+  if(anomaly.rtkDegraded){sensorHealthState.gpsSats=Math.max(5,sensorHealthState.gpsSats-3);sensorHealthState.hdop=(1.5+Math.random()*2).toFixed(1);}
+  sensorHealthState.imuTemp=41+Math.floor(Math.random()*4);
+  sensorHealthState.vibration=Math.random()<0.05?'中':'低';
+  const v=parseFloat(sensorHealthState.hdop);
+  const bSat=sensorHealthState.gpsSats>=12;
+  const bHdop=v<=1.2;
+  document.getElementById('sh-gps-sats').textContent=sensorHealthState.gpsSats;
+  document.getElementById('sh-gps-sats').className='sensor-val '+((bSat)?'good':'warn');
+  document.getElementById('sh-hdop').textContent=sensorHealthState.hdop;
+  document.getElementById('sh-hdop').className='sensor-val '+((bHdop)?'good':'warn');
+  document.getElementById('sh-barometer').textContent=sensorHealthState.barometer;
+  document.getElementById('sh-compass').textContent=sensorHealthState.compass;
+  document.getElementById('sh-imu-temp').textContent=sensorHealthState.imuTemp+'\u00b0C';
+  document.getElementById('sh-vibration').textContent=sensorHealthState.vibration;
+  document.getElementById('sh-vibration').className='sensor-val '+(sensorHealthState.vibration==='低'?'good':'warn');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Gap1: MAVLink Message Generator
+// ═══════════════════════════════════════════════════════════════
+let mavlinkMsgCounter=0;
+const mavlinkMessages=[];
+let mavlinkTimer=0;
+function generateMAVLinkMsgs(dt){
+  mavlinkTimer+=dt;
+  const msgsPerSec=5;
+  const interval=1/msgsPerSec;
+  if(mavlinkTimer<interval)return;
+  mavlinkTimer-=interval;
+  const now=new Date();
+  const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0')+'.'+String(now.getMilliseconds()).padStart(3,'0');
+  const types=['HEARTBEAT','GLOBAL_POSITION_INT','ATTITUDE','SYS_STATUS','ATTITUDE','GLOBAL_POSITION_INT','HEARTBEAT','SYS_STATUS'];
+  const type=types[mavlinkMsgCounter%types.length];
+  const noiseLat=(flight.lat+gpsNoise()*0.000001).toFixed(7);
+  const noiseLng=(flight.lng+gpsNoise()*0.000001).toFixed(7);
+  const noiseAlt=(flight.alt+baroNoise()).toFixed(1);
+  const noiseSpd=Math.max(0,flight.spd+speedNoise()).toFixed(1);
+  const noiseHdg=((flight.hdg+compassNoise())%360+360)%360;
+  const noiseRoll=flight.roll+imuNoise()*10;
+  const noisePitch=flight.pitch+imuNoise()*10;
+  let data='';
+  if(type==='HEARTBEAT')data='type=18 autopilot=8 base_mode=81 custom_mode=0 system_status='+(anomaly.rthActive?'3':'4')+' mavlink_version=3';
+  else if(type==='GLOBAL_POSITION_INT')data='lat='+(noiseLat*1e7).toFixed(0)+' lon='+(noiseLng*1e7).toFixed(0)+' alt='+(noiseAlt*1000).toFixed(0)+' relative_alt='+((noiseAlt-50)*1000).toFixed(0)+' vx='+(noiseSpd*100).toFixed(0)+' hdg='+(noiseHdg*100).toFixed(0);
+  else if(type==='ATTITUDE')data='roll='+noiseRoll.toFixed(4)+' pitch='+noisePitch.toFixed(4)+' yaw='+(flight.yaw*Math.PI/180).toFixed(4)+' rollspeed=0.00 pitchspeed=0.00 yawspeed=0.00';
+  else if(type==='SYS_STATUS')data='voltage_battery='+(11.1+Math.random()*0.3).toFixed(1)+'V current_battery='+(2+Math.random()*0.5).toFixed(1)+'A battery_remaining='+Math.round(demo.batteryLevel)+'% drop_rate_comm='+(100-demo.linkQuality).toFixed(0)+'% errors_comm=0';
+  const msg='<div class="mavlink-msg"><span class="msg-type">#'+mavlinkMsgCounter+' '+type+'</span> <span class="msg-data">'+data+'</span><span style="color:rgba(0,200,255,0.2);float:right;">'+ts+'</span></div>';
+  mavlinkMessages.unshift(msg);
+  if(mavlinkMessages.length>50)mavlinkMessages.pop();
+  document.getElementById('mavlink-stream').innerHTML=mavlinkMessages.join('');
+  mavlinkMsgCounter++;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Gap3: Operations Log
+// ═══════════════════════════════════════════════════════════════
+const opsLogEntries=[];
+let opsCounts={init:0,user:0,flight:0,fence:0,event:0,decision:0};
+function addOpsLog(msg,tag){
+  const now=new Date();
+  const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+  opsLogEntries.unshift({ts,tag,msg});
+  if(opsLogEntries.length>100)opsLogEntries.pop();
+  opsCounts[tag]=(opsCounts[tag]||0)+1;
+  renderOpsLog();
+}
+function renderOpsLog(){
+  const el=document.getElementById('ops-log-content');
+  if(!el.classList.contains('open'))return;
+  el.innerHTML=opsLogEntries.map(e=>{
+    const tagClass={'init':'init','user':'user','flight':'flight','fence':'fence','event':'event','decision':'decision'}[e.tag]||'init';
+    return '<div class="ops-entry"><span class="ops-ts">'+e.ts+'</span><span class="ops-tag '+tagClass+'">'+{'init':'初始化','user':'用户操作','flight':'飞行阶段','fence':'围栏状态','event':'系统事件','decision':'自主决策'}[e.tag]+'</span><span class="ops-msg">'+e.msg+'</span></div>';
+  }).join('');
+  document.getElementById('ops-summary').textContent='审计统计: 操作'+opsCounts.user+' | 飞行事件'+opsCounts.flight+' | 围栏'+opsCounts.fence+' | 异常'+opsCounts.event+' | 决策'+opsCounts.decision;
+}
+function toggleOpsLogPanel(){
+  const content=document.getElementById('ops-log-content');
+  content.classList.toggle('open');
+  if(content.classList.contains('open'))renderOpsLog();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Gong3: Role Switching
+// ═══════════════════════════════════════════════════════════════
+let currentRole='operator';
+function switchRole(role){
+  currentRole=role;
+  const labels={operator:'操作员',engineer:'工程师',observer:'观察员'};
+  document.getElementById('current-user').textContent=labels[role];
+  addOpsLog('角色切换至: '+labels[role],'user');
+  // Disable controls based on role
+  const startBtn=document.getElementById('btn-start');
+  const stopBtn=document.getElementById('btn-stop');
+  const anomalyBtns=document.querySelectorAll('.anomaly-btn');
+  const formBtns=document.querySelectorAll('.formation-btn');
+  if(role==='observer'){
+    startBtn.disabled=true;if(stopBtn)stopBtn.disabled=true;
+    document.getElementById('btn-fault')&&(document.getElementById('btn-fault').disabled=true);
+    anomalyBtns.forEach(b=>b.disabled=true);
+    formBtns.forEach(b=>b.disabled=true);
+    document.getElementById('btn-recover')&&(document.getElementById('btn-recover').disabled=true);
+    document.querySelectorAll('.mission-btn').forEach(b=>b.disabled=true);
+  }else if(role==='engineer'){
+    startBtn.disabled=true;if(stopBtn)stopBtn.disabled=true;
+    document.getElementById('btn-fault')&&(document.getElementById('btn-fault').disabled=false);
+    anomalyBtns.forEach(b=>b.disabled=false);
+    formBtns.forEach(b=>b.disabled=false);
+    document.getElementById('btn-recover')&&(document.getElementById('btn-recover').disabled=false);
+    document.querySelectorAll('.mission-btn').forEach(b=>b.disabled=false);
+  }else{
+    startBtn.disabled=false;if(stopBtn)stopBtn.disabled=false;
+    document.getElementById('btn-fault')&&(document.getElementById('btn-fault').disabled=false);
+    anomalyBtns.forEach(b=>b.disabled=false);
+    formBtns.forEach(b=>b.disabled=false);
+    document.getElementById('btn-recover')&&(document.getElementById('btn-recover').disabled=false);
+    document.querySelectorAll('.mission-btn').forEach(b=>b.disabled=false);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Gong2: Wind disturbance enhanced decision log (error convergence sequence)
+// ═══════════════════════════════════════════════════════════════
+let windMaxDeviation=0;
+let windRecoveryStart=0;
+let windRecoveryEnd=0;
+let windRecoveryDone=false;
+let windLastDriftMag=0;
+
 // ═══════════════════════════════════════════════════════════════
 //  Wind Disturbance Simulation
 // ═══════════════════════════════════════════════════════════════
@@ -1187,8 +1455,9 @@ function triggerAnomaly(type){
       if(anomaly.gpsLost)break;
       anomaly.gpsLost=true;anomaly.insNavActive=true;anomaly.gpsLostTimer=0;
       document.getElementById('btn-gps-lose').classList.add('active');
-      addFCLog('[异常] GPS信号丢失 → 自主切换INS惯性导航 → 悬停等待信号恢复 → 30秒无恢复则自动返航','emergency');
+      addFCLog('[触发事件] GPS信号丢失 \u2192 [系统判断] 导航可信度骤降 \u2192 [执行动作] 切换INS惯性导航(速度限制8m/s) \u2192 [结果验证] 悬停等待30秒恢复 \u2192 超时未恢复则自动返航','emergency');
       addVLog('GPS信号丢失 — 已切换INS惯性导航','violation');
+      addOpsLog('异常: GPS信号丢失','event');
       demo.anomalyCount++;
       updateFaultTree();
       setAutonomyLevel(4);
@@ -1197,8 +1466,9 @@ function triggerAnomaly(type){
       if(anomaly.rtkDegraded)break;
       anomaly.rtkDegraded=true;
       document.getElementById('btn-rtk-dg').classList.add('active');
-      addFCLog('[异常] RTK差分降级 → 定位精度下降至亚米级 → 继续飞行监控','warning');
+      addFCLog('[触发事件] RTK基准站信号降级 \u2192 [系统判断] 定位精度降至亚米级 \u2192 [执行动作] 切换单频定位模式 \u2192 [结果验证] 飞行任务继续监控中','warning');
       addVLog('RTK差分降级 — 定位精度下降','warn');
+      addOpsLog('异常: RTK差分降级','event');
       demo.anomalyCount++;
       updateFaultTree();
       break;
@@ -1206,8 +1476,9 @@ function triggerAnomaly(type){
       if(anomaly.commLost)break;
       anomaly.commLost=true;anomaly.autonomousFlight=true;
       document.getElementById('btn-comm-loss').classList.add('active');
-      addFCLog('[异常] 通信中断 → 切换自主飞行模式 → 按预定航点继续完成飞行','emergency');
+      addFCLog('[触发事件] 数据链中断(链路质量<30%) \u2192 [系统判断] 无法接收地面指令 \u2192 [执行动作] 切换完全自主飞行模式 \u2192 [结果验证] 按预存航点继续完成飞行任务','emergency');
       addVLog('通信中断 — 已切换自主飞行模式','violation');
+      addOpsLog('异常: 通信中断','event');
       demo.anomalyCount++;
       updateFaultTree();
       setAutonomyLevel(4);
@@ -1217,8 +1488,9 @@ function triggerAnomaly(type){
       anomaly.batteryCritical=true;
       demo.batteryLevel=Math.min(demo.batteryLevel,25);
       document.getElementById('btn-bat-low').classList.add('active');
-      addFCLog('[异常] 电池电量骤降至25% → 低电量告警 → 自动规划返航 → 开始返航','emergency');
+      addFCLog('[触发事件] 电池电量骤降至25% \u2192 [系统判断] 剩余飞行时间不足 \u2192 [执行动作] 自动规划最短返航路径 \u2192 [结果验证] 返回出发点降落','emergency');
       addVLog('电池异常 — 低电量，触发自动返航','violation');
+      addOpsLog('异常: 电池电量过低','event');
       demo.anomalyCount++;
       updateFaultTree();
       triggerRTH('battery');
@@ -1234,9 +1506,9 @@ function triggerRTH(reason){
   anomaly.rthProgress=0;
   if(reason==='battery'||reason==='fault'){
     flight.phase='悬停中';flight.spd=0;
-    addFCLog('[紧急] 模拟故障触发 → 自动悬停 → 评估返航路径 → 开始返航','emergency');
+    addFCLog('[触发事件] 模拟故障触发 \u2192 [系统判断] 飞行安全受威胁 \u2192 [执行动作] 自动悬停 \u2192 评估返航路径 \u2192 开始返航','emergency');
   }else if(reason==='gps_timeout'){
-    addFCLog('[自主响应] GPS信号30秒未恢复 → 启动自动返航程序','emergency');
+    addFCLog('[触发事件] GPS信号30秒超时未恢复 \u2192 [系统判断] 定位可信度持续不足 \u2192 [执行动作] 启动自动返航程序(INS导航) \u2192 [结果验证] 开始返航','emergency');
   }
   setAutonomyLevel(3);
   document.getElementById('btn-fault').style.display='none';
@@ -1251,6 +1523,7 @@ function recoverNormal(){
   setAutonomyLevel(2);
   addFCLog('[恢复] 正常模式已恢复 → 继续原定飞行路线','success');
   addVLog('已恢复正常飞行模式','info');
+  addOpsLog('恢复正常模式','user');
   updateHUD();
 }
 function resetSystem(){
@@ -1268,6 +1541,7 @@ function resetSystem(){
   updateHealthPanel();updateSurfacePanel();
   addFCLog('[系统] 全部异常状态已清除 → 系统恢复正常','success');
   addVLog('系统已重置，所有异常已清除','info');
+  addOpsLog('系统已重置','user');
   if(demo.running&&demo.paused){demo.paused=false;demo._lastTick=performance.now();flight.phase='巡航中';document.getElementById('btn-fault').style.display='inline-block';updateHUD();}
 }
 function triggerFault(){
@@ -1318,6 +1592,7 @@ function processRTH(dt){
     setAutonomyLevel(2);
     addFCLog('[返航完成] 已安全抵达出发点','success');
     addVLog('返航完成 — 已抵达出发点','info');
+    addOpsLog('自动返航完成','flight');
     stopDemo(true);
     return;
   }
@@ -1418,6 +1693,66 @@ function formationCmd(cmd){
   else if(cmd==='rally'){formation.mode='rally';addVLog('集结编队中...','info');}
 }
 
+
+// ═══════════════════════════════════════════════════════════════
+//  Gong3: Timeline Event Markers
+// ═══════════════════════════════════════════════════════════════
+let replayEvents=[];
+function generateTimelineEvents(){
+  replayEvents=[];
+  if(demo.replayData.length===0)return;
+  for(let i=0;i<demo.replayData.length;i++){
+    const snap=demo.replayData[i];
+    // Red anomaly markers
+    if(i>0){
+      const prev=demo.replayData[i-1];
+      if(!prev.anomalyState.gpsLost&&snap.anomalyState.gpsLost)replayEvents.push({idx:i,color:'red',label:'GPS信号丢失'});
+      if(!prev.anomalyState.commLost&&snap.anomalyState.commLost)replayEvents.push({idx:i,color:'red',label:'通信中断'});
+      if(!prev.anomalyState.batteryCritical&&snap.anomalyState.batteryCritical)replayEvents.push({idx:i,color:'red',label:'电池异常'});
+      if(!prev.anomalyState.rtkDegraded&&snap.anomalyState.rtkDegraded)replayEvents.push({idx:i,color:'yellow',label:'RTK降级'});
+      if(snap.anomalyState.rthActive&&!prev.anomalyState.rthActive)replayEvents.push({idx:i,color:'green',label:'自动返航启动'});
+      if(!snap.anomalyState.rthActive&&prev.anomalyState.rthActive)replayEvents.push({idx:i,color:'green',label:'返航完成'});
+      // Phase changes
+      if(prev.phase!==snap.phase&&snap.phase==='巡航中')replayEvents.push({idx:i,color:'blue',label:'进入巡航'});
+      if(prev.phase!==snap.phase&&snap.phase==='悬停中')replayEvents.push({idx:i,color:'yellow',label:'悬停'});
+      if(prev.phase!==snap.phase&&snap.phase==='返航中')replayEvents.push({idx:i,color:'yellow',label:'返航中'});
+      if(prev.phase!==snap.phase&&snap.phase==='已完成')replayEvents.push({idx:i,color:'blue',label:'任务完成'});
+    }
+  }
+  renderTimelineMarkers();
+}
+function renderTimelineMarkers(){
+  const container=document.getElementById('replay-events-container');
+  if(!container||demo.replayData.length===0)return;
+  container.innerHTML='';
+  replayEvents.forEach(evt=>{
+    const pct=(evt.idx/demo.replayData.length)*100;
+    const marker=document.createElement('div');
+    marker.className='replay-event-marker '+evt.color;
+    marker.style.left=pct+'%';
+    marker.title=evt.label;
+    const tooltip=document.createElement('div');
+    tooltip.className='replay-event-tooltip';
+    tooltip.textContent=evt.label;
+    marker.appendChild(tooltip);
+    marker.addEventListener('click',()=>{
+      replaySeek(pct);
+    });
+    container.appendChild(marker);
+  });
+}
+function replaySeekWithSnap(val){
+  demo.replayIndex=Math.floor((val/100)*(demo.replayData.length-1));
+  // Magnetic snap to nearest event
+  let nearestEvent=null,nearestDist=5;
+  replayEvents.forEach(evt=>{
+    const evtPct=(evt.idx/demo.replayData.length)*100;
+    if(Math.abs(val-evtPct)<nearestDist){nearestDist=Math.abs(val-evtPct);nearestEvent=evtPct;}
+  });
+  if(nearestEvent!==null)val=nearestEvent;
+  replaySeek(val);
+}
+
 // ═══════════════════════════════════════════════════════════════
 //  B3: Replay system
 // ═══════════════════════════════════════════════════════════════
@@ -1443,6 +1778,7 @@ function startReplayRecording(){
 }
 function replayPlay(){
   if(demo.replayData.length===0){addVLog('无回放数据','warn');return;}
+  generateTimelineEvents();
   demo.replayActive=true;demo.replayPaused=false;
   demo.replaySavedState={
     running:demo.running,paused:demo.paused,progress:demo.progress,
@@ -1506,7 +1842,13 @@ function replayPause(){
 }
 function replaySeek(val){
   if(demo.replayData.length===0)return;
-  demo.replayIndex=Math.floor((val/100)*(demo.replayData.length-1));
+  // Magnetic snap
+  let snappedVal=val;
+  replayEvents.forEach(evt=>{
+    const evtPct=(evt.idx/demo.replayData.length)*100;
+    if(Math.abs(val-evtPct)<2.5)snappedVal=evtPct;
+  });
+  demo.replayIndex=Math.floor((snappedVal/100)*(demo.replayData.length-1));
   if(!demo.replayActive){replayPlay();demo.replayPaused=true;demo.replayActive=true;}
   const snap=demo.replayData[demo.replayIndex];
   flight.lat=snap.lat;flight.lng=snap.lng;flight.alt=snap.alt;
@@ -1544,7 +1886,9 @@ function replayExit(){
   document.getElementById('btn-replay-exit').style.display='none';
   updateFlightEntity();updateHUD();updateSurfacePanel();updateHealthPanel();updateControlLoopPanel();
   updateFaultTree();updateFormationPanel();
-  if(demo.running&&!demo.paused){demo._lastTick=performance.now();demo.animFrame=requestAnimationFrame(demoLoop);}
+  if(demo.running&&!demo.paused){demo._lastTick=performance.now();demo.animFrame=requestAnimationFrame(demoLoop);
+  if(!demo.paused)updateSensorHealth();
+  if(!demo.paused)generateMAVLinkMsgs(dt);}
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1599,6 +1943,44 @@ function exportReport(){
   a.href=url;a.download='flyteos_mission_report.json';a.click();
   URL.revokeObjectURL(url);
   addVLog('任务分析报告已导出','info');
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+//  Gong2: Safety Audit - scan route for geofence crossings
+// ═══════════════════════════════════════════════════════════════
+function safetyAudit(){
+  const gf03=GEOFENCES.find(g=>g.id==='GF03');
+  if(!gf03){addOpsLog('安全审查: GF03不存在','event');addVLog('GF03围栏不存在','warn');return;}
+  let violations=[];
+  for(let i=0;i<WAYPOINTS.length-1;i++){
+    const a=WAYPOINTS[i],b=WAYPOINTS[i+1];
+    // Sample 20 points along segment
+    for(let s=0;s<=20;s++){
+      const t=s/20;
+      const lat=a.lat+(b.lat-a.lat)*t;
+      const lng=a.lng+(b.lng-a.lng)*t;
+      const alt=a.alt+(b.alt-a.alt)*t;
+      const status=checkGeofence(gf03,lat,lng,alt);
+      if(status!=='safe'){
+        violations.push({from:i,to:i+1,lat,lng,alt,status});
+        break;
+      }
+    }
+  }
+  if(violations.length>0){
+    addOpsLog('安全审查: 发现 '+violations.length+' 处航线穿越禁飞区(航段'+violations[0].from+'\u2192'+violations[0].to+') \u2192 自动计算绕行','decision');
+    addVLog('安全审查: 发现 '+violations.length+' 处航线穿越禁飞区','warn');
+    // Auto detour
+    planDetour();
+    // Log re-planning
+    addFCLog('[触发事件] 安全审查发现航线冲突 \u2192 [系统判断] '+violations.length+'处穿越GF03禁飞区 \u2192 [执行动作] 自动计算绕行新航点 \u2192 [结果验证] 航线已更新避开禁飞区','warning');
+    addOpsLog('安全审查: 已自动重规划绕行航线','decision');
+  }else{
+    addOpsLog('安全审查: 航线安全，无穿越禁飞区','fence');
+    addVLog('安全审查: 航线安全，无穿越禁飞区','info');
+    addFCLog('[触发事件] 安全审查完成 \u2192 [系统判断] 航线全段安全 \u2192 [执行动作] 无需调整','success');
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1779,10 +2161,13 @@ function startDemo(){
   updateWingmanEntity(wingman3Body,wingman3Nose,wingman3,wingman3TrailP,wingman3Trail);
   // Replay
   startReplayRecording();
-  addFCLog('[系统] 飞行演示启动 → 开始导航','info');
+  addFCLog('[触发事件] 用户启动飞行演示 \u2192 [系统判断] 飞控系统自检通过 \u2192 [执行动作] 引擎启动+导航初始化 \u2192 [结果验证] 开始导航','info');
+  addOpsLog('飞行演示启动，开始导航','flight');
   addVLog('飞行演示已启动','info');
   demo._lastTick=performance.now();
   demo.animFrame=requestAnimationFrame(demoLoop);
+  if(!demo.paused)updateSensorHealth();
+  if(!demo.paused)generateMAVLinkMsgs(dt);
 }
 function stopDemo(showReport){
   demo.running=false;demo.paused=false;
@@ -1790,6 +2175,7 @@ function stopDemo(showReport){
   flight.phase='待命';updateHUD();
   addFCLog('[系统] 飞行演示已停止','info');
   addVLog('飞行演示已停止','info');
+  addOpsLog('飞行演示已停止','flight');
   if(showReport)setTimeout(showAIReport,500);
 }
 function updateFlightEntity(){
@@ -1820,7 +2206,9 @@ function updateFlightEntity(){
 //  MAIN DEMO LOOP
 // ═══════════════════════════════════════════════════════════════
 function demoLoop(timestamp){
-  if(!demo.running||demo.paused){demo.animFrame=requestAnimationFrame(demoLoop);return;}
+  if(!demo.running||demo.paused){demo.animFrame=requestAnimationFrame(demoLoop);
+  if(!demo.paused)updateSensorHealth();
+  if(!demo.paused)generateMAVLinkMsgs(dt);return;}
   const dt=Math.min(0.5,(timestamp-demo._lastTick)/1000);
   demo._lastTick=timestamp;
   // 1. Process RTH
@@ -1906,9 +2294,10 @@ function doPostRender(){
   if(flight.gfStatus==='违规'&&!demo._lastViolationLogged){
     demo._lastViolationLogged=true;
     addVLog('围栏违规 — '+flight.gfStatus,'violation');
+    addOpsLog('围栏违规: '+flight.gfStatus,'fence');
     if(flight.phase!=='悬停中'&&flight.phase!=='返航中'&&!anomaly.rthActive){
       flight.spd=Math.max(0,flight.spd-5);
-      addFCLog('[自主响应] 检测到围栏边界 → 自动减速 → 修正航向远离围栏','warning');
+      addFCLog('[触发事件] 检测到围栏边界(距离<60m) \u2192 [系统判断] 即将进入禁飞区 \u2192 [执行动作] 自动减速+修正航向远离围栏 \u2192 [结果验证] 航线已调整避开禁区','warning');
     }
   }else if(flight.gfStatus!=='违规'){demo._lastViolationLogged=false;}
   // Auto-steer away from fence
@@ -1929,6 +2318,8 @@ function doPostRender(){
     }
   }
   demo.animFrame=requestAnimationFrame(demoLoop);
+  if(!demo.paused)updateSensorHealth();
+  if(!demo.paused)generateMAVLinkMsgs(dt);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1959,16 +2350,18 @@ window.onload=function(){
   // Keyboard shortcuts
   document.addEventListener('keydown',function(e){
     if(e.ctrlKey&&e.key==='f'){e.preventDefault();triggerFault();}
-    else if(e.key==='1'){e.preventDefault();triggerAnomaly('gps_lose');}
-    else if(e.key==='2'){e.preventDefault();triggerAnomaly('rtk_degrade');}
-    else if(e.key==='3'){e.preventDefault();triggerAnomaly('comm_loss');}
-    else if(e.key==='4'){e.preventDefault();triggerAnomaly('battery_low');}
-    else if(e.key==='0'){e.preventDefault();resetSystem();}
+    else if(e.key==='1'){e.preventDefault();triggerAnomaly('gps_lose');addOpsLog('快捷键: 触发GPS丢失','user');}
+    else if(e.key==='2'){e.preventDefault();triggerAnomaly('rtk_degrade');addOpsLog('快捷键: 触发RTK降级','user');}
+    else if(e.key==='3'){e.preventDefault();triggerAnomaly('comm_loss');addOpsLog('快捷键: 触发通信中断','user');}
+    else if(e.key==='4'){e.preventDefault();triggerAnomaly('battery_low');addOpsLog('快捷键: 触发电池异常','user');}
+    else if(e.key==='0'){e.preventDefault();resetSystem();addOpsLog('快捷键: 系统重置','user');}
   });
   addVLog('FlyteOS 智能飞行管理系统已就绪','info');
+  addOpsLog('系统初始化完成','init');
   setAutonomyLevel(0);
 };
 // ═══════════════════════════════════════════════════════════════
+//  VERSION: 20260618-gaps
 //  END
 // ═══════════════════════════════════════════════════════════════
 </script>
