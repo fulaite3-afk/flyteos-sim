@@ -357,6 +357,8 @@
 <script src="core/event_bus.js"></script>
 <script src="core/state_manager.js"></script>
 <script src="core/cesium_core.js"></script>
+<script src="core/data_simulator.js"></script>
+<script src="core/perf_monitor.js"></script>
 
 <!-- ============================================================
      Phase 2 面板模块（M1 Phase 2 — 独立 IIFE 模块）
@@ -381,11 +383,12 @@
   (function () {
     'use strict';
 
-    console.log('[M1 Phase 3] Core + 8 Panels loaded.');
+    console.log('[M1 Phase 3] Core + DataSimulator + 8 Panels loaded.');
     console.log('  - EventBus:', typeof EventBus !== 'undefined' ? 'OK' : 'MISSING');
     console.log('  - StateManager:', typeof StateManager !== 'undefined' ? 'OK' : 'MISSING');
     console.log('  - Cesium:', typeof Cesium !== 'undefined' ? 'OK' : 'MISSING');
     console.log('  - CesiumCore:', typeof CesiumCore !== 'undefined' ? 'OK' : 'MISSING');
+    console.log('  - DataSimulator:', typeof DataSimulator !== 'undefined' ? 'OK' : 'MISSING');
     console.log('  - Panels.flight:', typeof Panels !== 'undefined' && Panels.flight ? 'OK' : 'MISSING');
     console.log('  - Panels.sensor:', typeof Panels !== 'undefined' && Panels.sensor ? 'OK' : 'MISSING');
     console.log('  - Panels.health:', typeof Panels !== 'undefined' && Panels.health ? 'OK' : 'MISSING');
@@ -426,16 +429,16 @@
       console.error('[M1 Phase 3] Panel init failed:', err);
     }
 
-    // ── 注入初始状态数据 ──
+    // ── 注入初始状态数据（为面板种子数据，DataSimulator 启动后会覆盖）──
     StateManager.set('flight', {
-      lat: 31.230000, lng: 121.470000, alt: 2000,
-      spd: 45.5, hdg: 90, vertRate: 2.3,
-      phase: 'CRUISE', wpLabel: 'WP3 (Shanghai)',
+      lat: 37.700000, lng: -122.400000, alt: 500,
+      spd: 25.0, hdg: 90.0, vertRate: 0.0,
+      phase: 'STOPPED', wpLabel: 'WP3 (SF Bay)',
       gfStatus: 'safe', gpsSats: 14,
     });
 
     StateManager.set('sensors', {
-      IMU: 450, BARO: 1013, GPS: 14, MAG: 48,
+      IMU: 450, BARO: 1013, GPS: 14, MAG: 50,
     });
 
     StateManager.set('health', {
@@ -462,24 +465,24 @@
       progress: 0,
     });
 
-    // ── 控制按钮事件（EventBus）──
+    // ── 控制按钮事件 ──
     document.getElementById('btn-start').addEventListener('click', function () {
-      EventBus.emit('demo:start');
-      StateManager.set('flight', Object.assign(StateManager.get('flight') || {}, { phase: 'TAKEOFF' }));
-      document.getElementById('status-text').textContent = 'Demo Status: RUNNING';
+      DataSimulator.start();
+      StateManager.set('flight', Object.assign(StateManager.get('flight') || {}, { phase: 'CRUISE' }));
+      document.getElementById('status-text').textContent = 'Demo Status: RUNNING (DataSimulator 5Hz)';
     });
     document.getElementById('btn-pause').addEventListener('click', function () {
-      EventBus.emit('demo:pause');
+      DataSimulator.stop();
       StateManager.set('flight', Object.assign(StateManager.get('flight') || {}, { phase: 'PAUSED' }));
       document.getElementById('status-text').textContent = 'Demo Status: PAUSED';
     });
     document.getElementById('btn-resume').addEventListener('click', function () {
-      EventBus.emit('demo:resume');
+      DataSimulator.start();
       StateManager.set('flight', Object.assign(StateManager.get('flight') || {}, { phase: 'CRUISE' }));
-      document.getElementById('status-text').textContent = 'Demo Status: RUNNING';
+      document.getElementById('status-text').textContent = 'Demo Status: RUNNING (DataSimulator 5Hz)';
     });
     document.getElementById('btn-stop').addEventListener('click', function () {
-      EventBus.emit('demo:stop');
+      DataSimulator.stop();
       StateManager.set('flight', Object.assign(StateManager.get('flight') || {}, { phase: 'STOPPED' }));
       document.getElementById('status-text').textContent = 'Demo Status: STOPPED';
     });
@@ -491,6 +494,39 @@
     });
 
     console.log('[M1 Phase 3] All 8 panels initialized and state seeded.');
+
+    // ── M1-09 性能基准测试 ──
+    if (typeof PerfMonitor !== 'undefined') {
+      console.log('[M1-09] Performance baseline test will run for 30 seconds...');
+
+      // 先启动 DataSimulator 确保有数据流
+      DataSimulator.start();
+      StateManager.set('flight', Object.assign(StateManager.get('flight') || {}, { phase: 'CRUISE' }));
+      document.getElementById('status-text').textContent = 'Demo Status: RUNNING (Perf Test 30s)';
+
+      // 启动性能监控
+      PerfMonitor.start(30000);
+
+      // 30 秒后自动打印报告到控制台
+      setTimeout(function () {
+        if (window.__perfReport) {
+          console.log('[M1-09] Performance baseline test complete.');
+          console.log('[M1-09] Report available at: window.__perfReport');
+          console.log('[M1-09] Copy the JSON above to save as m1_performance_baseline.json');
+
+          // 输出 JSON 到页面调试区
+          var reportJson = JSON.stringify(window.__perfReport, null, 2);
+          console.log('=== BEGIN PERF REPORT JSON ===');
+          console.log(reportJson);
+          console.log('=== END PERF REPORT JSON ===');
+
+          document.getElementById('status-text').textContent =
+            'Demo Status: PERF TEST DONE — FPS avg=' +
+            window.__perfReport.render.fps.avg.toFixed(1) +
+            ', EventBus=' + window.__perfReport.eventbus.throughput_rps.toFixed(0) + 'rps';
+        }
+      }, 31000);
+    }
   })();
 </script>
 

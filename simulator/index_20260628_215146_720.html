@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<!--
+  index.html — FlyteOS Simulator 模块化入口页面
+  ============================================================================
+  功能：Cesium 3D 飞行模拟器的 HTML 骨架，通过 CDN 加载 Cesium 1.120，
+        按依赖顺序加载核心 JS 模块和面板模块，提供左右分栏布局。
+  架构：
+    左栏（70%）— #cesiumContainer         Cesium 3D 地球渲染区
+    右栏（30%）— #panel-container         功能面板区（由各 Panel 模块动态渲染）
+  依赖加载顺序：
+    1. Cesium 1.120 CDN（CSS + JS）
+    2. core/event_bus.js       — 事件总线（零依赖）
+    3. core/state_manager.js   — 状态管理器（依赖 EventBus）
+    4. core/cesium_core.js     — Cesium 封装（依赖 Cesium + EventBus + StateManager）
+    5. panels/flight_panel.js  — 飞控遥测面板
+    6. panels/sensor_panel.js  — 传感器健康面板
+    7. panels/health_panel.js  — 系统健康监控面板
+    8. panels/log_panel.js     — 操作日志与审计面板
+  接口：无（纯入口页面）
+  ============================================================================
+-->
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlyteOS Simulator — M1 Phase 2</title>
+
+  <!-- Cesium 1.120 CDN -->
+  <link rel="stylesheet" href="https://cesium.com/downloads/cesiumjs/releases/1.120/Build/Cesium/Widgets/widgets.css">
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.120/Build/Cesium/Cesium.js"></script>
+
+  <style>
+    /* ============================================================
+       全局重置
+       ============================================================ */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+      background: #0a0e1a;
+      color: #e0e0e0;
+    }
+
+    /* ============================================================
+       主布局：左右分栏
+       ============================================================ */
+    .app-layout {
+      display: flex;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ---- 左栏：Cesium 3D 视图（70%） ---- */
+    .cesium-pane {
+      flex: 0 0 70%;
+      height: 100%;
+      position: relative;
+      border-right: 2px solid #1a2a4a;
+    }
+
+    #cesiumContainer {
+      width: 100%;
+      height: 100%;
+    }
+
+    .cesium-pane .cesium-viewer-credits {
+      display: none !important;
+    }
+
+    /* ---- 右栏：功能面板区（30%） ---- */
+    .panel-pane {
+      flex: 0 0 30%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      background: #0d1225;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 12px 16px;
+      background: linear-gradient(180deg, #141e3a, #0d1225);
+      border-bottom: 1px solid #1e3050;
+      text-align: center;
+    }
+
+    .panel-header h2 {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      color: #4ea8ff;
+    }
+
+    .panel-header .version {
+      font-size: 11px;
+      color: #556688;
+      margin-top: 2px;
+    }
+
+    /* 面板区域滚动容器（各 Panel 模块在此生成 DOM） */
+    .panel-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    /* 通用面板卡片样式（Panel 模块共用） */
+    .panel-card {
+      background: #101830;
+      border: 1px solid #1a2a4a;
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 8px;
+    }
+
+    .panel-card h3 {
+      font-size: 13px;
+      color: #6a9fd8;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #1a2a4a;
+      padding-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* ---- 控制按钮栏 ---- */
+    .ctrl-bar {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      padding: 8px 0;
+    }
+
+    .ctrl-bar button {
+      flex: 1 1 calc(50% - 6px);
+      min-width: 60px;
+      padding: 8px 4px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid #1a2a4a;
+      border-radius: 4px;
+      background: #141e3a;
+      color: #c0d0f0;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 0.5px;
+    }
+
+    .ctrl-bar button:hover {
+      background: #1e3050;
+      border-color: #4ea8ff;
+      color: #fff;
+    }
+
+    .ctrl-bar button:active {
+      transform: scale(0.97);
+    }
+
+    .ctrl-bar button.primary {
+      background: #1a4a6e;
+      border-color: #2a6a9e;
+    }
+
+    .ctrl-bar button.danger {
+      background: #4a1a1a;
+      border-color: #6e2a2a;
+    }
+
+    /* ---- 状态栏 ---- */
+    .status-bar {
+      padding: 6px 12px;
+      background: #0a0e1a;
+      border-top: 1px solid #1a2a4a;
+      font-size: 11px;
+      color: #556688;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .status-fps {
+      color: #4ea8ff;
+      font-family: 'Consolas', 'Courier New', monospace;
+    }
+
+    /* ---- 滚动条美化 ---- */
+    .panel-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .panel-scroll::-webkit-scrollbar-track {
+      background: #0a0e1a;
+    }
+
+    .panel-scroll::-webkit-scrollbar-thumb {
+      background: #1e3050;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-layout">
+  <!-- ========== 左栏：Cesium 3D 视图 ========== -->
+  <div class="cesium-pane">
+    <div id="cesiumContainer"></div>
+  </div>
+
+  <!-- ========== 右栏：功能面板区 ========== -->
+  <div class="panel-pane">
+    <div class="panel-header">
+      <h2>FLYTEOS SIMULATOR</h2>
+      <div class="version">M1 Phase 2 — Panel Modules</div>
+    </div>
+
+    <!-- 面板动态挂载点（各 Panel 模块在此生成 DOM） -->
+    <div class="panel-scroll" id="panel-scroll"></div>
+
+    <!-- 底部状态栏 -->
+    <div class="status-bar">
+      <span id="status-text">Demo Status: IDLE</span>
+      <span class="status-fps" id="status-fps">FPS: --</span>
+    </div>
+  </div><!-- .panel-pane -->
+</div><!-- .app-layout -->
+
+<!-- ============================================================
+     核心 JS 模块加载（按依赖顺序）
+     ============================================================ -->
+<script src="core/event_bus.js"></script>
+<script src="core/state_manager.js"></script>
+<script src="core/cesium_core.js"></script>
+
+<!-- ============================================================
+     面板模块加载
+     ============================================================ -->
+<script src="panels/flight_panel.js"></script>
+<script src="panels/sensor_panel.js"></script>
+<script src="panels/health_panel.js"></script>
+<script src="panels/log_panel.js"></script>
+
+<!-- ============================================================
+     Phase 2 启动入口
+     ============================================================ -->
+<script>
+  (function () {
+    'use strict';
+
+    // ------ 1. 模块加载诊断 ------
+    console.log('[M1 Phase 2] Core modules:');
+    console.log('  - EventBus:',     typeof EventBus     !== 'undefined' ? 'OK' : 'MISSING');
+    console.log('  - StateManager:', typeof StateManager !== 'undefined' ? 'OK' : 'MISSING');
+    console.log('  - Cesium:',       typeof Cesium       !== 'undefined' ? 'OK' : 'MISSING');
+    console.log('  - CesiumCore:',   typeof CesiumCore   !== 'undefined' ? 'OK' : 'MISSING');
+    console.log('  - Panels.flight:', typeof window.Panels?.flight?.init === 'function' ? 'OK' : 'MISSING');
+    console.log('  - Panels.sensor:', typeof window.Panels?.sensor?.init === 'function' ? 'OK' : 'MISSING');
+    console.log('  - Panels.health:', typeof window.Panels?.health?.init === 'function' ? 'OK' : 'MISSING');
+    console.log('  - Panels.log:',    typeof window.Panels?.log?.init    === 'function' ? 'OK' : 'MISSING');
+
+    // ------ 2. 初始化 Cesium Viewer ------
+    try {
+      CesiumCore.initialize('cesiumContainer', {
+        terrainProvider: Cesium.createWorldTerrain(),
+      });
+      CesiumCore.setCamera({ lng: 121.47, lat: 31.23, alt: 0 }, {
+        heading: 0, pitch: -45, range: 15000,
+      });
+      CesiumCore.addAircraft('UAV-Demo', { lng: 121.47, lat: 31.23, alt: 2000 });
+      console.log('[M1 Phase 2] Cesium Viewer initialized.');
+    } catch (err) {
+      console.error('[M1 Phase 2] Viewer init failed:', err);
+      document.getElementById('status-text').textContent = 'Status: ERROR - ' + err.message;
+      return;
+    }
+
+    // ------ 3. 初始化所有面板 ------
+    const panelContainer = document.getElementById('panel-scroll');
+
+    // 3a. 飞控遥测面板
+    if (window.Panels?.flight?.init) {
+      window.Panels.flight.init(panelContainer);
+    }
+
+    // 3b. 传感器健康面板
+    if (window.Panels?.sensor?.init) {
+      window.Panels.sensor.init(panelContainer);
+    }
+
+    // 3c. 系统健康面板
+    if (window.Panels?.health?.init) {
+      window.Panels.health.init(panelContainer);
+    }
+
+    // 3d. 操作日志面板
+    if (window.Panels?.log?.init) {
+      window.Panels.log.init(panelContainer);
+    }
+
+    // ------ 4. 控制按钮（内置到面板区域末尾） ------
+    const ctrlCard = document.createElement('div');
+    ctrlCard.className = 'panel-card';
+    ctrlCard.innerHTML = `
+      <h3>DEMO CONTROLS</h3>
+      <div class="ctrl-bar">
+        <button class="primary" id="btn-start">START</button>
+        <button id="btn-pause">PAUSE</button>
+        <button id="btn-resume">RESUME</button>
+        <button class="danger" id="btn-stop">STOP</button>
+      </div>
+    `;
+    panelContainer.appendChild(ctrlCard);
+
+    // 按钮事件
+    document.getElementById('btn-start').addEventListener('click', () => {
+      EventBus.emit('demo:start');
+      document.getElementById('status-text').textContent = 'Demo Status: RUNNING';
+    });
+    document.getElementById('btn-pause').addEventListener('click', () => {
+      EventBus.emit('demo:pause');
+      document.getElementById('status-text').textContent = 'Demo Status: PAUSED';
+    });
+    document.getElementById('btn-resume').addEventListener('click', () => {
+      EventBus.emit('demo:resume');
+      document.getElementById('status-text').textContent = 'Demo Status: RUNNING';
+    });
+    document.getElementById('btn-stop').addEventListener('click', () => {
+      EventBus.emit('demo:stop');
+      document.getElementById('status-text').textContent = 'Demo Status: STOPPED';
+    });
+
+    // 键盘快捷键
+    document.addEventListener('keydown', function (e) {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        EventBus.emit('demo:toggle');
+      } else if (e.code === 'Escape') {
+        EventBus.emit('demo:stop');
+      }
+    });
+
+    // ------ 5. FPS 计数器 ------
+    (function setupFPS() {
+      let fpsFrames = 0, fpsTime = performance.now();
+      const viewer = CesiumCore.getViewer();
+      if (!viewer) return;
+      viewer.scene.postRender.addEventListener(() => {
+        fpsFrames++;
+        const now = performance.now();
+        if (now - fpsTime >= 1000) {
+          const el = document.getElementById('status-fps');
+          if (el) el.textContent = 'FPS: ' + fpsFrames;
+          fpsFrames = 0;
+          fpsTime = now;
+        }
+      });
+    })();
+
+    // ------ 6. 日志欢迎信息 ------
+    EventBus.emit('log:add', { role: 'engineer', message: 'FlyteOS Simulator M1 Phase 2 initialized', type: 'info' });
+    EventBus.emit('log:add', { role: 'operator', message: '4 panels mounted: Flight / Sensor / Health / Log', type: 'info' });
+    EventBus.emit('log:add', { role: 'observer', message: 'Press SPACE or click START to begin demo', type: 'info' });
+
+    document.getElementById('status-text').textContent = 'Demo Status: READY';
+    console.log('[M1 Phase 2] Initialization complete.');
+  })();
+</script>
+
+</body>
+</html>
